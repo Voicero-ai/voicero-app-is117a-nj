@@ -1,0 +1,438 @@
+{% comment %}
+  VoiceroAI Conversational Interface
+{% endcomment %}
+
+<script>
+  // Initialize voicero with shop data - but DON'T expose the access key directly in window
+  window.voiceroConfig = {
+    shop: "{{ shop.permanent_domain }}",
+    websiteId: "{{ shop.id }}"
+  };
+  
+  // Store access key in a closure that's not directly accessible from window
+  (function() {
+    const accessKey = "{{ block.settings.access_key | default: shop.metafields.voicero.access_key }}";
+    
+    // Create a secure method to get authorization headers without exposing the key
+    window.voiceroConfig.getAuthHeaders = function() {
+      return {
+        'Authorization': `Bearer ${accessKey}`
+      };
+    };
+    
+    // Create a method to check if we have a valid key
+    window.voiceroConfig.hasValidKey = function() {
+      return !!accessKey && accessKey.length > 0;
+    };
+  })();
+  
+  // Check if we have a saved state
+  try {
+    const savedState = localStorage.getItem('voiceroAppState');
+    if (savedState) {
+      const parsedState = JSON.parse(savedState);
+      // Store last interface for quick access
+      window.voiceroConfig.lastInterface = parsedState.activeInterface;
+      window.voiceroConfig.wasOpen = parsedState.isOpen;
+      
+      // Set flag to indicate we should auto-open and hide chooser
+      if (parsedState.isOpen && parsedState.activeInterface) {
+        window.voiceroConfig.autoOpenInterface = true;
+      }
+    }
+  } catch (e) {
+    console.error("Error checking saved state:", e);
+  }
+</script>
+
+<!-- Set up getSessionToken override immediately -->
+<script>
+  // Pre-define the user data namespace and token override function
+  // This needs to be defined BEFORE the customer script loads
+  window.VoiceroUserData = window.VoiceroUserData || {};
+  window.VoiceroUserData.getSessionTokenOverride = async function() {
+    console.log("VoiceroUserData: Using pre-defined token handler");
+    
+    // For storefront context, check common token locations
+    if (window.Shopify && window.Shopify.checkout && window.Shopify.checkout.token) {
+      return window.Shopify.checkout.token;
+    }
+    
+    // Try to get customer token from meta tag if available
+    const metaCustomerToken = document.querySelector('meta[name="shopify-customer-token"]');
+    if (metaCustomerToken && metaCustomerToken.content) {
+      return metaCustomerToken.content;
+    }
+    
+    // Try to access customer.access_token if exposed by shop
+    if (window.Shopify && window.Shopify.customer && window.Shopify.customer.access_token) {
+      return window.Shopify.customer.access_token;
+    }
+    
+    // If this is customer-specific data, try session token from cookie
+    try {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.startsWith('_shopify_customer_session=')) {
+          return cookie.substring('_shopify_customer_session='.length);
+        }
+      }
+    } catch (e) {
+      console.warn("VoiceroUserData: Error checking cookies for token", e);
+    }
+    
+    // For storefront, we'll rely on standard /cart.js and Shopify.customer
+    console.log("VoiceroUserData: No customer token found, returning null");
+    return null;
+  };
+</script>
+
+<!-- Set up customer data container -->
+<script>
+  // Global container for Shopify App Bridge compatibility
+  window.shopifyAppBridge = {
+    // Simple method for frontend access to customer data
+    getSessionToken: function() {
+      // Custom token method that checks cookies first
+      console.log("Using shopifyAppBridge token container (enhanced)");
+      
+      // Check for customer session cookie
+      try {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim();
+          if (cookie.startsWith('_shopify_customer_session=')) {
+            console.log("Found customer session token in cookies");
+            return cookie.substring('_shopify_customer_session='.length);
+          }
+        }
+      } catch (e) {
+        console.warn("Error checking cookies for token", e);
+      }
+      
+      return null;
+    }
+  };
+  
+  // Check if the customer is actually logged in and store that info immediately
+  // This helps bypass the Liquid templating issues
+  (function() {
+    // Check for customer login indicators
+    const isLoggedIn = (
+      // Check if we have a customer object from Liquid
+      {% if customer %}true{% else %}false{% endif %} ||
+      // Check for customer-specific cookies
+      document.cookie.includes('_shopify_customer_') ||
+      // Or other specific login indicators
+      document.querySelectorAll('a[href*="/logout"]').length > 0
+    );
+    
+    // Store this status where our modules can access it
+    window.shopifyCustomerStatus = {
+      isLoggedIn: isLoggedIn,
+      checkTime: new Date().toISOString()
+    };
+    
+    console.log("Direct customer login check:", isLoggedIn);
+  })();
+  
+  // Inject detailed customer data if available through Liquid
+  {% if customer %}
+    console.log("LIQUID: Customer object is available!");
+    // Create a data container with all available customer information
+    window.__VoiceroCustomerId = "{{ customer.id }}";
+    window.__VoiceroCustomerData = {
+      id: "{{ customer.id }}",
+      first_name: "{{ customer.first_name }}",
+      last_name: "{{ customer.last_name }}",
+      email: "{{ customer.email }}",
+      phone: "{{ customer.phone }}",
+      accepts_marketing: {{ customer.accepts_marketing }},
+      orders_count: {{ customer.orders_count }},
+      tags: "{{ customer.tags }}",
+      total_spent: "{{ customer.total_spent }}",
+      tax_exempt: {{ customer.tax_exempt }},
+      created_at: "{{ customer.created_at }}",
+      {% if customer.default_address %}
+      default_address: {
+        id: "{{ customer.default_address.id }}",
+        first_name: "{{ customer.default_address.first_name }}",
+        last_name: "{{ customer.default_address.last_name }}",
+        company: "{{ customer.default_address.company }}",
+        address1: "{{ customer.default_address.address1 }}",
+        address2: "{{ customer.default_address.address2 }}",
+        city: "{{ customer.default_address.city }}",
+        province: "{{ customer.default_address.province }}",
+        province_code: "{{ customer.default_address.province_code }}",
+        country: "{{ customer.default_address.country }}",
+        country_code: "{{ customer.default_address.country_code }}",
+        zip: "{{ customer.default_address.zip }}",
+        phone: "{{ customer.default_address.phone }}"
+      },
+      {% endif %}
+      // For security, we don't include customer addresses array here
+      // Only include the default address above
+      
+      // Last order details
+      last_order: {
+        {% if customer.last_order %}
+        name: "{{ customer.last_order.name }}",
+        order_number: "{{ customer.last_order.order_number }}",
+        created_at: "{{ customer.last_order.created_at }}",
+        financial_status: "{{ customer.last_order.financial_status }}",
+        fulfillment_status: "{{ customer.last_order.fulfillment_status }}",
+        total_price: "{{ customer.last_order.total_price }}",
+        shipping_address: {
+          {% if customer.last_order.shipping_address %}
+          name: "{{ customer.last_order.shipping_address.name }}",
+          address1: "{{ customer.last_order.shipping_address.address1 }}",
+          address2: "{{ customer.last_order.shipping_address.address2 }}",
+          city: "{{ customer.last_order.shipping_address.city }}",
+          province: "{{ customer.last_order.shipping_address.province }}",
+          country: "{{ customer.last_order.shipping_address.country }}",
+          zip: "{{ customer.last_order.shipping_address.zip }}",
+          phone: "{{ customer.last_order.shipping_address.phone }}"
+          {% else %}
+          null: true
+          {% endif %}
+        },
+        tracking_info: {
+          {% if customer.last_order.fulfillments.size > 0 %}
+          company: "{{ customer.last_order.fulfillments.first.tracking_company }}",
+          number: "{{ customer.last_order.fulfillments.first.tracking_number }}",
+          url: "{{ customer.last_order.fulfillments.first.tracking_url }}"
+          {% else %}
+          null: true
+          {% endif %}
+        }
+        {% else %}
+        null: true
+        {% endif %}
+      },
+      
+      // Recent orders (up to 10)
+      recent_orders: [
+        {% assign recent_orders_limit = 10 %}
+        {% for order in customer.orders limit: recent_orders_limit %}
+        {
+          name: "{{ order.name }}",
+          order_number: "{{ order.order_number }}",
+          created_at: "{{ order.created_at }}",
+          financial_status: "{{ order.financial_status }}",
+          fulfillment_status: "{{ order.fulfillment_status }}",
+          total_price: "{{ order.total_price }}",
+          line_items_count: {{ order.line_items.size }},
+          {% if order.fulfillments.size > 0 %}
+          has_tracking: true,
+          tracking_company: "{{ order.fulfillments.first.tracking_company }}",
+          tracking_number: "{{ order.fulfillments.first.tracking_number }}",
+          tracking_url: "{{ order.fulfillments.first.tracking_url }}"
+          {% else %}
+          has_tracking: false
+          {% endif %}
+        }{% unless forloop.last %},{% endunless %}
+        {% endfor %}
+      ]
+    };
+    console.log("VoiceroAI: Detailed customer data injected from Liquid", window.__VoiceroCustomerData);
+  {% else %}
+    console.log("LIQUID: No customer object available - user is not logged in");
+  {% endif %}
+</script>
+
+<script>
+  // Function to load scripts sequentially
+  function loadScript(src, callback) {
+    const script = document.createElement('script');
+    script.src = src;
+    script.onload = callback;
+    script.onerror = function() {
+      console.error("Failed to load script: " + src);
+    };
+    document.body.appendChild(script);
+  }
+  
+  // Load all scripts on DOM content loaded
+  document.addEventListener('DOMContentLoaded', function() {
+    
+    // Load orders script first 
+    loadScript("{{ 'voicero-orders.js' | asset_url }}", function() {
+      // Then load the customer data script
+      loadScript("{{ 'voicero-customer.js' | asset_url }}", function() {
+        // Load our new auth helper right after customer script
+        loadScript("{{ 'voicero-auth-helper.js' | asset_url }}", function() {
+          // Then load the core script
+          loadScript("{{ 'voicero-core.js' | asset_url }}", function() {
+            // Load our utility files before other modules
+            loadScript("{{ 'voicero-color.js' | asset_url }}", function() {
+              loadScript("{{ 'voicero-page-data.js' | asset_url }}", function() {
+                // Load the chooser module after utilities
+                loadScript("{{ 'voicero-chooser.js' | asset_url }}", function() {
+                  // Load the welcome module before voice and text modules
+                  loadScript("{{ 'voicero-welcome.js' | asset_url }}", function() {
+                    // Load second-look module before voice/text to analyze page
+                    loadScript("{{ 'voicero-second.js' | asset_url }}", function() {
+                      // Load the wait module first
+                      loadScript("{{ 'voicero-wait.js' | asset_url }}", function() {
+                        // Then load voice module
+                        loadScript("{{ 'voicero-voice.js' | asset_url }}", function() {
+                          
+                          // Auto-open voice interface if it was the last active one
+                          if (window.voiceroConfig.wasOpen && window.voiceroConfig.lastInterface === 'voice') {
+                            setTimeout(function() {
+                              if (window.VoiceroVoice && window.VoiceroVoice.openVoiceChat) {
+                                window.VoiceroVoice.openVoiceChat();
+                              }
+                            }, 300);
+                          }
+                        });
+                        
+                        // Load text module in parallel
+                        loadScript("{{ 'voicero-text.js' | asset_url }}", function() {
+                          
+                          // Auto-open text interface if it was the last active one
+                          if (window.voiceroConfig.wasOpen && window.voiceroConfig.lastInterface === 'text') {
+                            setTimeout(function() {
+                              if (window.VoiceroText && window.VoiceroText.openTextChat) {
+                                window.VoiceroText.openTextChat();
+                              }
+                            }, 300);
+                          }
+                        });
+                      });
+                    });
+                  });
+                });
+              });
+              
+              // Load action handler script
+              loadScript("{{ 'voicero-action-handler.js' | asset_url }}", function() {
+                // Initialize action handler with shop configuration
+                if (window.VoiceroActionHandler && window.VoiceroActionHandler.init) {
+                  window.VoiceroActionHandler.init();
+                }
+                
+                // Load return handler script
+                loadScript("{{ 'voicero-return.js' | asset_url }}", function() {
+                  // Initialize return handler
+                  if (window.VoiceroReturnHandler && window.VoiceroReturnHandler.init) {
+                    window.VoiceroReturnHandler.init();
+                  }
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+
+    // Load support module
+    loadScript("{{ 'voicero-support.js' | asset_url }}", function() {
+      if (window.VoiceroSupport && window.VoiceroSupport.init) {
+        window.VoiceroSupport.init();
+      }
+    });
+
+    // Load contact module
+    loadScript("{{ 'voicero-contact.js' | asset_url }}", function() {
+      if (window.VoiceroContact && window.VoiceroContact.init) {
+        window.VoiceroContact.init();
+      }
+    });
+  });
+  
+  // Also try to load immediately if DOM is already loaded
+  if (document.readyState === "complete" || document.readyState === "interactive") {
+    {%- comment -%} theme-check:disable theme-check/MissingAsset {%- endcomment -%}
+    // Load orders script first 
+    loadScript("{{ 'voicero-orders.js' | asset_url }}", function() {
+      // Then load the customer data script
+      loadScript("{{ 'voicero-customer.js' | asset_url }}", function() {
+        // Load our new auth helper right after customer script
+        loadScript("{{ 'voicero-auth-helper.js' | asset_url }}", function() {
+          loadScript("{{ 'voicero-core.js' | asset_url }}", function() {
+            // Load our utility files before other modules
+            loadScript("{{ 'voicero-color.js' | asset_url }}", function() {
+              loadScript("{{ 'voicero-page-data.js' | asset_url }}", function() {
+                // Load the chooser module after utilities
+                loadScript("{{ 'voicero-chooser.js' | asset_url }}", function() {
+                  // Load the welcome module before voice and text modules
+                  loadScript("{{ 'voicero-welcome.js' | asset_url }}", function() {
+                    // Load second-look module before voice/text to analyze page
+                    loadScript("{{ 'voicero-second.js' | asset_url }}", function() {
+                      // Load the wait module first
+                      loadScript("{{ 'voicero-wait.js' | asset_url }}", function() {
+                        // Then load voice module
+                        loadScript("{{ 'voicero-voice.js' | asset_url }}", function() {
+                          
+                          // Auto-open voice interface if it was the last active one
+                          if (window.voiceroConfig.wasOpen && window.voiceroConfig.lastInterface === 'voice') {
+                            setTimeout(function() {
+                              if (window.VoiceroVoice && window.VoiceroVoice.openVoiceChat) {
+                                window.VoiceroVoice.openVoiceChat();
+                              }
+                            }, 300);
+                          }
+                        });
+                        
+                        // Load text module in parallel
+                        loadScript("{{ 'voicero-text.js' | asset_url }}", function() {
+                          
+                          // Auto-open text interface if it was the last active one
+                          if (window.voiceroConfig.wasOpen && window.voiceroConfig.lastInterface === 'text') {
+                            setTimeout(function() {
+                              if (window.VoiceroText && window.VoiceroText.openTextChat) {
+                                window.VoiceroText.openTextChat();
+                              }
+                            }, 300);
+                          }
+                        });
+                      });
+                    });
+                  });
+                });
+              });
+              
+              // Initialize action handler with shop configuration
+              if (window.VoiceroActionHandler && window.VoiceroActionHandler.init) {
+                window.VoiceroActionHandler.init();
+              }
+              
+              // Load action handler script
+              loadScript("{{ 'voicero-action-handler.js' | asset_url }}", function() {
+                // Initialize action handler with shop configuration
+                if (window.VoiceroActionHandler && window.VoiceroActionHandler.init) {
+                  window.VoiceroActionHandler.init();
+                }
+                
+                // Load return handler script
+                loadScript("{{ 'voicero-return.js' | asset_url }}", function() {
+                  // Initialize return handler
+                  if (window.VoiceroReturnHandler && window.VoiceroReturnHandler.init) {
+                    window.VoiceroReturnHandler.init();
+                  }
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+  }
+</script>
+
+{% schema %}
+{
+  "name": "VoiceroAI",
+  "target": "body",
+  "settings": [
+    {
+      "type": "text",
+      "id": "access_key",
+      "label": "Access Key",
+      "info": "Enter your VoiceroAI access key here. If left blank, the system will try to use the access key from your shop settings."
+    }
+  ]
+}
+{% endschema %} 

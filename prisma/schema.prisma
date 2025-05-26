@@ -1,0 +1,34 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Note that some adapters may set a maximum length for the String type by default, please ensure your strings are long
+// enough when changing adapters.
+// See https://www.prisma.io/docs/orm/reference/prisma-schema-reference#string for more information
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Session {
+  id            String    @id @map("id") @db.VarChar(255)
+  shop          String    @map("shop")
+  state         String    @map("state")
+  isOnline      Boolean   @default(false) @map("isOnline")
+  scope         String?   @map("scope")
+  expires       DateTime? @map("expires")
+  accessToken   String    @map("accessToken")
+  userId        BigInt?   @map("userId")
+  firstName     String?   @map("firstName")
+  lastName      String?   @map("lastName")
+  email         String?   @map("email")
+  accountOwner  Boolean   @default(false) @map("accountOwner")
+  locale        String?   @map("locale")
+  collaborator  Boolean?  @default(false) @map("collaborator")
+  emailVerified Boolean?  @default(false) @map("emailVerified")
+
+  @@map("sessions")
+}

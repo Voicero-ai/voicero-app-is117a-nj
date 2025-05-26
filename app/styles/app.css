@@ -1,0 +1,62 @@
+/* Apply brand color (#882be6) to primary elements */
+
+/* Primary buttons */
+.Polaris-Button--primary {
+  background-color: #882be6 !important;
+  border-color: #882be6 !important;
+}
+
+.Polaris-Button--primary:hover {
+  background-color: #7425c9 !important;
+  border-color: #7425c9 !important;
+}
+
+/* Icons with highlight color */
+.Polaris-Icon--colorHighlight svg {
+  fill: #882be6 !important;
+}
+
+/* Icons with primary color */
+.Polaris-Icon--colorPrimary svg,
+.Polaris-Icon--colorBase svg {
+  fill: #882be6 !important;
+}
+
+/* Links */
+.Polaris-Link {
+  color: #882be6 !important;
+}
+
+.Polaris-Link:hover {
+  color: #7425c9 !important;
+}
+
+/* Selected navigation items */
+.Polaris-Navigation__Item--selected {
+  background-color: rgba(136, 43, 230, 0.1) !important;
+}
+
+.Polaris-Navigation__Item--selected .Polaris-Navigation__Icon svg {
+  fill: #882be6 !important;
+}
+
+/* Badges */
+.Polaris-Badge--statusInfo {
+  background-color: rgba(136, 43, 230, 0.1) !important;
+  color: #882be6 !important;
+}
+
+/* Success badges and icons */
+.Polaris-Badge--statusSuccess {
+  background-color: rgba(136, 43, 230, 0.1) !important;
+  color: #882be6 !important;
+}
+
+.Polaris-Icon--colorSuccess svg {
+  fill: #882be6 !important;
+}
+
+/* Progress bars */
+.Polaris-ProgressBar__Indicator {
+  background-color: #882be6 !important;
+}
