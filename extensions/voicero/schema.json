@@ -6,7 +6,7 @@
       "type": "text",
       "id": "client_id",
       "label": "Shopify Client ID",
-      "default": "96e8a9edf06fbe28957bc93a4f00ddc9",
+      "default": "fd1cced06c818b2c1eb6d4901a4404b3",
       "info": "Your app's public Client ID from the Partner Dashboard"
     }
   ]

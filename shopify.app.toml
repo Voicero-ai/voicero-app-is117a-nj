@@ -1,6 +1,6 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
-client_id = "96e8a9edf06fbe28957bc93a4f00ddc9"
+client_id = "fd1cced06c818b2c1eb6d4901a4404b3"
 application_url = "https://voicero-app-is117a-nj.vercel.app/"
 embedded = true
 name = "voicero-app-is117a-nj"
