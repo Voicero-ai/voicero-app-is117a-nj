@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "96e8a9edf06fbe28957bc93a4f00ddc9"
-application_url = "https://shopify-app-is117a-nj.vercel.app/"
+application_url = "https://voicero-app-is117a-nj.vercel.app/"
 embedded = true
 name = "voicero-app-is117a-nj"
 handle = "voicero-app-is117a-nj"
@@ -31,15 +31,15 @@ scopes = "read_content,read_products,read_discounts,write_content,read_metaobjec
 
 [auth]
 redirect_urls = [
-  "https://shopify-app-is117a-nj.vercel.app/auth/callback",
-  "https://shopify-app-is117a-nj.vercel.app/auth/shopify/callback",
-  "https://shopify-app-is117a-nj.vercel.app/api/auth/callback"
+  "https://voicero-app-is117a-nj.vercel.app/auth/callback",
+  "https://voicero-app-is117a-nj.vercel.app/auth/shopify/callback",
+  "https://voicero-app-is117a-nj.vercel.app/api/auth/callback"
 ]
 
 [pos]
 embedded = false
 
 [app_proxy]
-url = "https://shopify-app-is117a-nj.vercel.app/app/proxy"
+url = "https://voicero-app-is117a-nj.vercel.app/app/proxy"
 subpath = "proxy"
 prefix = "apps"
