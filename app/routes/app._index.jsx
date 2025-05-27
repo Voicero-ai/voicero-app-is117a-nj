@@ -427,7 +427,6 @@ export const action = async ({ request }) => {
 
         const shopId = shopData.data.shop.id;
 
-        // First save the access key to metafields
         const metafieldResponse = await admin.graphql(
           `
           mutation CreateMetafield($input: MetafieldsSetInput!) {
@@ -465,101 +464,6 @@ export const action = async ({ request }) => {
             metafieldData.data.metafieldsSet.userErrors,
           );
           throw new Error("Failed to save access key to store");
-        }
-
-        // Also save the website ID if available in the response
-        if (data.website?.id) {
-          console.log(`Saving website ID from connect: ${data.website.id}`);
-
-          // Check if there's an existing website ID metafield we need to delete first
-          const websiteIdResponse = await admin.graphql(`
-            query {
-              shop {
-                metafield(namespace: "voicero", key: "website_id") {
-                  id
-                  value
-                }
-              }
-            }
-          `);
-
-          const websiteIdData = await websiteIdResponse.json();
-          const existingMetafieldId = websiteIdData.data?.shop?.metafield?.id;
-
-          // If there's an existing metafield with a different website ID, delete it first
-          if (
-            existingMetafieldId &&
-            websiteIdData.data?.shop?.metafield?.value !== data.website.id
-          ) {
-            console.log(
-              `Deleting outdated website ID metafield: ${existingMetafieldId}`,
-            );
-
-            const deleteResponse = await admin.graphql(`
-              mutation {
-                metafieldDelete(input: {
-                  id: "${existingMetafieldId}"
-                }) {
-                  deletedId
-                  userErrors {
-                    field
-                    message
-                  }
-                }
-              }
-            `);
-
-            const deleteResult = await deleteResponse.json();
-
-            if (deleteResult.data?.metafieldDelete?.userErrors?.length > 0) {
-              console.warn(
-                "Warning: Issues deleting old website ID:",
-                deleteResult.data.metafieldDelete.userErrors,
-              );
-            }
-          }
-
-          // Save the new website ID
-          const websiteIdMutation = await admin.graphql(
-            `
-            mutation CreateMetafield($input: MetafieldsSetInput!) {
-              metafieldsSet(metafields: [$input]) {
-                metafields {
-                  id
-                  key
-                  value
-                }
-                userErrors {
-                  field
-                  message
-                }
-              }
-            }
-          `,
-            {
-              variables: {
-                input: {
-                  namespace: "voicero",
-                  key: "website_id",
-                  type: "single_line_text_field",
-                  value: data.website.id,
-                  ownerId: shopId,
-                },
-              },
-            },
-          );
-
-          const websiteIdResult = await websiteIdMutation.json();
-
-          if (websiteIdResult.data?.metafieldsSet?.userErrors?.length > 0) {
-            console.error(
-              "Website ID metafield errors:",
-              websiteIdResult.data.metafieldsSet.userErrors,
-            );
-            // Don't throw an error here, just log it and continue
-          } else {
-            console.log(`Successfully saved website ID: ${data.website.id}`);
-          }
         }
 
         return {
