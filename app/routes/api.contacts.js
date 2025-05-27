@@ -5,9 +5,26 @@ import urls from "../config/urls";
 export const dynamic = "force-dynamic";
 
 export async function loader({ request }) {
-  const { admin, session } = await authenticate.admin(request);
-
   try {
+    const { admin, session } = await authenticate.admin(request);
+
+    // Verify session and shop exist
+    if (!session) {
+      console.error("No session found during authentication");
+      return json(
+        { success: false, error: "Authentication failed - no session" },
+        { status: 401 },
+      );
+    }
+
+    if (!session.shop) {
+      console.error("No shop found in session:", session);
+      return json(
+        { success: false, error: "Authentication failed - no shop in session" },
+        { status: 401 },
+      );
+    }
+
     // Get access key from metafields
     const metafieldResponse = await admin.graphql(`
       query {
@@ -23,7 +40,10 @@ export async function loader({ request }) {
     const accessKey = metafieldData.data.shop.metafield?.value;
 
     if (!accessKey) {
-      return json({ error: "No access key found" }, { status: 400 });
+      return json(
+        { success: false, error: "No access key found" },
+        { status: 400 },
+      );
     }
 
     // Get website data from our existing connection first to get the website ID
@@ -103,7 +123,15 @@ export async function loader({ request }) {
             );
           }
         } else {
-          throw new Error("Failed to get website ID from connection check");
+          const errorText = await connectionResponse.text();
+          console.error(
+            "Connection response error:",
+            connectionResponse.status,
+            errorText,
+          );
+          throw new Error(
+            `Failed to get website ID from connection check: ${connectionResponse.status} ${errorText}`,
+          );
         }
       } catch (error) {
         console.error("Error getting website ID:", error);
@@ -143,10 +171,17 @@ export async function loader({ request }) {
     });
 
     if (!contactsResponse.ok) {
-      const errorData = await contactsResponse.json();
-      throw new Error(
-        `Failed to fetch contacts data: ${errorData.error || contactsResponse.statusText}`,
-      );
+      const errorText = await contactsResponse.text();
+      let errorMessage;
+
+      try {
+        const errorData = JSON.parse(errorText);
+        errorMessage = errorData.error || contactsResponse.statusText;
+      } catch (e) {
+        errorMessage = errorText || contactsResponse.statusText;
+      }
+
+      throw new Error(`Failed to fetch contacts data: ${errorMessage}`);
     }
 
     const contactsData = await contactsResponse.json();
@@ -164,7 +199,7 @@ export async function loader({ request }) {
     return json(
       {
         success: false,
-        error: error.message,
+        error: error.message || "An unexpected error occurred",
       },
       { status: 500 },
     );
