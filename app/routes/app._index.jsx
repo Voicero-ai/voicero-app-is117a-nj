@@ -2960,32 +2960,98 @@ export default function Index() {
                                                 return item.url;
                                               }
 
-                                              const domain =
+                                              // Try to get domain from multiple sources
+                                              let domain = "";
+
+                                              // Option 1: Try to get from websiteData.url
+                                              if (
+                                                fetcher.data?.websiteData?.url
+                                              ) {
+                                                try {
+                                                  const websiteUrl = new URL(
+                                                    fetcher.data.websiteData.url,
+                                                  );
+                                                  domain = websiteUrl.hostname;
+                                                } catch (e) {
+                                                  console.error(
+                                                    "Failed to parse websiteData.url:",
+                                                    e,
+                                                  );
+                                                }
+                                              }
+
+                                              // Option 2: Try to get from websiteData.domain
+                                              if (
+                                                !domain &&
                                                 fetcher.data?.websiteData
-                                                  ?.domain || "";
+                                                  ?.domain
+                                              ) {
+                                                domain =
+                                                  fetcher.data.websiteData
+                                                    .domain;
+                                              }
+
+                                              // Option 3: Fall back to the shop URL if set in session
+                                              if (
+                                                !domain &&
+                                                typeof window !== "undefined"
+                                              ) {
+                                                // Get the shop name from the URL if possible
+                                                const shopParam =
+                                                  new URLSearchParams(
+                                                    window.location.search,
+                                                  ).get("shop");
+                                                if (shopParam) {
+                                                  domain = shopParam;
+                                                }
+                                              }
+
+                                              // If we still don't have a domain, log an error and use myshopify.com domain
+                                              if (!domain) {
+                                                console.error(
+                                                  "WARNING: Could not determine shop domain for URL construction",
+                                                );
+                                                // Get the current path
+                                                if (
+                                                  typeof window !== "undefined"
+                                                ) {
+                                                  // Extract shop name from path if possible
+                                                  const pathMatch =
+                                                    window.location.pathname.match(
+                                                      /\/([^\/]+)\/apps\//,
+                                                    );
+                                                  if (
+                                                    pathMatch &&
+                                                    pathMatch[1]
+                                                  ) {
+                                                    domain = `${pathMatch[1]}.myshopify.com`;
+                                                  }
+                                                }
+                                              }
+
+                                              // Final fallback
+                                              if (!domain) {
+                                                domain =
+                                                  "your-shop-url.myshopify.com";
+                                              }
+
                                               const handle =
                                                 item.handle ||
                                                 item.url.split("/").pop();
-
-                                              
+                                              console.log(
+                                                "Using domain:",
+                                                domain,
+                                              );
 
                                               // Build URL based on content type
                                               switch (contentType) {
                                                 case "blogPosts":
-                                                  console.log(handle);
-                                                  console.log(domain);
                                                   return `https://${domain}/blogs/${item.blogHandle || "news"}/${handle}`;
                                                 case "products":
-                                                  console.log(handle);
-                                                  console.log(domain);
                                                   return `https://${domain}/products/${handle}`;
                                                 case "pages":
-                                                  console.log(handle);
-                                                  console.log(domain);
                                                   return `https://${domain}/pages/${handle}`;
                                                 case "collections":
-                                                  console.log(handle);
-                                                  console.log(domain);
                                                   return `https://${domain}/collections/${handle}`;
                                                 default:
                                                   // Fallback to original URL format
