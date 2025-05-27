@@ -1749,7 +1749,7 @@ const VoiceroVoice = {
 
                 // Try localhost first for the /shopify/chat route, then fall back to normal endpoint
                 const chatResponse = await fetch(
-                  "http://localhost:3000/api/shopify/chat",
+                  "https://www.voicero.ai/api/shopify/chat",
                   {
                     method: "POST",
                     headers: {
@@ -4073,7 +4073,7 @@ Hi, I'm ${botName}! ${welcomeMessageContent}
     );
 
     // Try localhost first for the /shopify/chat route, then fall back to normal endpoint
-    fetch("http://localhost:3000/api/shopify/chat", {
+    fetch("https://www.voicero.ai/api/shopify/chat", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
