@@ -88,6 +88,32 @@ export async function loader({ request }) {
     // Get website data directly from the connect response
     const websiteData = connectionData.website;
 
+    // Format the website data for frontend compatibility
+
+    // 1. If plan is empty, set to "Free"
+    if (!websiteData.plan || websiteData.plan === "") {
+      websiteData.plan = "Free";
+    }
+
+    // 2. Ensure posts are correctly mapped
+    // If we have posts but no blogPosts, create the blogPosts field
+    if (
+      websiteData.content &&
+      websiteData.content.posts &&
+      !websiteData.content.blogPosts
+    ) {
+      websiteData.content.blogPosts = websiteData.content.posts;
+    }
+
+    // If _count has posts but not blogPosts, ensure blogPosts is set
+    if (
+      websiteData._count &&
+      websiteData._count.posts !== undefined &&
+      websiteData._count.blogPosts === undefined
+    ) {
+      websiteData._count.blogPosts = websiteData._count.posts;
+    }
+
     // Update the website_id metafield for future use
     try {
       // Get shop ID for metafield operations

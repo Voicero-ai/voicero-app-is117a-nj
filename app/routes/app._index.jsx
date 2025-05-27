@@ -1181,7 +1181,7 @@ export default function Index() {
       setIsLoadingExtendedData(true);
       const response = await fetch("/api/website/get");
       const data = await response.json();
-      console.log(data);
+      console.log("websites/get data: ", data);
 
       if (data.success && data.websiteData) {
         setExtendedWebsiteData(data.websiteData);
