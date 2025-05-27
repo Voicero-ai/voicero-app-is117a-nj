@@ -375,6 +375,7 @@ export const action = async ({ request }) => {
 
             try {
               const data = JSON.parse(responseText);
+              console.log("data", data);
 
               if (response.ok && data.website) {
                 connectionSuccessful = true;
