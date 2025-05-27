@@ -2957,7 +2957,17 @@ export default function Index() {
                                             url={
                                               item.url.startsWith("http")
                                                 ? item.url
-                                                : `https://${fetcher.data?.websiteData?.domain || ""}${item.url.startsWith("/") ? item.url : `/${item.url}`}`
+                                                : contentType === "blogPosts" &&
+                                                    item.blogHandle
+                                                  ? `https://${fetcher.data?.websiteData?.domain || ""}/blogs/${item.blogHandle}/${item.handle || item.url.split("/").pop()}`
+                                                  : contentType === "products"
+                                                    ? `https://${fetcher.data?.websiteData?.domain || ""}/products/${item.handle || item.url.split("/").pop()}`
+                                                    : contentType === "pages"
+                                                      ? `https://${fetcher.data?.websiteData?.domain || ""}/pages/${item.handle || item.url.split("/").pop()}`
+                                                      : contentType ===
+                                                          "collections"
+                                                        ? `https://${fetcher.data?.websiteData?.domain || ""}/collections/${item.handle || item.url.split("/").pop()}`
+                                                        : `https://${fetcher.data?.websiteData?.domain || ""}${item.url.startsWith("/") ? item.url : `/${item.url}`}`
                                             }
                                             external
                                           >
