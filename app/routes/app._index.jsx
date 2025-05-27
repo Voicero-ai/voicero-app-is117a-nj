@@ -2967,15 +2967,25 @@ export default function Index() {
                                                 item.handle ||
                                                 item.url.split("/").pop();
 
+                                              
+
                                               // Build URL based on content type
                                               switch (contentType) {
                                                 case "blogPosts":
+                                                  console.log(handle);
+                                                  console.log(domain);
                                                   return `https://${domain}/blogs/${item.blogHandle || "news"}/${handle}`;
                                                 case "products":
+                                                  console.log(handle);
+                                                  console.log(domain);
                                                   return `https://${domain}/products/${handle}`;
                                                 case "pages":
+                                                  console.log(handle);
+                                                  console.log(domain);
                                                   return `https://${domain}/pages/${handle}`;
                                                 case "collections":
+                                                  console.log(handle);
+                                                  console.log(domain);
                                                   return `https://${domain}/collections/${handle}`;
                                                 default:
                                                   // Fallback to original URL format
