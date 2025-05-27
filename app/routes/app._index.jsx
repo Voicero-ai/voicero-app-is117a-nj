@@ -2955,28 +2955,6 @@ export default function Index() {
                                         {item.url && (
                                           <Link
                                             url={(() => {
-                                              // Check for home page special case
-                                              if (
-                                                item.url === "/pages//" ||
-                                                item.url === "/pages/"
-                                              ) {
-                                                return `https://${domain}/`;
-                                              }
-
-                                              // If the URL already starts with http, use it as is
-                                              if (item.url.startsWith("http")) {
-                                                return item.url;
-                                              }
-
-                                              // For blog posts, use the URL directly as it's already well-formed
-                                              if (
-                                                contentType === "blogPosts" &&
-                                                item.url &&
-                                                item.url.includes("/blogs/")
-                                              ) {
-                                                return `https://${domain}${item.url}`;
-                                              }
-
                                               // Try to get domain from multiple sources
                                               let domain = "";
 
@@ -3063,6 +3041,28 @@ export default function Index() {
                                                 "Item URL:",
                                                 item.url,
                                               );
+
+                                              // Check for home page special case
+                                              if (
+                                                item.url === "/pages//" ||
+                                                item.url === "/pages/"
+                                              ) {
+                                                return `https://${domain}/`;
+                                              }
+
+                                              // If the URL already starts with http, use it as is
+                                              if (item.url.startsWith("http")) {
+                                                return item.url;
+                                              }
+
+                                              // For blog posts, use the URL directly as it's already well-formed
+                                              if (
+                                                contentType === "blogPosts" &&
+                                                item.url &&
+                                                item.url.includes("/blogs/")
+                                              ) {
+                                                return `https://${domain}${item.url}`;
+                                              }
 
                                               // Build URL based on content type
                                               switch (contentType) {
