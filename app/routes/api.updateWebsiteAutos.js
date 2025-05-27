@@ -10,17 +10,26 @@ export async function action({ request }) {
   try {
     // Get the request body
     const body = await request.json();
-    const {
-      allowAutoRedirect,
-      allowAutoScroll,
-      allowAutoHighlight,
-      allowAutoClick,
-      allowAutoCancel,
-      allowAutoReturn,
-      allowAutoExchange,
-      allowAutoGetUserOrders,
-      allowAutoUpdateUserInfo,
-    } = body;
+
+    // Ensure all required auto features have a boolean value (default to false if missing)
+    const autoFeatures = {
+      allowAutoRedirect: !!body.allowAutoRedirect,
+      allowAutoScroll: !!body.allowAutoScroll,
+      allowAutoHighlight: !!body.allowAutoHighlight,
+      allowAutoClick: !!body.allowAutoClick,
+      allowAutoCancel: !!body.allowAutoCancel,
+      allowAutoReturn: !!body.allowAutoReturn,
+      allowAutoExchange: !!body.allowAutoExchange,
+      allowAutoGetUserOrders: !!body.allowAutoGetUserOrders,
+      allowAutoUpdateUserInfo: !!body.allowAutoUpdateUserInfo,
+      allowAutoFillForm: !!body.allowAutoFillForm,
+      allowAutoTrackOrder: !!body.allowAutoTrackOrder,
+      allowAutoLogout: !!body.allowAutoLogout,
+      allowAutoLogin: !!body.allowAutoLogin,
+      allowAutoGenerateImage: !!body.allowAutoGenerateImage,
+    };
+
+    console.log("Auto features to update:", autoFeatures);
 
     // Get access key from metafields
     const metafieldResponse = await admin.graphql(`
@@ -37,7 +46,10 @@ export async function action({ request }) {
     const accessKey = metafieldData.data.shop.metafield?.value;
 
     if (!accessKey) {
-      return json({ error: "No access key found" }, { status: 400 });
+      return json(
+        { success: false, error: "No access key found" },
+        { status: 400 },
+      );
     }
 
     // Get websiteId from metafields
@@ -55,7 +67,10 @@ export async function action({ request }) {
     const websiteId = websiteIdData.data.shop?.metafield?.value;
 
     if (!websiteId) {
-      return json({ error: "No website ID found" }, { status: 400 });
+      return json(
+        { success: false, error: "No website ID found" },
+        { status: 400 },
+      );
     }
 
     // Call the API to update auto features
@@ -70,21 +85,15 @@ export async function action({ request }) {
         },
         body: JSON.stringify({
           websiteId,
-          allowAutoRedirect,
-          allowAutoScroll,
-          allowAutoHighlight,
-          allowAutoClick,
-          allowAutoCancel,
-          allowAutoReturn,
-          allowAutoExchange,
-          allowAutoGetUserOrders,
-          allowAutoUpdateUserInfo,
+          ...autoFeatures,
         }),
       },
     );
 
     if (!response.ok) {
-      const errorData = await response.json();
+      const errorData = await response
+        .json()
+        .catch(() => ({ error: response.statusText }));
       throw new Error(
         `Failed to update auto features: ${errorData.error || response.statusText}`,
       );
@@ -97,7 +106,7 @@ export async function action({ request }) {
     return json(
       {
         success: false,
-        error: error.message,
+        error: error.message || "Failed to update AI auto features",
       },
       { status: 500 },
     );

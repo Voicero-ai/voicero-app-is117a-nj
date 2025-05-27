@@ -184,15 +184,36 @@ export default function SettingsPage() {
 
   // Auto features state
   const [autoFeatures, setAutoFeatures] = useState({
-    allowAutoRedirect: websiteData?.allowAutoRedirect || false,
-    allowAutoScroll: websiteData?.allowAutoScroll || false,
-    allowAutoHighlight: websiteData?.allowAutoHighlight || false,
-    allowAutoClick: websiteData?.allowAutoClick || false,
-    allowAutoCancel: websiteData?.allowAutoCancel || false,
-    allowAutoReturn: websiteData?.allowAutoReturn || false,
-    allowAutoExchange: websiteData?.allowAutoExchange || false,
-    allowAutoGetUserOrders: websiteData?.allowAutoGetUserOrders || false,
-    allowAutoUpdateUserInfo: websiteData?.allowAutoUpdateUserInfo || false,
+    allowAutoRedirect: websiteData
+      ? websiteData.allowAutoRedirect === true
+      : false,
+    allowAutoScroll: websiteData ? websiteData.allowAutoScroll === true : false,
+    allowAutoHighlight: websiteData
+      ? websiteData.allowAutoHighlight === true
+      : false,
+    allowAutoClick: websiteData ? websiteData.allowAutoClick === true : false,
+    allowAutoCancel: websiteData ? websiteData.allowAutoCancel === true : false,
+    allowAutoReturn: websiteData ? websiteData.allowAutoReturn === true : false,
+    allowAutoExchange: websiteData
+      ? websiteData.allowAutoExchange === true
+      : false,
+    allowAutoGetUserOrders: websiteData
+      ? websiteData.allowAutoGetUserOrders === true
+      : false,
+    allowAutoUpdateUserInfo: websiteData
+      ? websiteData.allowAutoUpdateUserInfo === true
+      : false,
+    allowAutoFillForm: websiteData
+      ? websiteData.allowAutoFillForm !== false
+      : true,
+    allowAutoTrackOrder: websiteData
+      ? websiteData.allowAutoTrackOrder !== false
+      : true,
+    allowAutoLogout: websiteData ? websiteData.allowAutoLogout !== false : true,
+    allowAutoLogin: websiteData ? websiteData.allowAutoLogin !== false : true,
+    allowAutoGenerateImage: websiteData
+      ? websiteData.allowAutoGenerateImage !== false
+      : true,
   });
 
   // User data state
@@ -538,12 +559,47 @@ export default function SettingsPage() {
     } else if (fetcher.data?.success) {
       // Update form data with the new data from the server
       if (fetcher.data.data) {
+        // Update website information
         setFormData({
           name: fetcher.data.data.name || "",
           url: fetcher.data.data.url || "",
           customInstructions: fetcher.data.data.customInstructions || "",
           active: fetcher.data.data.active || false,
         });
+
+        // Update auto features if they are part of the response
+        if (fetcher.data.data.autoFeatures) {
+          setAutoFeatures({
+            allowAutoRedirect:
+              fetcher.data.data.autoFeatures.allowAutoRedirect === true,
+            allowAutoScroll:
+              fetcher.data.data.autoFeatures.allowAutoScroll === true,
+            allowAutoHighlight:
+              fetcher.data.data.autoFeatures.allowAutoHighlight === true,
+            allowAutoClick:
+              fetcher.data.data.autoFeatures.allowAutoClick === true,
+            allowAutoCancel:
+              fetcher.data.data.autoFeatures.allowAutoCancel === true,
+            allowAutoReturn:
+              fetcher.data.data.autoFeatures.allowAutoReturn === true,
+            allowAutoExchange:
+              fetcher.data.data.autoFeatures.allowAutoExchange === true,
+            allowAutoGetUserOrders:
+              fetcher.data.data.autoFeatures.allowAutoGetUserOrders === true,
+            allowAutoUpdateUserInfo:
+              fetcher.data.data.autoFeatures.allowAutoUpdateUserInfo === true,
+            allowAutoFillForm:
+              fetcher.data.data.autoFeatures.allowAutoFillForm !== false,
+            allowAutoTrackOrder:
+              fetcher.data.data.autoFeatures.allowAutoTrackOrder !== false,
+            allowAutoLogout:
+              fetcher.data.data.autoFeatures.allowAutoLogout !== false,
+            allowAutoLogin:
+              fetcher.data.data.autoFeatures.allowAutoLogin !== false,
+            allowAutoGenerateImage:
+              fetcher.data.data.autoFeatures.allowAutoGenerateImage !== false,
+          });
+        }
       }
 
       setShowToast(true);
@@ -591,12 +647,32 @@ export default function SettingsPage() {
     try {
       setIsEditingAuto(false);
 
+      // Ensure all auto features are explicitly set as booleans
+      const featuresPayload = {
+        allowAutoRedirect: !!autoFeatures.allowAutoRedirect,
+        allowAutoScroll: !!autoFeatures.allowAutoScroll,
+        allowAutoHighlight: !!autoFeatures.allowAutoHighlight,
+        allowAutoClick: !!autoFeatures.allowAutoClick,
+        allowAutoCancel: !!autoFeatures.allowAutoCancel,
+        allowAutoReturn: !!autoFeatures.allowAutoReturn,
+        allowAutoExchange: !!autoFeatures.allowAutoExchange,
+        allowAutoGetUserOrders: !!autoFeatures.allowAutoGetUserOrders,
+        allowAutoUpdateUserInfo: !!autoFeatures.allowAutoUpdateUserInfo,
+        allowAutoFillForm: !!autoFeatures.allowAutoFillForm,
+        allowAutoTrackOrder: !!autoFeatures.allowAutoTrackOrder,
+        allowAutoLogout: !!autoFeatures.allowAutoLogout,
+        allowAutoLogin: !!autoFeatures.allowAutoLogin,
+        allowAutoGenerateImage: !!autoFeatures.allowAutoGenerateImage,
+      };
+
+      console.log("Sending auto features:", featuresPayload);
+
       const response = await fetch("/api/updateWebsiteAutos", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(autoFeatures),
+        body: JSON.stringify(featuresPayload),
       });
 
       const data = await response.json();
@@ -986,6 +1062,21 @@ export default function SettingsPage() {
           </div>
         </div>
 
+        <div style={styles.featureRow}>
+          <div style={styles.featureLabel}>
+            <span>Allow AI to automatically fill forms for users</span>
+          </div>
+          <div style={styles.featureToggle}>
+            <input
+              type="checkbox"
+              style={styles.checkbox}
+              checked={autoFeatures.allowAutoFillForm}
+              onChange={() => toggleAutoFeature("allowAutoFillForm")}
+              disabled={!isEditingAuto}
+            />
+          </div>
+        </div>
+
         <h3
           style={{ fontSize: "16px", fontWeight: "600", margin: "24px 0 16px" }}
         >
@@ -1010,14 +1101,30 @@ export default function SettingsPage() {
         <div style={styles.featureRow}>
           <div style={styles.featureLabel}>
             <span>Allow AI to help users return products</span>
+            <span
+              style={{
+                marginLeft: "8px",
+                padding: "2px 6px",
+                backgroundColor: "#f1f1f1",
+                color: "#637381",
+                borderRadius: "4px",
+                fontSize: "12px",
+                fontWeight: "bold",
+              }}
+            >
+              Coming Soon
+            </span>
           </div>
           <div style={styles.featureToggle}>
             <input
               type="checkbox"
-              style={styles.checkbox}
-              checked={autoFeatures.allowAutoReturn}
-              onChange={() => toggleAutoFeature("allowAutoReturn")}
-              disabled={!isEditingAuto}
+              style={{
+                ...styles.checkbox,
+                opacity: 0.5,
+                cursor: "not-allowed",
+              }}
+              checked={false}
+              disabled={true}
             />
           </div>
         </div>
@@ -1025,23 +1132,48 @@ export default function SettingsPage() {
         <div style={styles.featureRow}>
           <div style={styles.featureLabel}>
             <span>Allow AI to help users exchange products</span>
+            <span
+              style={{
+                marginLeft: "8px",
+                padding: "2px 6px",
+                backgroundColor: "#f1f1f1",
+                color: "#637381",
+                borderRadius: "4px",
+                fontSize: "12px",
+                fontWeight: "bold",
+              }}
+            >
+              Coming Soon
+            </span>
+          </div>
+          <div style={styles.featureToggle}>
+            <input
+              type="checkbox"
+              style={{
+                ...styles.checkbox,
+                opacity: 0.5,
+                cursor: "not-allowed",
+              }}
+              checked={false}
+              disabled={true}
+            />
+          </div>
+        </div>
+
+        <div style={styles.featureRow}>
+          <div style={styles.featureLabel}>
+            <span>Allow AI to help users track their orders</span>
           </div>
           <div style={styles.featureToggle}>
             <input
               type="checkbox"
               style={styles.checkbox}
-              checked={autoFeatures.allowAutoExchange}
-              onChange={() => toggleAutoFeature("allowAutoExchange")}
+              checked={autoFeatures.allowAutoTrackOrder}
+              onChange={() => toggleAutoFeature("allowAutoTrackOrder")}
               disabled={!isEditingAuto}
             />
           </div>
         </div>
-
-        <h3
-          style={{ fontSize: "16px", fontWeight: "600", margin: "24px 0 16px" }}
-        >
-          User Data Features
-        </h3>
 
         <div style={styles.featureRow}>
           <div style={styles.featureLabel}>
@@ -1058,6 +1190,12 @@ export default function SettingsPage() {
           </div>
         </div>
 
+        <h3
+          style={{ fontSize: "16px", fontWeight: "600", margin: "24px 0 16px" }}
+        >
+          User Data Features
+        </h3>
+
         <div style={styles.featureRow}>
           <div style={styles.featureLabel}>
             <span>Allow AI to help users update their account information</span>
@@ -1069,6 +1207,73 @@ export default function SettingsPage() {
               checked={autoFeatures.allowAutoUpdateUserInfo}
               onChange={() => toggleAutoFeature("allowAutoUpdateUserInfo")}
               disabled={!isEditingAuto}
+            />
+          </div>
+        </div>
+
+        <div style={styles.featureRow}>
+          <div style={styles.featureLabel}>
+            <span>Allow AI to help users log out</span>
+          </div>
+          <div style={styles.featureToggle}>
+            <input
+              type="checkbox"
+              style={styles.checkbox}
+              checked={autoFeatures.allowAutoLogout}
+              onChange={() => toggleAutoFeature("allowAutoLogout")}
+              disabled={!isEditingAuto}
+            />
+          </div>
+        </div>
+
+        <div style={styles.featureRow}>
+          <div style={styles.featureLabel}>
+            <span>Allow AI to help users log in</span>
+          </div>
+          <div style={styles.featureToggle}>
+            <input
+              type="checkbox"
+              style={styles.checkbox}
+              checked={autoFeatures.allowAutoLogin}
+              onChange={() => toggleAutoFeature("allowAutoLogin")}
+              disabled={!isEditingAuto}
+            />
+          </div>
+        </div>
+
+        <h3
+          style={{ fontSize: "16px", fontWeight: "600", margin: "24px 0 16px" }}
+        >
+          Content Generation Features
+        </h3>
+
+        <div style={styles.featureRow}>
+          <div style={styles.featureLabel}>
+            <span>Allow AI to generate images for users</span>
+            <span
+              style={{
+                marginLeft: "8px",
+                padding: "2px 6px",
+                backgroundColor: "#f1f1f1",
+                color: "#637381",
+                borderRadius: "4px",
+                fontSize: "12px",
+                fontWeight: "bold",
+              }}
+            >
+              Coming Soon
+            </span>
+          </div>
+          <div style={styles.featureToggle}>
+            <input
+              type="checkbox"
+              style={{
+                ...styles.checkbox,
+                opacity: 0.5,
+                cursor: "not-allowed",
+              }}
+              checked={false}
+              disabled={true}
             />
           </div>
         </div>

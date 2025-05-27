@@ -73,7 +73,7 @@
       }
 
       // Step 1: First set up basic containers (but not the button yet)
-      console.log("VoiceroCore: Creating interfaces");
+      console.log("VoiceroCore: Creating interfaces - voicero - app- is117a");
       this.createTextChatInterface();
       this.createVoiceChatInterface();
 

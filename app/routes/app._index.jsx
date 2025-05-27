@@ -2118,7 +2118,7 @@ export default function Index() {
                             </Text>
                           </div>
                         )}
-                        <Link url="/app/contacts">
+                        <Link url="https://www.voicero.ai/app/contacts">
                           <Button primary={unreadContacts > 0} icon={ChatIcon}>
                             View Contacts
                           </Button>
@@ -2643,7 +2643,9 @@ export default function Index() {
                             },
                             {
                               icon: DiscountIcon,
-                              count: 0, // No discounts in the API data
+                              count:
+                                extendedWebsiteData?.content?.discounts
+                                  ?.length || 0,
                               label: "Discounts",
                               id: "discounts",
                             },
@@ -2801,6 +2803,12 @@ export default function Index() {
                                             color="subdued"
                                           />
                                         )}
+                                        {contentType === "discounts" && (
+                                          <Icon
+                                            source={DiscountIcon}
+                                            color="subdued"
+                                          />
+                                        )}
                                         <Text
                                           variant="headingMd"
                                           fontWeight="semibold"
@@ -2817,7 +2825,9 @@ export default function Index() {
                                         (contentType === "pages" &&
                                           item.content) ||
                                         (contentType === "blogPosts" &&
-                                          item.content)) && (
+                                          item.content) ||
+                                        (contentType === "discounts" &&
+                                          item.description)) && (
                                         <div
                                           style={{
                                             paddingLeft: "4px",
@@ -2833,17 +2843,21 @@ export default function Index() {
                                               ? item.description.length > 100
                                                 ? `${item.description.substring(0, 100)}...`
                                                 : item.description
-                                              : item.content
-                                                ? item.content.replace(
-                                                    /<[^>]*>/g,
-                                                    "",
-                                                  ).length > 100
-                                                  ? `${item.content.replace(/<[^>]*>/g, "").substring(0, 100)}...`
-                                                  : item.content.replace(
+                                              : contentType === "discounts"
+                                                ? item.description
+                                                  ? item.description
+                                                  : `Type: ${item.type}, Code: ${item.code || "Automatic"}`
+                                                : item.content
+                                                  ? item.content.replace(
                                                       /<[^>]*>/g,
                                                       "",
-                                                    )
-                                                : ""}
+                                                    ).length > 100
+                                                    ? `${item.content.replace(/<[^>]*>/g, "").substring(0, 100)}...`
+                                                    : item.content.replace(
+                                                        /<[^>]*>/g,
+                                                        "",
+                                                      )
+                                                  : ""}
                                           </Text>
                                         </div>
                                       )}
@@ -2868,6 +2882,72 @@ export default function Index() {
                                                 {item.handle}
                                               </Text>
                                             </div>
+                                          )}
+                                          {contentType === "discounts" && (
+                                            <>
+                                              {item.code && (
+                                                <div
+                                                  style={{
+                                                    backgroundColor: "#F0F7FF",
+                                                    padding: "4px 8px",
+                                                    borderRadius: "4px",
+                                                    border: "1px solid #B3D7FF",
+                                                  }}
+                                                >
+                                                  <Text
+                                                    variant="bodySm"
+                                                    color="highlight"
+                                                  >
+                                                    {item.code}
+                                                  </Text>
+                                                </div>
+                                              )}
+                                              {item.type && (
+                                                <div
+                                                  style={{
+                                                    backgroundColor: "#F4F5F7",
+                                                    padding: "4px 8px",
+                                                    borderRadius: "4px",
+                                                  }}
+                                                >
+                                                  <Text
+                                                    variant="bodySm"
+                                                    color="subdued"
+                                                  >
+                                                    {item.type
+                                                      .replace("Discount", "")
+                                                      .replace(
+                                                        /([A-Z])/g,
+                                                        " $1",
+                                                      )
+                                                      .trim()}
+                                                  </Text>
+                                                </div>
+                                              )}
+                                              {item.status && (
+                                                <div
+                                                  style={{
+                                                    backgroundColor:
+                                                      item.status === "ACTIVE"
+                                                        ? "#E3F5E1"
+                                                        : "#FFF4E4",
+                                                    padding: "4px 8px",
+                                                    borderRadius: "4px",
+                                                  }}
+                                                >
+                                                  <Text
+                                                    variant="bodySm"
+                                                    tone={
+                                                      item.status === "ACTIVE"
+                                                        ? "success"
+                                                        : "caution"
+                                                    }
+                                                  >
+                                                    {item.status}
+                                                  </Text>
+                                                </div>
+                                              )}
+                                            </>
                                           )}
                                         </InlineStack>
 

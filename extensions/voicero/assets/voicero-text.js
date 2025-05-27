@@ -775,18 +775,30 @@ Hi, I'm ${botName}! ${welcomeMessageContent}
 
     // Add click handlers to the welcome questions
     setTimeout(() => {
-      if (this.shadowRoot) {
-        const questionElements =
-          this.shadowRoot.querySelectorAll(".welcome-question");
-        questionElements.forEach((el) => {
-          el.addEventListener("click", (e) => {
-            e.preventDefault();
-            const questionText = e.target.getAttribute("data-question");
-            if (questionText) {
-              this.sendChatMessage(questionText);
+      if (this.shadowRoot && welcomeMessageElement) {
+        // Use event delegation on the welcome message element instead of individual question elements
+        // This avoids duplicate handlers when switching between interfaces
+        if (!welcomeMessageElement.hasAttribute("data-question-handler")) {
+          welcomeMessageElement.setAttribute("data-question-handler", "true");
+
+          // Use event delegation - one handler for the entire message
+          welcomeMessageElement.addEventListener("click", (e) => {
+            // Find if the click was on a welcome-question element
+            let target = e.target;
+            while (target !== welcomeMessageElement) {
+              if (target.classList.contains("welcome-question")) {
+                e.preventDefault();
+                const questionText = target.getAttribute("data-question");
+                if (questionText) {
+                  this.sendChatMessage(questionText);
+                }
+                break;
+              }
+              if (!target.parentElement) break; // Safety check
+              target = target.parentElement;
             }
           });
-        });
+        }
       }
     }, 100);
 
@@ -876,19 +888,10 @@ Hi, I'm ${botName}! ${welcomeMessageContent}
       // Make sure any HTML content (especially for welcome questions) is preserved
       messageContent.innerHTML = this.formatContent(text);
 
-      // After setting innerHTML, attach click handlers to welcome-question spans if present
-      const questionSpans =
-        messageContent.querySelectorAll(".welcome-question");
-      if (questionSpans.length > 0) {
-        questionSpans.forEach((span) => {
-          span.addEventListener("click", (e) => {
-            e.preventDefault();
-            const questionText = span.getAttribute("data-question");
-            if (questionText) {
-              this.sendChatMessage(questionText);
-            }
-          });
-        });
+      // Use event delegation instead of individual click handlers
+      // We'll set up a single click handler on the message element
+      if (messageContent.querySelectorAll(".welcome-question").length > 0) {
+        message.setAttribute("data-has-questions", "true");
       }
     } else {
       messageContent.textContent = text;
@@ -896,6 +899,27 @@ Hi, I'm ${botName}! ${welcomeMessageContent}
 
     // Append content to message
     message.appendChild(messageContent);
+
+    // Add event delegation for welcome questions if needed
+    if (message.getAttribute("data-has-questions") === "true") {
+      // Use event delegation - one handler for the entire message
+      message.addEventListener("click", (e) => {
+        // Find if the click was on a welcome-question element
+        let target = e.target;
+        while (target !== message) {
+          if (target.classList.contains("welcome-question")) {
+            e.preventDefault();
+            const questionText = target.getAttribute("data-question");
+            if (questionText) {
+              this.sendChatMessage(questionText);
+            }
+            break;
+          }
+          if (!target.parentElement) break; // Safety check
+          target = target.parentElement;
+        }
+      });
+    }
 
     // Find messages container
     const messagesContainer = this.shadowRoot

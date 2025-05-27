@@ -137,7 +137,7 @@ const VoiceroVoice = {
     const styleEl = document.createElement("style");
     styleEl.textContent = `
       .welcome-question {
-        color: #FF0000 !important;
+        color: var(--voicero-theme-color, ${this.websiteColor || "#882be6"});
         text-decoration: underline !important;
         font-weight: bold !important;
         cursor: pointer !important;
@@ -2988,31 +2988,38 @@ const VoiceroVoice = {
         // If it has HTML, use innerHTML to preserve the HTML elements
         messageContent.innerHTML = content;
 
-        // After setting innerHTML, attach click handlers to welcome-question spans if present
-        const questionSpans =
-          messageContent.querySelectorAll(".welcome-question");
-        if (questionSpans.length > 0) {
-          console.log(
-            "VoiceroVoice: Found welcome questions in message, attaching handlers",
-          );
-          questionSpans.forEach((span) => {
-            // Ensure styling is applied directly
-            span.style.color = "#FF0000";
-            span.style.textDecoration = "underline";
-            span.style.fontWeight = "bold";
-            span.style.cursor = "pointer";
+        // Check if there are welcome questions
+        const hasWelcomeQuestions =
+          messageContent.querySelectorAll(".welcome-question").length > 0;
 
-            span.addEventListener("click", (e) => {
-              e.preventDefault();
-              const questionText = span.getAttribute("data-question");
-              if (questionText) {
-                console.log(
-                  "VoiceroVoice: Welcome question clicked:",
-                  questionText,
-                );
-                this.processUserText(questionText);
+        if (hasWelcomeQuestions) {
+          console.log(
+            "VoiceroVoice: Found welcome questions in message, using event delegation",
+          );
+
+          // Mark this message as having questions so we can use event delegation
+          messageEl.setAttribute("data-has-questions", "true");
+
+          // Add a single click handler to the message element
+          messageEl.addEventListener("click", (e) => {
+            // Find if the click was on a welcome-question element
+            let target = e.target;
+            while (target !== messageEl) {
+              if (target.classList.contains("welcome-question")) {
+                e.preventDefault();
+                const questionText = target.getAttribute("data-question");
+                if (questionText) {
+                  console.log(
+                    "VoiceroVoice: Welcome question clicked:",
+                    questionText,
+                  );
+                  this.processUserText(questionText);
+                }
+                break;
               }
-            });
+              if (!target.parentElement) break; // Safety check
+              target = target.parentElement;
+            }
           });
         }
       } else {
@@ -3697,7 +3704,7 @@ Hi, I'm ${botName}! ${welcomeMessageContent}
         const questionText = item.question || item;
         if (questionText && typeof questionText === "string") {
           // Create a more robust styling approach that works in the voice interface
-          welcomeMessage += `\n- <span class="welcome-question" style="color: #FF0000; text-decoration: underline; font-weight: bold; cursor: pointer;" data-question="${questionText.replace(/"/g, "&quot;")}">${questionText}</span>`;
+          welcomeMessage += `\n- <span class="welcome-question" style="color: ${this.websiteColor || "#882be6"}; text-decoration: underline; font-weight: bold; cursor: pointer;" data-question="${questionText.replace(/"/g, "&quot;")}">${questionText}</span>`;
         }
       });
     }
@@ -3742,17 +3749,32 @@ Hi, I'm ${botName}! ${welcomeMessageContent}
 
     // Add click handlers to the welcome questions
     setTimeout(() => {
-      const questionElements = document.querySelectorAll(".welcome-question");
-      questionElements.forEach((el) => {
-        el.addEventListener("click", (e) => {
-          e.preventDefault();
-          const questionText = e.target.getAttribute("data-question");
-          if (questionText) {
-            // Send the question as a user message
-            this.processUserText(questionText);
-          }
-        });
-      });
+      // Use the message element for event delegation instead of individual question elements
+      // This avoids duplicate handlers when switching between interfaces
+      if (messageEl) {
+        // Only add the handler if it's not already there
+        if (!messageEl.hasAttribute("data-question-handler")) {
+          messageEl.setAttribute("data-question-handler", "true");
+
+          // Use event delegation - one handler for the entire message
+          messageEl.addEventListener("click", (e) => {
+            // Find if the click was on a welcome-question element
+            let target = e.target;
+            while (target !== messageEl) {
+              if (target.classList.contains("welcome-question")) {
+                e.preventDefault();
+                const questionText = target.getAttribute("data-question");
+                if (questionText) {
+                  // Send the question as a user message
+                  this.processUserText(questionText);
+                }
+                break;
+              }
+              target = target.parentElement;
+            }
+          });
+        }
+      }
     }, 100);
 
     // Scroll to bottom
