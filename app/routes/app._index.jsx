@@ -2954,7 +2954,11 @@ export default function Index() {
 
                                         {item.url && (
                                           <Link
-                                            url={`https://${fetcher.data?.websiteData?.domain || ""}${item.url}`}
+                                            url={
+                                              item.url.startsWith("http")
+                                                ? item.url
+                                                : `https://${fetcher.data?.websiteData?.domain || ""}${item.url.startsWith("/") ? item.url : `/${item.url}`}`
+                                            }
                                             external
                                           >
                                             <Button
