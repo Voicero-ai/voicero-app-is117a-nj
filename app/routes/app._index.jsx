@@ -2955,9 +2955,26 @@ export default function Index() {
                                         {item.url && (
                                           <Link
                                             url={(() => {
+                                              // Check for home page special case
+                                              if (
+                                                item.url === "/pages//" ||
+                                                item.url === "/pages/"
+                                              ) {
+                                                return `https://${domain}/`;
+                                              }
+
                                               // If the URL already starts with http, use it as is
                                               if (item.url.startsWith("http")) {
                                                 return item.url;
+                                              }
+
+                                              // For blog posts, use the URL directly as it's already well-formed
+                                              if (
+                                                contentType === "blogPosts" &&
+                                                item.url &&
+                                                item.url.includes("/blogs/")
+                                              ) {
+                                                return `https://${domain}${item.url}`;
                                               }
 
                                               // Try to get domain from multiple sources
@@ -3042,14 +3059,54 @@ export default function Index() {
                                                 "Using domain:",
                                                 domain,
                                               );
+                                              console.log(
+                                                "Item URL:",
+                                                item.url,
+                                              );
 
                                               // Build URL based on content type
                                               switch (contentType) {
                                                 case "blogPosts":
+                                                  // For blog posts, prefer the full URL if available as it contains both blog handle and post handle
+                                                  if (
+                                                    item.url &&
+                                                    item.url.includes("/blogs/")
+                                                  ) {
+                                                    return `https://${domain}${item.url}`;
+                                                  }
                                                   return `https://${domain}/blogs/${item.blogHandle || "news"}/${handle}`;
                                                 case "products":
                                                   return `https://${domain}/products/${handle}`;
                                                 case "pages":
+                                                  // Check if this is a policy page
+                                                  const policyTerms = [
+                                                    "privacy_policy",
+                                                    "privacy-policy",
+                                                    "return_policy",
+                                                    "return-policy",
+                                                    "refund_policy",
+                                                    "refund-policy",
+                                                    "contact_information",
+                                                    "contact-information",
+                                                    "terms_of_service",
+                                                    "terms-of-service",
+                                                    "shipping_policy",
+                                                    "shipping-policy",
+                                                    "data_sale_opt_out",
+                                                    "data-sale-opt-out",
+                                                  ];
+
+                                                  // Check if it's a policy page (either with underscore or hyphen format)
+                                                  if (
+                                                    policyTerms.includes(handle)
+                                                  ) {
+                                                    // Convert underscores to hyphens for policy pages
+                                                    const policyHandle =
+                                                      handle.replace(/_/g, "-");
+                                                    return `https://${domain}/policies/${policyHandle}`;
+                                                  }
+
+                                                  // Regular page
                                                   return `https://${domain}/pages/${handle}`;
                                                 case "collections":
                                                   return `https://${domain}/collections/${handle}`;
