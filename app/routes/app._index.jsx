@@ -2954,21 +2954,34 @@ export default function Index() {
 
                                         {item.url && (
                                           <Link
-                                            url={
-                                              item.url.startsWith("http")
-                                                ? item.url
-                                                : contentType === "blogPosts" &&
-                                                    item.blogHandle
-                                                  ? `https://${fetcher.data?.websiteData?.domain || ""}/blogs/${item.blogHandle}/${item.handle || item.url.split("/").pop()}`
-                                                  : contentType === "products"
-                                                    ? `https://${fetcher.data?.websiteData?.domain || ""}/products/${item.handle || item.url.split("/").pop()}`
-                                                    : contentType === "pages"
-                                                      ? `https://${fetcher.data?.websiteData?.domain || ""}/pages/${item.handle || item.url.split("/").pop()}`
-                                                      : contentType ===
-                                                          "collections"
-                                                        ? `https://${fetcher.data?.websiteData?.domain || ""}/collections/${item.handle || item.url.split("/").pop()}`
-                                                        : `https://${fetcher.data?.websiteData?.domain || ""}${item.url.startsWith("/") ? item.url : `/${item.url}`}`
-                                            }
+                                            url={(() => {
+                                              // If the URL already starts with http, use it as is
+                                              if (item.url.startsWith("http")) {
+                                                return item.url;
+                                              }
+
+                                              const domain =
+                                                fetcher.data?.websiteData
+                                                  ?.domain || "";
+                                              const handle =
+                                                item.handle ||
+                                                item.url.split("/").pop();
+
+                                              // Build URL based on content type
+                                              switch (contentType) {
+                                                case "blogPosts":
+                                                  return `https://${domain}/blogs/${item.blogHandle || "news"}/${handle}`;
+                                                case "products":
+                                                  return `https://${domain}/products/${handle}`;
+                                                case "pages":
+                                                  return `https://${domain}/pages/${handle}`;
+                                                case "collections":
+                                                  return `https://${domain}/collections/${handle}`;
+                                                default:
+                                                  // Fallback to original URL format
+                                                  return `https://${domain}${item.url.startsWith("/") ? item.url : `/${item.url}`}`;
+                                              }
+                                            })()}
                                             external
                                           >
                                             <Button
