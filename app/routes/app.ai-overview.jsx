@@ -357,7 +357,10 @@ export default function AIOverviewPage() {
   // Calculate usage percentages - use the correct property names
   const monthlyUsage = websiteData?.monthlyQueries || 0;
   const monthlyQuota = websiteData?.queryLimit || 1000;
-  const usagePercentage = Math.min(100, (monthlyUsage / monthlyQuota) * 100);
+  const isEnterprisePlan = websiteData?.plan === "Enterprise";
+  const usagePercentage = isEnterprisePlan
+    ? 0
+    : Math.min(100, (monthlyUsage / monthlyQuota) * 100);
 
   if (disconnected) {
     return null; // Don't render anything while redirecting
@@ -412,18 +415,22 @@ export default function AIOverviewPage() {
                   <Box padding="400">
                     <BlockStack gap="400">
                       <Text variant="headingLg" as="h2" alignment="center">
-                        {monthlyUsage} / {monthlyQuota} queries used this month
+                        {monthlyUsage} /{" "}
+                        {isEnterprisePlan ? "Unlimited" : monthlyQuota} queries
+                        used this month
                       </Text>
-                      <div>
-                        <CustomProgressBar
-                          progress={usagePercentage}
-                          tone={usagePercentage < 90 ? "success" : "critical"}
-                        />
-                      </div>
+                      {!isEnterprisePlan && (
+                        <div>
+                          <CustomProgressBar
+                            progress={usagePercentage}
+                            tone={usagePercentage < 90 ? "success" : "critical"}
+                          />
+                        </div>
+                      )}
                       <Text variant="bodyMd" as="p" alignment="center">
-                        {100 - usagePercentage > 0
-                          ? `${(100 - usagePercentage).toFixed(1)}% remaining`
-                          : "Quota exceeded"}
+                        {isEnterprisePlan
+                          ? "Enterprise plan includes unlimited queries"
+                          : `${(100 - usagePercentage).toFixed(1)}% remaining`}
                       </Text>
                     </BlockStack>
                   </Box>
