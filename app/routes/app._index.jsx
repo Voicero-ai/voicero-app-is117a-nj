@@ -2070,7 +2070,6 @@ export default function Index() {
                       "_blank",
                     );
                   }}
-                  disabled={!fetcher.data?.websiteData?.plan}
                 >
                   Open Control Panel
                 </Button>
@@ -2118,8 +2117,8 @@ export default function Index() {
                     <Text variant="bodyMd" tone="warning">
                       Your account doesn't have an active plan. Actions like
                       activating your assistant, syncing content, and refreshing
-                      data are disabled. Please Open your control panel to
-                      upgrade your plan.
+                      data are disabled. Please use the "Open Control Panel"
+                      button above to upgrade your plan.
                     </Text>
                   </InlineStack>
                 </div>

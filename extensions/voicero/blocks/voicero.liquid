@@ -269,11 +269,23 @@
     .then(data => {
       console.log("VoiceroAI API check result:", data);
       
+      // First check if we have a website object at all
+      if (!data || !data.website) {
+        console.log("VoiceroAI: No website data returned from API, skipping script loading");
+        return;
+      }
+      
+      // Log full website data to help with debugging
+      console.log("VoiceroAI: Full website data:", data.website);
+      
       // Check if website is active AND has a valid plan
-      const isActive = data && data.website && data.website.active === true;
-      const hasPlan = data && data.website && data.website.plan && data.website.plan !== "";
+      const isActive = data.website.active === true;
+      // Check for null, undefined, empty string, or "free" plan which shouldn't be enabled
+      const hasPlan = !!(data.website.plan && data.website.plan !== "" && data.website.plan !== "free");
+      
       console.log("VoiceroAI: Website active status:", isActive);
-      console.log("VoiceroAI: Website plan status:", hasPlan ? "Has plan" : "No plan");
+      console.log("VoiceroAI: Website plan:", data.website.plan);
+      console.log("VoiceroAI: Has valid plan:", hasPlan);
       
       if (isActive && hasPlan) {
         // Website is active and has a plan, load all scripts
@@ -281,20 +293,24 @@
         loadAllScripts();
       } else {
         // Website is not active or has no plan, don't load scripts
-        console.log("VoiceroAI: Website is NOT active or has no plan, skipping script loading");
+        const reason = !isActive ? "website is inactive" : "website has no valid plan";
+        console.log(`VoiceroAI: Not loading scripts because ${reason}`);
         
         // Optionally add a small notification element to inform users about the issue
-        const notificationDiv = document.createElement('div');
-        notificationDiv.style.cssText = 'position:fixed;bottom:20px;right:20px;background-color:#FFF4E4;color:#996B00;padding:12px 16px;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,0.1);font-size:14px;max-width:300px;z-index:9999;border:1px solid #FFECCC;';
-        notificationDiv.innerHTML = 'AI assistant is unavailable. Please contact your store administrator.';
-        document.body.appendChild(notificationDiv);
-        
-        // Auto-remove after 10 seconds
-        setTimeout(() => {
-          if (document.body.contains(notificationDiv)) {
-            document.body.removeChild(notificationDiv);
-          }
-        }, 10000);
+        if (isActive && !hasPlan) {
+          // Only show notification if the site is active but doesn't have a plan
+          const notificationDiv = document.createElement('div');
+          notificationDiv.style.cssText = 'position:fixed;bottom:20px;right:20px;background-color:#FFF4E4;color:#996B00;padding:12px 16px;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,0.1);font-size:14px;max-width:300px;z-index:9999;border:1px solid #FFECCC;';
+          notificationDiv.innerHTML = 'AI assistant is unavailable. Please contact your store administrator.';
+          document.body.appendChild(notificationDiv);
+          
+          // Auto-remove after 10 seconds
+          setTimeout(() => {
+            if (document.body.contains(notificationDiv)) {
+              document.body.removeChild(notificationDiv);
+            }
+          }, 10000);
+        }
       }
     })
     .catch(error => {
