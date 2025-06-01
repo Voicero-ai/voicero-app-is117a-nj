@@ -406,9 +406,13 @@ export default function AIOverviewPage() {
                       Monthly Query Usage
                     </Text>
                   </InlineStack>
-                  <Badge status={usagePercentage < 90 ? "success" : "critical"}>
-                    {usagePercentage < 90 ? "Good" : "Near Limit"}
-                  </Badge>
+                  {!isEnterprisePlan && (
+                    <Badge
+                      status={usagePercentage < 90 ? "success" : "critical"}
+                    >
+                      {usagePercentage < 90 ? "Good" : "Near Limit"}
+                    </Badge>
+                  )}
                 </InlineStack>
                 <Divider />
                 <BlockStack gap="300">
@@ -430,7 +434,9 @@ export default function AIOverviewPage() {
                       <Text variant="bodyMd" as="p" alignment="center">
                         {isEnterprisePlan
                           ? "Enterprise plan includes unlimited queries"
-                          : `${(100 - usagePercentage).toFixed(1)}% remaining`}
+                          : 100 - usagePercentage > 0
+                            ? `${(100 - usagePercentage).toFixed(1)}% remaining`
+                            : "Quota exceeded"}
                       </Text>
                     </BlockStack>
                   </Box>

@@ -269,40 +269,17 @@
     .then(data => {
       console.log("VoiceroAI API check result:", data);
       
-      // First check if we have a website object at all
-      if (!data || !data.website) {
-        console.log("VoiceroAI: No website data returned from API, skipping script loading");
-        return;
-      }
+      // Check if website is active
+      const isActive = data && data.website && data.website.active === true;
+      console.log("VoiceroAI: Website active status:", isActive);
       
-      // Log full website data to help with debugging
-      console.log("VoiceroAI: Full website data:", data.website);
-      
-      // SIMPLEST CHECK POSSIBLE: Check for plan value directly
-      const planValue = data.website.plan;
-      console.log("VoiceroAI: Plan value is:", JSON.stringify(planValue));
-      
-      // Only load if plan has an actual string value that's not empty and not "free"
-      if (typeof planValue === 'string' && planValue.trim() !== '' && planValue !== 'free') {
-        console.log("VoiceroAI: Valid plan found:", planValue);
+      if (isActive) {
+        // Website is active, load all scripts
+        console.log("VoiceroAI: Website is active, loading scripts");
         loadAllScripts();
       } else {
-        console.log("VoiceroAI: No valid plan found, not loading scripts");
-        
-        // Add a notification if the website is active but has no valid plan
-        if (data.website.active === true) {
-          const notificationDiv = document.createElement('div');
-          notificationDiv.style.cssText = 'position:fixed;bottom:20px;right:20px;background-color:#FFF4E4;color:#996B00;padding:12px 16px;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,0.1);font-size:14px;max-width:300px;z-index:9999;border:1px solid #FFECCC;';
-          notificationDiv.innerHTML = 'AI assistant is unavailable. Please contact your store administrator.';
-          document.body.appendChild(notificationDiv);
-          
-          // Auto-remove after 10 seconds
-          setTimeout(() => {
-            if (document.body.contains(notificationDiv)) {
-              document.body.removeChild(notificationDiv);
-            }
-          }, 10000);
-        }
+        // Website is not active, don't load scripts
+        console.log("VoiceroAI: Website is NOT active, skipping script loading");
       }
     })
     .catch(error => {
