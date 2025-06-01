@@ -2059,22 +2059,20 @@ export default function Index() {
                   Manage your AI-powered shopping assistant
                 </Text>
               </BlockStack>
-              {accessKey && fetcher.data?.success && (
-                <Button
-                  primary
-                  size="large"
-                  icon={ExternalIcon}
-                  onClick={() => {
-                    window.open(
-                      `${urls.voiceroApi}/app/websites/website?id=${fetcher.data.websiteData.id}`,
-                      "_blank",
-                    );
-                  }}
-                  disabled={!fetcher.data.websiteData.plan}
-                >
-                  Open Control Panel
-                </Button>
-              )}
+              <Button
+                primary
+                size="large"
+                icon={ExternalIcon}
+                onClick={() => {
+                  window.open(
+                    `${urls.voiceroApi}/app/websites/website?id=${fetcher.data.websiteData.id}`,
+                    "_blank",
+                  );
+                }}
+                disabled={!fetcher.data.websiteData.plan}
+              >
+                Open Control Panel
+              </Button>
             </InlineStack>
           </Box>
 
@@ -2118,7 +2116,8 @@ export default function Index() {
                     <Text variant="bodyMd" tone="warning">
                       Your account doesn't have an active plan. Actions like
                       activating your assistant, syncing content, and refreshing
-                      data are disabled. Please contact support for assistance.
+                      data are disable. Please Open your control panel to
+                      upgrade your plan.
                     </Text>
                   </InlineStack>
                 </div>

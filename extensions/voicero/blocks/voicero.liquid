@@ -269,17 +269,32 @@
     .then(data => {
       console.log("VoiceroAI API check result:", data);
       
-      // Check if website is active
+      // Check if website is active AND has a valid plan
       const isActive = data && data.website && data.website.active === true;
+      const hasPlan = data && data.website && data.website.plan && data.website.plan !== "";
       console.log("VoiceroAI: Website active status:", isActive);
+      console.log("VoiceroAI: Website plan status:", hasPlan ? "Has plan" : "No plan");
       
-      if (isActive) {
-        // Website is active, load all scripts
-        console.log("VoiceroAI: Website is active, loading scripts");
+      if (isActive && hasPlan) {
+        // Website is active and has a plan, load all scripts
+        console.log("VoiceroAI: Website is active with valid plan, loading scripts");
         loadAllScripts();
       } else {
-        // Website is not active, don't load scripts
-        console.log("VoiceroAI: Website is NOT active, skipping script loading");
+        // Website is not active or has no plan, don't load scripts
+        console.log("VoiceroAI: Website is NOT active or has no plan, skipping script loading");
+        
+        // Optionally add a small notification element to inform users about the issue
+        const notificationDiv = document.createElement('div');
+        notificationDiv.style.cssText = 'position:fixed;bottom:20px;right:20px;background-color:#FFF4E4;color:#996B00;padding:12px 16px;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,0.1);font-size:14px;max-width:300px;z-index:9999;border:1px solid #FFECCC;';
+        notificationDiv.innerHTML = 'AI assistant is unavailable. Please contact your store administrator.';
+        document.body.appendChild(notificationDiv);
+        
+        // Auto-remove after 10 seconds
+        setTimeout(() => {
+          if (document.body.contains(notificationDiv)) {
+            document.body.removeChild(notificationDiv);
+          }
+        }, 10000);
       }
     })
     .catch(error => {
