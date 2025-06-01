@@ -269,8 +269,8 @@
     .then(data => {
       console.log("VoiceroAI API check result:", data);
       
-      // Check if website is active - look directly at the active property in data
-      const isActive = data && data.active === true;
+      // Check if website is active
+      const isActive = data && data.website && data.website.active === true;
       console.log("VoiceroAI: Website active status:", isActive);
       
       if (isActive) {
