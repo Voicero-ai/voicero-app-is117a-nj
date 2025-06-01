@@ -2296,7 +2296,7 @@ export default function Index() {
                               primary
                               onClick={() => {
                                 window.open(
-                                  `${urls.voiceroApi}/app/billing`,
+                                  `${urls.voiceroApi}/app/websites/website?id=${fetcher.data?.websiteData?.id}`,
                                   "_blank",
                                 );
                               }}

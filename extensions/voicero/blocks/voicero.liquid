@@ -278,27 +278,19 @@
       // Log full website data to help with debugging
       console.log("VoiceroAI: Full website data:", data.website);
       
-      // Check if website is active AND has a valid plan
-      const isActive = data.website.active === true;
-      // Check for null, undefined, empty string, or "free" plan which shouldn't be enabled
-      const hasPlan = !!(data.website.plan && data.website.plan !== "" && data.website.plan !== "free");
+      // SIMPLEST CHECK POSSIBLE: Check for plan value directly
+      const planValue = data.website.plan;
+      console.log("VoiceroAI: Plan value is:", JSON.stringify(planValue));
       
-      console.log("VoiceroAI: Website active status:", isActive);
-      console.log("VoiceroAI: Website plan:", data.website.plan);
-      console.log("VoiceroAI: Has valid plan:", hasPlan);
-      
-      if (isActive && hasPlan) {
-        // Website is active and has a plan, load all scripts
-        console.log("VoiceroAI: Website is active with valid plan, loading scripts");
+      // Only load if plan has an actual string value that's not empty and not "free"
+      if (typeof planValue === 'string' && planValue.trim() !== '' && planValue !== 'free') {
+        console.log("VoiceroAI: Valid plan found:", planValue);
         loadAllScripts();
       } else {
-        // Website is not active or has no plan, don't load scripts
-        const reason = !isActive ? "website is inactive" : "website has no valid plan";
-        console.log(`VoiceroAI: Not loading scripts because ${reason}`);
+        console.log("VoiceroAI: No valid plan found, not loading scripts");
         
-        // Optionally add a small notification element to inform users about the issue
-        if (isActive && !hasPlan) {
-          // Only show notification if the site is active but doesn't have a plan
+        // Add a notification if the website is active but has no valid plan
+        if (data.website.active === true) {
           const notificationDiv = document.createElement('div');
           notificationDiv.style.cssText = 'position:fixed;bottom:20px;right:20px;background-color:#FFF4E4;color:#996B00;padding:12px 16px;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,0.1);font-size:14px;max-width:300px;z-index:9999;border:1px solid #FFECCC;';
           notificationDiv.innerHTML = 'AI assistant is unavailable. Please contact your store administrator.';
