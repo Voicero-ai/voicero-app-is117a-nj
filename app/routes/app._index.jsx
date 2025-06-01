@@ -1178,6 +1178,19 @@ export default function Index() {
   // Add function to fetch extended website data
   const fetchExtendedWebsiteData = async () => {
     try {
+      // Check if there's an active plan first
+      if (!fetcher.data?.websiteData?.plan) {
+        setError(
+          <Banner status="warning" onDismiss={() => setError("")}>
+            <p>
+              You need an active plan to refresh data. Please upgrade to
+              continue.
+            </p>
+          </Banner>,
+        );
+        return;
+      }
+
       setIsLoadingExtendedData(true);
       const response = await fetch("/api/website/get");
       const data = await response.json();
@@ -1197,7 +1210,12 @@ export default function Index() {
 
   // Use effect to fetch extended data when we have an access key and valid website data
   useEffect(() => {
-    if (accessKey && fetcher.data?.success && fetcher.data.websiteData) {
+    if (
+      accessKey &&
+      fetcher.data?.success &&
+      fetcher.data.websiteData &&
+      fetcher.data.websiteData.plan
+    ) {
       fetchExtendedWebsiteData();
     }
   }, [accessKey, fetcher.data?.success]);
@@ -1630,6 +1648,19 @@ export default function Index() {
 
   const handleSync = async () => {
     try {
+      // Check if there's an active plan first
+      if (!fetcher.data?.websiteData?.plan) {
+        setError(
+          <Banner status="warning" onDismiss={() => setError("")}>
+            <p>
+              You need an active plan to sync content. Please upgrade to
+              continue.
+            </p>
+          </Banner>,
+        );
+        return;
+      }
+
       setIsSyncing(true);
       setError("");
 
@@ -2039,6 +2070,7 @@ export default function Index() {
                       "_blank",
                     );
                   }}
+                  disabled={!fetcher.data.websiteData.plan}
                 >
                   Open Control Panel
                 </Button>
@@ -2067,6 +2099,31 @@ export default function Index() {
               )}
             </Box>
           )}
+
+          {/* No Plan Warning Banner */}
+          {accessKey &&
+            fetcher.data?.success &&
+            !fetcher.data.websiteData.plan && (
+              <Box paddingBlockEnd="400">
+                <div
+                  style={{
+                    backgroundColor: "#FFF4E4",
+                    borderRadius: "12px",
+                    padding: "16px",
+                    border: "1px solid #FFECCC",
+                  }}
+                >
+                  <InlineStack gap="300" blockAlign="center">
+                    <Icon source={InfoIcon} color="warning" />
+                    <Text variant="bodyMd" tone="warning">
+                      Your account doesn't have an active plan. Actions like
+                      activating your assistant, syncing content, and refreshing
+                      data are disabled. Please contact support for assistance.
+                    </Text>
+                  </InlineStack>
+                </div>
+              </Box>
+            )}
 
           {/* Main Content */}
           <BlockStack gap="600">
@@ -2233,44 +2290,63 @@ export default function Index() {
                                 : "Inactive"}
                             </Text>
                           </div>
-                          <Button
-                            size="slim"
-                            onClick={() => {
-                              fetch("/api/toggle-status", {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({
-                                  accessKey: accessKey.trim(),
-                                }),
-                              })
-                                .then((response) => {
-                                  if (!response.ok) {
-                                    throw new Error(
-                                      `HTTP error! status: ${response.status}`,
-                                    );
-                                  }
-                                  fetcher.submit(
-                                    { accessKey, action: "manual_connect" },
-                                    { method: "POST" },
-                                  );
+                          {!fetcher.data.websiteData.plan ? (
+                            <Button
+                              size="slim"
+                              primary
+                              onClick={() => {
+                                window.open(
+                                  `${urls.voiceroApi}/app/billing`,
+                                  "_blank",
+                                );
+                              }}
+                            >
+                              Upgrade Now
+                            </Button>
+                          ) : (
+                            <Button
+                              size="slim"
+                              onClick={() => {
+                                fetch("/api/toggle-status", {
+                                  method: "POST",
+                                  headers: {
+                                    "Content-Type": "application/json",
+                                  },
+                                  body: JSON.stringify({
+                                    accessKey: accessKey.trim(),
+                                  }),
                                 })
-                                .catch((error) => {
-                                  console.error(
-                                    "Error toggling status:",
-                                    error,
-                                  );
-                                  setError("Failed to toggle website status");
-                                });
-                            }}
-                            disabled={
-                              !fetcher.data.websiteData.lastSyncedAt ||
-                              fetcher.data.websiteData.lastSyncedAt === "Never"
-                            }
-                          >
-                            {fetcher.data.websiteData.active
-                              ? "Deactivate"
-                              : "Activate"}
-                          </Button>
+                                  .then((response) => {
+                                    if (!response.ok) {
+                                      throw new Error(
+                                        `HTTP error! status: ${response.status}`,
+                                      );
+                                    }
+                                    fetcher.submit(
+                                      { accessKey, action: "manual_connect" },
+                                      { method: "POST" },
+                                    );
+                                  })
+                                  .catch((error) => {
+                                    console.error(
+                                      "Error toggling status:",
+                                      error,
+                                    );
+                                    setError("Failed to toggle website status");
+                                  });
+                              }}
+                              disabled={
+                                !fetcher.data.websiteData.lastSyncedAt ||
+                                fetcher.data.websiteData.lastSyncedAt ===
+                                  "Never" ||
+                                !fetcher.data.websiteData.plan
+                              }
+                            >
+                              {fetcher.data.websiteData.active
+                                ? "Deactivate"
+                                : "Activate"}
+                            </Button>
+                          )}
                         </InlineStack>
                       </InlineStack>
 
@@ -2289,7 +2365,29 @@ export default function Index() {
                             Plan Type
                           </Text>
                           <Text variant="headingMd" fontWeight="semibold">
-                            {fetcher.data.websiteData.plan}
+                            {fetcher.data.websiteData.plan || (
+                              <InlineStack gap="200" blockAlign="center">
+                                <Text
+                                  variant="headingMd"
+                                  fontWeight="semibold"
+                                  tone="warning"
+                                >
+                                  No Active Plan
+                                </Text>
+                                <div
+                                  style={{
+                                    backgroundColor: "#FFF4E4",
+                                    padding: "4px 8px",
+                                    borderRadius: "4px",
+                                    border: "1px solid #FFECCC",
+                                  }}
+                                >
+                                  <Text variant="bodySm" tone="warning">
+                                    Limited Access
+                                  </Text>
+                                </div>
+                              </InlineStack>
+                            )}
                           </Text>
                         </BlockStack>
                         <BlockStack gap="200">
@@ -2358,6 +2456,7 @@ export default function Index() {
                             onClick={fetchExtendedWebsiteData}
                             loading={isLoadingExtendedData}
                             icon={RefreshIcon}
+                            disabled={!fetcher.data.websiteData.plan}
                           >
                             Refresh Data
                           </Button>
@@ -2589,6 +2688,7 @@ export default function Index() {
                             !fetcher.data?.websiteData?.lastSyncedAt ||
                             fetcher.data?.websiteData?.lastSyncedAt === "Never"
                           }
+                          disabled={!fetcher.data.websiteData.plan}
                         >
                           {isSyncing ? "Syncing..." : "Sync Content"}
                         </Button>
