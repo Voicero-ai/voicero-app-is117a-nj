@@ -760,7 +760,7 @@ const checkTrainingStatus = async (
           setTrainingData({
             status: "success",
             progress: 100,
-            message: `Training complete! Your AI assistant is ready to use. Last synced: ${fetcher.data.websiteData.lastSyncedAt ? new Date(fetcher.data.websiteData.lastSyncedAt).toLocaleString() : "Never"}`,
+            message: `Training complete! Your AI assistant is ready to use. Last synced: ${fetcher.data?.websiteData?.lastSyncedAt ? new Date(fetcher.data?.websiteData?.lastSyncedAt).toLocaleString() : "Never"}`,
             currentCategory: 5,
           });
           setIsTraining(false);
@@ -784,7 +784,7 @@ const checkTrainingStatus = async (
     setTrainingData({
       status: "success",
       progress: 100,
-      message: `Training complete! Your AI assistant is ready to use. Last synced: ${fetcher.data.websiteData.lastSyncedAt ? new Date(fetcher.data.websiteData.lastSyncedAt).toLocaleString() : "Never"}`,
+      message: `Training complete! Your AI assistant is ready to use. Last synced: ${fetcher.data?.websiteData?.lastSyncedAt ? new Date(fetcher.data?.websiteData?.lastSyncedAt).toLocaleString() : "Never"}`,
       currentCategory: 5,
     });
     setIsTraining(false);
@@ -1213,8 +1213,8 @@ export default function Index() {
     if (
       accessKey &&
       fetcher.data?.success &&
-      fetcher.data.websiteData &&
-      fetcher.data.websiteData.plan
+      fetcher.data?.websiteData &&
+      fetcher.data?.websiteData?.plan
     ) {
       fetchExtendedWebsiteData();
     }
@@ -1469,7 +1469,7 @@ export default function Index() {
                   setTrainingData({
                     status: "success",
                     progress: 100,
-                    message: `Training complete! Your AI assistant is ready to use. Last synced: ${fetcher.data.websiteData.lastSyncedAt ? new Date(fetcher.data.websiteData.lastSyncedAt).toLocaleString() : "Never"}`,
+                    message: `Training complete! Your AI assistant is ready to use. Last synced: ${fetcher.data?.websiteData?.lastSyncedAt ? new Date(fetcher.data?.websiteData?.lastSyncedAt).toLocaleString() : "Never"}`,
                     currentCategory: 5,
                   });
                   setIsTraining(false);
@@ -1493,7 +1493,7 @@ export default function Index() {
             setTrainingData({
               status: "success",
               progress: 100,
-              message: `Training complete! Your AI assistant is ready to use. Last synced: ${fetcher.data.websiteData.lastSyncedAt ? new Date(fetcher.data.websiteData.lastSyncedAt).toLocaleString() : "Never"}`,
+              message: `Training complete! Your AI assistant is ready to use. Last synced: ${fetcher.data?.websiteData?.lastSyncedAt ? new Date(fetcher.data?.websiteData?.lastSyncedAt).toLocaleString() : "Never"}`,
               currentCategory: 5,
             });
             setIsTraining(false);
@@ -1517,7 +1517,7 @@ export default function Index() {
     // Check if we have namespace in VectorDbConfig
     else if (fetcher.data?.websiteData?.VectorDbConfig?.namespace) {
       const websiteNamespace =
-        fetcher.data.websiteData.VectorDbConfig.namespace;
+        fetcher.data?.websiteData?.VectorDbConfig?.namespace;
 
       setNamespace(websiteNamespace);
     }
@@ -1879,7 +1879,7 @@ export default function Index() {
         ...prev,
         status: "success",
         progress: 100,
-        message: `Training complete! Your AI assistant is ready to use. Last synced: ${fetcher.data.websiteData.lastSyncedAt ? new Date(fetcher.data.websiteData.lastSyncedAt).toLocaleString() : "Never"}`,
+        message: `Training complete! Your AI assistant is ready to use. Last synced: ${fetcher.data?.websiteData?.lastSyncedAt ? new Date(fetcher.data?.websiteData?.lastSyncedAt).toLocaleString() : "Never"}`,
         currentCategory: 6,
       }));
 
@@ -2059,20 +2059,22 @@ export default function Index() {
                   Manage your AI-powered shopping assistant
                 </Text>
               </BlockStack>
-              <Button
-                primary
-                size="large"
-                icon={ExternalIcon}
-                onClick={() => {
-                  window.open(
-                    `${urls.voiceroApi}/app/websites/website?id=${fetcher.data.websiteData.id}`,
-                    "_blank",
-                  );
-                }}
-                disabled={!fetcher.data.websiteData.plan}
-              >
-                Open Control Panel
-              </Button>
+              {accessKey && fetcher.data?.success && (
+                <Button
+                  primary
+                  size="large"
+                  icon={ExternalIcon}
+                  onClick={() => {
+                    window.open(
+                      `${urls.voiceroApi}/app/websites/website?id=${fetcher.data?.websiteData?.id}`,
+                      "_blank",
+                    );
+                  }}
+                  disabled={!fetcher.data?.websiteData?.plan}
+                >
+                  Open Control Panel
+                </Button>
+              )}
             </InlineStack>
           </Box>
 
@@ -2116,7 +2118,7 @@ export default function Index() {
                     <Text variant="bodyMd" tone="warning">
                       Your account doesn't have an active plan. Actions like
                       activating your assistant, syncing content, and refreshing
-                      data are disable. Please Open your control panel to
+                      data are disabled. Please Open your control panel to
                       upgrade your plan.
                     </Text>
                   </InlineStack>
@@ -2229,7 +2231,7 @@ export default function Index() {
                               width: "48px",
                               height: "48px",
                               borderRadius: "12px",
-                              backgroundColor: fetcher.data.websiteData.active
+                              backgroundColor: fetcher.data?.websiteData?.active
                                 ? "#E3F5E1"
                                 : "#FFF4E4",
                               display: "flex",
@@ -2239,12 +2241,12 @@ export default function Index() {
                           >
                             <Icon
                               source={
-                                fetcher.data.websiteData.active
+                                fetcher.data?.websiteData?.active
                                   ? CheckIcon
                                   : InfoIcon
                               }
                               color={
-                                fetcher.data.websiteData.active
+                                fetcher.data?.websiteData?.active
                                   ? "success"
                                   : "warning"
                               }
@@ -2252,15 +2254,15 @@ export default function Index() {
                           </div>
                           <BlockStack gap="100">
                             <Text variant="headingLg" fontWeight="semibold">
-                              {fetcher.data.websiteData.name}
+                              {fetcher.data?.websiteData?.name}
                             </Text>
                             <Link
-                              url={fetcher.data.websiteData.url}
+                              url={fetcher.data?.websiteData?.url}
                               external
                               monochrome
                             >
                               <Text variant="bodySm" color="subdued">
-                                {fetcher.data.websiteData.url}
+                                {fetcher.data?.websiteData?.url}
                               </Text>
                             </Link>
                           </BlockStack>
@@ -2268,7 +2270,7 @@ export default function Index() {
                         <InlineStack gap="300" blockAlign="center">
                           <div
                             style={{
-                              backgroundColor: fetcher.data.websiteData.active
+                              backgroundColor: fetcher.data?.websiteData?.active
                                 ? "#E3F5E1"
                                 : "#FFF4E4",
                               padding: "6px 16px",
@@ -2279,17 +2281,17 @@ export default function Index() {
                               variant="bodySm"
                               fontWeight="semibold"
                               tone={
-                                fetcher.data.websiteData.active
+                                fetcher.data?.websiteData?.active
                                   ? "success"
                                   : "caution"
                               }
                             >
-                              {fetcher.data.websiteData.active
+                              {fetcher.data?.websiteData?.active
                                 ? "Active"
                                 : "Inactive"}
                             </Text>
                           </div>
-                          {!fetcher.data.websiteData.plan ? (
+                          {!fetcher.data?.websiteData?.plan ? (
                             <Button
                               size="slim"
                               primary
@@ -2335,13 +2337,13 @@ export default function Index() {
                                   });
                               }}
                               disabled={
-                                !fetcher.data.websiteData.lastSyncedAt ||
-                                fetcher.data.websiteData.lastSyncedAt ===
+                                !fetcher.data?.websiteData?.lastSyncedAt ||
+                                fetcher.data?.websiteData?.lastSyncedAt ===
                                   "Never" ||
-                                !fetcher.data.websiteData.plan
+                                !fetcher.data?.websiteData?.plan
                               }
                             >
-                              {fetcher.data.websiteData.active
+                              {fetcher.data?.websiteData?.active
                                 ? "Deactivate"
                                 : "Activate"}
                             </Button>
@@ -2364,7 +2366,7 @@ export default function Index() {
                             Plan Type
                           </Text>
                           <Text variant="headingMd" fontWeight="semibold">
-                            {fetcher.data.websiteData.plan || (
+                            {fetcher.data?.websiteData?.plan || (
                               <InlineStack gap="200" blockAlign="center">
                                 <Text
                                   variant="headingMd"
@@ -2395,10 +2397,10 @@ export default function Index() {
                           </Text>
                           <InlineStack gap="200" blockAlign="baseline">
                             <Text variant="headingMd" fontWeight="semibold">
-                              {fetcher.data.websiteData.monthlyQueries}
+                              {fetcher.data?.websiteData?.monthlyQueries}
                             </Text>
                             <Text variant="bodySm" color="subdued">
-                              / {fetcher.data.websiteData.queryLimit}
+                              / {fetcher.data?.websiteData?.queryLimit}
                             </Text>
                           </InlineStack>
                         </BlockStack>
@@ -2410,18 +2412,19 @@ export default function Index() {
                             variant="headingMd"
                             fontWeight="semibold"
                             tone={
-                              fetcher.data.websiteData.lastSyncedAt &&
-                              fetcher.data.websiteData.lastSyncedAt !== "Never"
+                              fetcher.data?.websiteData?.lastSyncedAt &&
+                              fetcher.data?.websiteData?.lastSyncedAt !==
+                                "Never"
                                 ? "success"
                                 : "caution"
                             }
                           >
-                            {fetcher.data.websiteData.lastSyncedAt
-                              ? fetcher.data.websiteData.lastSyncedAt ===
+                            {fetcher.data?.websiteData?.lastSyncedAt
+                              ? fetcher.data?.websiteData?.lastSyncedAt ===
                                 "Never"
                                 ? "Never"
                                 : new Date(
-                                    fetcher.data.websiteData.lastSyncedAt,
+                                    fetcher.data?.websiteData?.lastSyncedAt,
                                   ).toLocaleDateString()
                               : "Never"}
                           </Text>
@@ -2455,7 +2458,7 @@ export default function Index() {
                             onClick={fetchExtendedWebsiteData}
                             loading={isLoadingExtendedData}
                             icon={RefreshIcon}
-                            disabled={!fetcher.data.websiteData.plan}
+                            disabled={!fetcher.data?.websiteData?.plan}
                           >
                             Refresh Data
                           </Button>
@@ -2687,7 +2690,7 @@ export default function Index() {
                             !fetcher.data?.websiteData?.lastSyncedAt ||
                             fetcher.data?.websiteData?.lastSyncedAt === "Never"
                           }
-                          disabled={!fetcher.data.websiteData.plan}
+                          disabled={!fetcher.data?.websiteData?.plan}
                         >
                           {isSyncing ? "Syncing..." : "Sync Content"}
                         </Button>
@@ -3063,7 +3066,7 @@ export default function Index() {
                                               ) {
                                                 try {
                                                   const websiteUrl = new URL(
-                                                    fetcher.data.websiteData.url,
+                                                    fetcher.data?.websiteData?.url,
                                                   );
                                                   domain = websiteUrl.hostname;
                                                 } catch (e) {
@@ -3081,8 +3084,8 @@ export default function Index() {
                                                   ?.domain
                                               ) {
                                                 domain =
-                                                  fetcher.data.websiteData
-                                                    .domain;
+                                                  fetcher.data?.websiteData
+                                                    ?.domain;
                                               }
 
                                               // Option 3: Fall back to the shop URL if set in session
