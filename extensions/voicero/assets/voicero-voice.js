@@ -3629,7 +3629,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
     }
 
     // Create base welcome message
-    let welcomeMessage = `👋 Welcome to ${websiteName}! 
+    let welcomeMessage = `
 
 Hi, I'm ${botName}! ${welcomeMessageContent}
 
@@ -4073,7 +4073,7 @@ Hi, I'm ${botName}! ${welcomeMessageContent}
     );
 
     // Try localhost first for the /shopify/chat route, then fall back to normal endpoint
-    fetch("https://www.voicero.ai/api/shopify/chat", {
+    fetch("http://localhost:3000/api/shopify/chat", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

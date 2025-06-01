@@ -2399,7 +2399,9 @@ export default function Index() {
                               {fetcher.data?.websiteData?.monthlyQueries}
                             </Text>
                             <Text variant="bodySm" color="subdued">
-                              / {fetcher.data?.websiteData?.queryLimit}
+                              {fetcher.data?.websiteData?.plan === "Enterprise"
+                                ? "/ Unlimited"
+                                : `/ ${fetcher.data?.websiteData?.queryLimit}`}
                             </Text>
                           </InlineStack>
                         </BlockStack>
