@@ -32,11 +32,6 @@ const VoiceroReturnHandler = {
       console.log("VoiceroReturnHandler initialized with config:", this.config);
     }
 
-    // Check for pending returns on init
-    setTimeout(() => {
-      this.suggestPendingReturn();
-    }, 3000); // Wait 3 seconds to avoid interrupting initial page load
-
     return this;
   },
 
@@ -966,9 +961,8 @@ Would you like me to help you initiate a return request once you receive your or
       return;
     }
 
-    // Fallback to console and alert
+    // Only log to console, don't show alert popup
     console.log("User notification:", message);
-    alert(message);
   },
 
   /**
