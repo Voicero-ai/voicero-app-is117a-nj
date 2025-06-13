@@ -132,7 +132,7 @@ const VoiceroReturnHandler = {
     // Check if we have the required information
     if (!order_id && !order_number) {
       this.notifyUser(
-        "To cancel an order, I need your order number. Please provide it.",
+        "To cancel an order, I need your order number and emai laddress. Please provide it.",
       );
       return;
     }

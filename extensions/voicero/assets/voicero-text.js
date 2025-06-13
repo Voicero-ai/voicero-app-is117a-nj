@@ -2649,8 +2649,24 @@ Hi, I'm ${botName}! ${welcomeMessageContent}
           let url = null;
           let actionContext = null;
 
+          // Check if the response is a string that needs to be parsed
+          if (typeof data.response === "string") {
+            try {
+              const parsedResponse = JSON.parse(data.response);
+              message =
+                parsedResponse.answer || "Sorry, I don't have a response.";
+              action = parsedResponse.action || null;
+              actionContext = parsedResponse.action_context || null;
+              if (action === "redirect" && actionContext?.url) {
+                url = actionContext.url;
+              }
+            } catch (e) {
+              // If parsing fails, use the response as is
+              message = data.response;
+            }
+          }
           // Check for the nested response object structure
-          if (data && data.response && data.response.answer) {
+          else if (data && data.response && data.response.answer) {
             message = data.response.answer;
 
             // Get action and check for action_context
@@ -2695,10 +2711,6 @@ Hi, I'm ${botName}! ${welcomeMessageContent}
             if (!url && data.url) {
               url = data.url;
             }
-          }
-          // Fall back to direct 'response' string
-          else if (data && data.response && typeof data.response === "string") {
-            message = data.response;
           }
           // Default fallback
           else {
