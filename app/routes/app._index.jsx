@@ -852,6 +852,7 @@ export default function Index() {
   const [isLoadingExtendedData, setIsLoadingExtendedData] = useState(false);
   const [selectedContentTab, setSelectedContentTab] = useState(0);
   const [timeRemaining, setTimeRemaining] = useState(0);
+  const [syncStatusText, setSyncStatusText] = useState("");
 
   // State for UI and data
   const fetcher = useFetcher();
@@ -1172,6 +1173,7 @@ export default function Index() {
       }
 
       setIsSyncing(true);
+      setSyncStatusText("Syncing content... Please wait.");
       setError("");
 
       // Step 1: Initial sync
@@ -1234,6 +1236,9 @@ export default function Index() {
       setLoadingText(
         "Vectorizing your store content... This may take a few minutes.",
       );
+      setSyncStatusText(
+        "Vectorizing your store content... This may take a few minutes.",
+      );
 
       const vectorizeResponse = await fetch(
         `${urls.voiceroApi}/api/shopify/vectorize`,
@@ -1279,6 +1284,7 @@ export default function Index() {
 
       // Step 4: Create or get assistant
       setLoadingText("Setting up your AI assistant...");
+      setSyncStatusText("Setting up your AI assistant...");
       const assistantResponse = await fetch(
         `${urls.voiceroApi}/api/shopify/assistant`,
         {
@@ -1312,6 +1318,7 @@ export default function Index() {
       // After assistant setup, start individual training
       setIsTraining(true);
       setLoadingText("Starting content training process...");
+      setSyncStatusText("Starting content training process...");
 
       // Use the parallel training approach
       await trainUntrainedItems(
@@ -1323,6 +1330,7 @@ export default function Index() {
 
       // Step 5: Train general QAs
       setLoadingText("Training general QAs...");
+      setSyncStatusText("Training general QAs...");
 
       const generalTrainingResponse = await fetch(
         `${urls.voiceroApi}/api/shopify/train/general`,
@@ -1350,6 +1358,9 @@ export default function Index() {
       }
 
       setLoadingText("Training complete! Your AI assistant is ready to use.");
+      setSyncStatusText(
+        "Training complete! Your AI assistant is ready to use.",
+      );
       setIsSuccess(true);
       setIsSyncing(false);
     } catch (error) {
@@ -1359,6 +1370,7 @@ export default function Index() {
           <p>Failed to sync content: {error.message}</p>
         </Banner>,
       );
+      setSyncStatusText("");
       setIsSyncing(false);
     }
   };
