@@ -1,6 +1,6 @@
 import { json } from "@remix-run/node";
 import { authenticate } from "../shopify.server";
-import urls from "../config/urls";
+import { urls } from "~/utils/urls";
 
 export const dynamic = "force-dynamic";
 
@@ -52,23 +52,30 @@ export async function action({ request }) {
       );
     }
 
-    // Get websiteId from metafields
-    const websiteIdResponse = await admin.graphql(`
-      query {
-        shop {
-          metafield(namespace: "voicero", key: "website_id") {
-            value
-          }
-        }
-      }
-    `);
+    // Get website ID from /api/connect endpoint
+    const connectionResponse = await fetch(`${urls.voiceroApi}/api/connect`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${accessKey}`,
+      },
+    });
 
-    const websiteIdData = await websiteIdResponse.json();
-    const websiteId = websiteIdData.data.shop?.metafield?.value;
+    if (!connectionResponse.ok) {
+      throw new Error("Failed to get website ID from connection check");
+    }
+
+    const connectionData = await connectionResponse.json();
+    const websiteId = connectionData.website?.id;
 
     if (!websiteId) {
       return json(
-        { success: false, error: "No website ID found" },
+        {
+          success: false,
+          error:
+            "Could not determine website ID. Please refresh the page or reconnect your store.",
+        },
         { status: 400 },
       );
     }
