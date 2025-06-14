@@ -599,209 +599,12 @@ async function updateThemeSettings(admin, themeId, accessKey) {
   }
 }
 
-// Add new helper function to check training status
-const checkTrainingStatus = async (
-  accessKey,
-  setUntrainedItems,
-  setItemsInTraining,
-) => {
-  const response = await fetch(`${urls.voiceroApi}/api/shopify/train/status`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-      Authorization: `Bearer ${accessKey}`,
-    },
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(
-      `Failed to check training status: ${errorData.error || "Unknown error"}`,
-    );
-  }
-
-  const data = await response.json();
-
-  // Separate items into untrained and in-training
-  const untrained = {
-    products: [],
-    pages: [],
-    posts: [], // Changed from blogPosts to posts
-    collections: [],
-    discounts: [],
-  };
-
-  const inTraining = {
-    products: [],
-    pages: [],
-    posts: [], // Changed from blogPosts to posts
-    collections: [],
-    discounts: [],
-  };
-
-  // Process each category
-  Object.keys(data).forEach((category) => {
-    data[category].forEach((item) => {
-      if (item.isTraining) {
-        inTraining[category].push(item);
-      } else if (!item.trained) {
-        untrained[category].push(item);
-      }
-    });
-  });
-
-  // Update items in training state
-  setItemsInTraining(inTraining);
-
-  // Check if any items are currently being trained or need training
-  const hasItemsInTraining = Object.values(inTraining).some(
-    (items) => items.length > 0,
-  );
-  const hasUntrainedItems = Object.values(untrained).some(
-    (items) => items.length > 0,
-  );
-
-  // Show training banner if we have either items in training or untrained items
-  if (hasItemsInTraining || hasUntrainedItems) {
-    setTrainingData({
-      status: "processing",
-      progress: 0,
-      message: hasItemsInTraining
-        ? "Content training in progress..."
-        : "Content needs training...",
-      steps: [],
-      currentCategory: 0,
-      categories: ["products", "pages", "posts", "collections", "discounts"],
-    });
-    setIsTraining(true);
-
-    // If we have untrained items and no items in training, start the training process
-    if (hasUntrainedItems && !hasItemsInTraining) {
-      try {
-        await trainUntrainedItems(
-          fetcher.data.accessKey,
-          untrained,
-          setTrainingData,
-          setUntrainedItems,
-          fetcher.data.websiteData, // Pass websiteData as a parameter
-        );
-      } catch (error) {
-        console.error("Error training untrained items:", error);
-        setError(`Failed to train items: ${error.message}`);
-      }
-    }
-
-    // Set up polling to check status every 15 seconds
-    const pollStatus = async () => {
-      try {
-        const statusResponse = await fetch(
-          `${urls.voiceroApi}/api/shopify/train/status`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Accept: "application/json",
-              Authorization: `Bearer ${fetcher.data.accessKey}`,
-            },
-          },
-        );
-
-        if (!statusResponse.ok) {
-          throw new Error(
-            `Failed to check training status: ${statusResponse.status}`,
-          );
-        }
-
-        const statusData = await statusResponse.json();
-
-        // Process the status data
-        const polledUntrained = {
-          products: [],
-          pages: [],
-          posts: [], // Changed from blogPosts to posts
-          collections: [],
-          discounts: [],
-        };
-
-        const polledInTraining = {
-          products: [],
-          pages: [],
-          posts: [], // Changed from blogPosts to posts
-          collections: [],
-          discounts: [],
-        };
-
-        Object.keys(statusData).forEach((category) => {
-          statusData[category].forEach((item) => {
-            if (item.isTraining) {
-              polledInTraining[category].push(item);
-            } else if (!item.trained) {
-              polledUntrained[category].push(item);
-            }
-          });
-        });
-
-        // Update states
-        setItemsInTraining(polledInTraining);
-        setUntrainedItems(polledUntrained);
-
-        // Check if everything is done
-        const stillInTraining = Object.values(polledInTraining).some(
-          (items) => items.length > 0,
-        );
-        const stillUntrained = Object.values(polledUntrained).some(
-          (items) => items.length > 0,
-        );
-
-        if (stillInTraining || stillUntrained) {
-          setTimeout(pollStatus, 15000);
-        } else {
-          setTrainingData({
-            status: "success",
-            progress: 100,
-            message: `Training complete! Your AI assistant is ready to use. Last synced: ${fetcher.data?.websiteData?.lastSyncedAt ? new Date(fetcher.data?.websiteData?.lastSyncedAt).toLocaleString() : "Never"}`,
-            currentCategory: 5,
-          });
-          setIsTraining(false);
-
-          // Reload the page after training completes
-          setTimeout(() => {
-            window.location.href = "/app";
-          }, 2000);
-        }
-      } catch (error) {
-        console.error("Error polling training status:", error);
-        setError(`Failed to check training status: ${error.message}`);
-      }
-    };
-
-    // Start polling
-    setTimeout(pollStatus, 15000);
-  } else {
-    // Only set success state if there are no items in training AND no untrained items
-
-    setTrainingData({
-      status: "success",
-      progress: 100,
-      message: `Training complete! Your AI assistant is ready to use. Last synced: ${fetcher.data?.websiteData?.lastSyncedAt ? new Date(fetcher.data?.websiteData?.lastSyncedAt).toLocaleString() : "Never"}`,
-      currentCategory: 5,
-    });
-    setIsTraining(false);
-  }
-
-  // Log the current state
-
-  return untrained;
-};
-
 // Modify trainUntrainedItems to accept setTrainingData
 const trainUntrainedItems = async (
   accessKey,
   untrainedItems,
-  setTrainingData,
   setUntrainedItems,
-  websiteData, // Add websiteData parameter
+  websiteData,
 ) => {
   // Get websiteId from any untrained item (they all belong to the same website)
   const websiteId =
@@ -816,16 +619,6 @@ const trainUntrainedItems = async (
     (items) => items.length > 0,
   );
 
-  // Initialize training state
-  setTrainingData({
-    status: "processing",
-    progress: 0,
-    message: "Starting training of all content...",
-    steps: [],
-    currentCategory: 0,
-    categories: ["products", "pages", "posts", "collections", "discounts"],
-  });
-
   let totalItems = 0;
   Object.values(untrainedItems).forEach((items) => {
     totalItems += items.length;
@@ -838,82 +631,32 @@ const trainUntrainedItems = async (
   try {
     // Create arrays of promises for each category
     const trainingPromises = [];
-    let itemsStarted = 0;
 
     // Add product training promises
     untrainedItems.products?.forEach((product) => {
-      trainingPromises.push(
-        trainContentItem(accessKey, "product", product).then(() => {
-          itemsStarted++;
-          const progress = Math.round((itemsStarted / totalItems) * 100);
-          setTrainingData((prev) => ({
-            ...prev,
-            progress,
-            message: `Training in progress: ${itemsStarted}/${totalItems} items complete`,
-          }));
-        }),
-      );
+      trainingPromises.push(trainContentItem(accessKey, "product", product));
     });
 
     // Add page training promises
     untrainedItems.pages?.forEach((page) => {
-      trainingPromises.push(
-        trainContentItem(accessKey, "page", page).then(() => {
-          itemsStarted++;
-          const progress = Math.round((itemsStarted / totalItems) * 100);
-          setTrainingData((prev) => ({
-            ...prev,
-            progress,
-            message: `Training in progress: ${itemsStarted}/${totalItems} items complete`,
-          }));
-        }),
-      );
+      trainingPromises.push(trainContentItem(accessKey, "page", page));
     });
 
     // Add blog post training promises
     untrainedItems.posts?.forEach((post) => {
-      // Changed from blogPosts to posts
-      trainingPromises.push(
-        trainContentItem(accessKey, "post", post).then(() => {
-          itemsStarted++;
-          const progress = Math.round((itemsStarted / totalItems) * 100);
-          setTrainingData((prev) => ({
-            ...prev,
-            progress,
-            message: `Training in progress: ${itemsStarted}/${totalItems} items complete`,
-          }));
-        }),
-      );
+      trainingPromises.push(trainContentItem(accessKey, "post", post));
     });
 
     // Add collection training promises
     untrainedItems.collections?.forEach((collection) => {
       trainingPromises.push(
-        trainContentItem(accessKey, "collection", collection).then(() => {
-          itemsStarted++;
-          const progress = Math.round((itemsStarted / totalItems) * 100);
-          setTrainingData((prev) => ({
-            ...prev,
-            progress,
-            message: `Training in progress: ${itemsStarted}/${totalItems} items complete`,
-          }));
-        }),
+        trainContentItem(accessKey, "collection", collection),
       );
     });
 
     // Add discount training promises
     untrainedItems.discounts?.forEach((discount) => {
-      trainingPromises.push(
-        trainContentItem(accessKey, "discount", discount).then(() => {
-          itemsStarted++;
-          const progress = Math.round((itemsStarted / totalItems) * 100);
-          setTrainingData((prev) => ({
-            ...prev,
-            progress,
-            message: `Training in progress: ${itemsStarted}/${totalItems} items complete`,
-          }));
-        }),
-      );
+      trainingPromises.push(trainContentItem(accessKey, "discount", discount));
     });
 
     // Wait for all training promises to complete
@@ -921,12 +664,6 @@ const trainUntrainedItems = async (
 
     // After all individual items are trained, train general if needed
     if (hasUntrainedItems && websiteId) {
-      setTrainingData((prev) => ({
-        ...prev,
-        message: "Training general QAs...",
-        progress: 95,
-      }));
-
       await fetch(`${urls.voiceroApi}/api/shopify/train/general`, {
         method: "POST",
         headers: {
@@ -944,19 +681,10 @@ const trainUntrainedItems = async (
     setUntrainedItems({
       products: [],
       pages: [],
-      posts: [], // Changed from blogPosts to posts
+      posts: [],
       collections: [],
       discounts: [],
     });
-
-    // Set final success state
-    setTrainingData((prev) => ({
-      ...prev,
-      status: "success",
-      progress: 100,
-      message: `Training complete! Your AI assistant is ready to use. Last synced: ${websiteData?.lastSyncedAt ? new Date(websiteData.lastSyncedAt).toLocaleString() : "Never"}`,
-      currentCategory: 5,
-    }));
 
     // Reload the page after training is complete
     setTimeout(() => {
@@ -964,11 +692,6 @@ const trainUntrainedItems = async (
     }, 2000);
   } catch (error) {
     console.error("Error during parallel training:", error);
-    setTrainingData((prev) => ({
-      ...prev,
-      status: "error",
-      message: `Training error: ${error.message}`,
-    }));
     throw error;
   }
 };
@@ -1008,7 +731,7 @@ const calculateTotalItems = (data) => {
   const counts = {
     products: data.products?.length || 0,
     pages: data.pages?.length || 0,
-    posts: data.posts?.length || 0, // Changed from blogPosts to posts
+    posts: data.posts?.length || 0,
     collections: data.collections?.length || 0,
     discounts: data.discounts?.length || 0,
   };
@@ -1038,7 +761,7 @@ const calculateEstimatedTime = (untrainedItems, currentCategory) => {
   const counts = {
     products: untrainedItems.products?.length || 0,
     pages: untrainedItems.pages?.length || 0,
-    posts: untrainedItems.posts?.length || 0, // Changed from blogPosts to posts
+    posts: untrainedItems.posts?.length || 0,
     collections: untrainedItems.collections?.length || 0,
     discounts: untrainedItems.discounts?.length || 0,
   };
@@ -1103,15 +826,13 @@ export default function Index() {
 
   // Group all state declarations together at the top
   const [accessKey, setAccessKey] = useState(savedKey || "");
-  const [trainingData, setTrainingData] = useState(null);
   const [untrainedItems, setUntrainedItems] = useState({
     products: [],
     pages: [],
-    posts: [], // Changed from blogPosts to posts
+    posts: [],
     collections: [],
     discounts: [],
   });
-  const [timeRemaining, setTimeRemaining] = useState(0);
   const [error, setError] = useState(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
@@ -1123,7 +844,7 @@ export default function Index() {
   const [itemsInTraining, setItemsInTraining] = useState({
     products: [],
     pages: [],
-    posts: [], // Changed from blogPosts to posts
+    posts: [],
     collections: [],
     discounts: [],
   });
@@ -1223,8 +944,8 @@ export default function Index() {
   // Helper to get training progress
   const getTrainingProgress = useCallback(() => {
     // If we have training data with a progress value, use it
-    if (trainingData?.progress) {
-      const progressValue = parseInt(trainingData.progress);
+    if (fetcher.data?.progress) {
+      const progressValue = parseInt(fetcher.data.progress);
       if (!isNaN(progressValue)) {
         return progressValue;
       }
@@ -1245,15 +966,15 @@ export default function Index() {
 
     // Ensure progress is between 0 and 100
     return Math.min(Math.max(progress, 0), 100);
-  }, [trainingData, untrainedItems, itemsInTraining]);
+  }, [fetcher.data, untrainedItems, itemsInTraining]);
 
   // Add useEffect to update time remaining
   useEffect(() => {
-    if (trainingData?.status === "processing") {
+    if (fetcher.data?.status === "processing") {
       // Calculate initial remaining time
       let remainingTime = calculateEstimatedTime(
         untrainedItems,
-        trainingData.currentCategory,
+        fetcher.data.currentCategory,
       );
 
       // Set initial time remaining
@@ -1277,7 +998,7 @@ export default function Index() {
       // Reset time remaining when not processing
       setTimeRemaining(0);
     }
-  }, [trainingData?.status, trainingData?.currentCategory, untrainedItems]);
+  }, [fetcher.data?.status, fetcher.data?.currentCategory, untrainedItems]);
 
   // Check for access_key in URL
   useEffect(() => {
@@ -1302,228 +1023,17 @@ export default function Index() {
     if (fetcher.data?.success && fetcher.data.accessKey) {
       setAccessKey(fetcher.data.accessKey);
 
-      // Only check status on initial load
-      const checkInitialStatus = async () => {
-        try {
-          const response = await fetch(
-            `${urls.voiceroApi}/api/shopify/train/status`,
-            {
-              method: "GET",
-              headers: {
-                "Content-Type": "application/json",
-                Accept: "application/json",
-                Authorization: `Bearer ${fetcher.data.accessKey}`,
-              },
-            },
-          );
+      // Check if we got a response with namespace data
+      if (fetcher.data?.namespace) {
+        setNamespace(fetcher.data.namespace);
+      }
+      // Check if we have namespace in VectorDbConfig
+      else if (fetcher.data?.websiteData?.VectorDbConfig?.namespace) {
+        const websiteNamespace =
+          fetcher.data?.websiteData?.VectorDbConfig?.namespace;
 
-          if (!response.ok) {
-            throw new Error(
-              `Failed to check training status: ${response.status}`,
-            );
-          }
-
-          const data = await response.json();
-
-          // Separate items into untrained and in-training
-          const untrained = {
-            products: [],
-            pages: [],
-            posts: [], // Changed from blogPosts to posts
-            collections: [],
-            discounts: [],
-          };
-
-          const inTraining = {
-            products: [],
-            pages: [],
-            posts: [], // Changed from blogPosts to posts
-            collections: [],
-            discounts: [],
-          };
-
-          // Process each category
-          Object.keys(data).forEach((category) => {
-            data[category].forEach((item) => {
-              if (item.isTraining) {
-                inTraining[category].push(item);
-              } else if (!item.trained) {
-                untrained[category].push(item);
-              }
-            });
-          });
-
-          // Update items in training state
-          setItemsInTraining(inTraining);
-          setUntrainedItems(untrained);
-
-          // Check if any items are currently being trained or need training
-          const hasItemsInTraining = Object.values(inTraining).some(
-            (items) => items.length > 0,
-          );
-          const hasUntrainedItems = Object.values(untrained).some(
-            (items) => items.length > 0,
-          );
-
-          // Show training banner if we have either items in training or untrained items
-          if (hasItemsInTraining || hasUntrainedItems) {
-            setTrainingData({
-              status: "processing",
-              progress: 0,
-              message: hasItemsInTraining
-                ? "Content training in progress..."
-                : "Content needs training...",
-              steps: [],
-              currentCategory: 0,
-              categories: [
-                "products",
-                "pages",
-                "posts",
-                "collections",
-                "discounts",
-              ],
-            });
-            setIsTraining(true);
-
-            // If we have untrained items and no items in training, start the training process
-            if (hasUntrainedItems && !hasItemsInTraining) {
-              try {
-                await trainUntrainedItems(
-                  fetcher.data.accessKey,
-                  untrained,
-                  setTrainingData,
-                  setUntrainedItems,
-                  fetcher.data.websiteData, // Pass websiteData as a parameter
-                );
-              } catch (error) {
-                console.error("Error training untrained items:", error);
-                setError(`Failed to train items: ${error.message}`);
-              }
-            }
-
-            // Set up polling to check status every 15 seconds
-            const pollStatus = async () => {
-              try {
-                const statusResponse = await fetch(
-                  `${urls.voiceroApi}/api/shopify/train/status`,
-                  {
-                    method: "GET",
-                    headers: {
-                      "Content-Type": "application/json",
-                      Accept: "application/json",
-                      Authorization: `Bearer ${fetcher.data.accessKey}`,
-                    },
-                  },
-                );
-
-                if (!statusResponse.ok) {
-                  throw new Error(
-                    `Failed to check training status: ${statusResponse.status}`,
-                  );
-                }
-
-                const statusData = await statusResponse.json();
-
-                // Process the status data
-                const polledUntrained = {
-                  products: [],
-                  pages: [],
-                  posts: [], // Changed from blogPosts to posts
-                  collections: [],
-                  discounts: [],
-                };
-
-                const polledInTraining = {
-                  products: [],
-                  pages: [],
-                  posts: [], // Changed from blogPosts to posts
-                  collections: [],
-                  discounts: [],
-                };
-
-                Object.keys(statusData).forEach((category) => {
-                  statusData[category].forEach((item) => {
-                    if (item.isTraining) {
-                      polledInTraining[category].push(item);
-                    } else if (!item.trained) {
-                      polledUntrained[category].push(item);
-                    }
-                  });
-                });
-
-                // Update states
-                setItemsInTraining(polledInTraining);
-                setUntrainedItems(polledUntrained);
-
-                // Check if everything is done
-                const stillInTraining = Object.values(polledInTraining).some(
-                  (items) => items.length > 0,
-                );
-                const stillUntrained = Object.values(polledUntrained).some(
-                  (items) => items.length > 0,
-                );
-
-                if (stillInTraining || stillUntrained) {
-                  setTimeout(pollStatus, 15000);
-                } else {
-                  setTrainingData({
-                    status: "success",
-                    progress: 100,
-                    message: `Training complete! Your AI assistant is ready to use. Last synced: ${fetcher.data?.websiteData?.lastSyncedAt ? new Date(fetcher.data?.websiteData?.lastSyncedAt).toLocaleString() : "Never"}`,
-                    currentCategory: 5,
-                  });
-                  setIsTraining(false);
-
-                  // Reload the page after training completes
-                  setTimeout(() => {
-                    window.location.href = "/app";
-                  }, 2000);
-                }
-              } catch (error) {
-                console.error("Error polling training status:", error);
-                setError(`Failed to check training status: ${error.message}`);
-              }
-            };
-
-            // Start polling
-            setTimeout(pollStatus, 15000);
-          } else {
-            // Only set success state if there are no items in training AND no untrained items
-
-            setTrainingData({
-              status: "success",
-              progress: 100,
-              message: `Training complete! Your AI assistant is ready to use. Last synced: ${fetcher.data?.websiteData?.lastSyncedAt ? new Date(fetcher.data?.websiteData?.lastSyncedAt).toLocaleString() : "Never"}`,
-              currentCategory: 5,
-            });
-            setIsTraining(false);
-          }
-
-          // Log the current state
-        } catch (error) {
-          console.error("Error checking initial training status:", error);
-          setError(`Failed to check training status: ${error.message}`);
-        }
-      };
-
-      // Only check status once on initial load
-      checkInitialStatus();
-    }
-
-    // Check if we got a response with namespace data
-    if (fetcher.data?.namespace) {
-      setNamespace(fetcher.data.namespace);
-    }
-    // Check if we have namespace in VectorDbConfig
-    else if (fetcher.data?.websiteData?.VectorDbConfig?.namespace) {
-      const websiteNamespace =
-        fetcher.data?.websiteData?.VectorDbConfig?.namespace;
-
-      setNamespace(websiteNamespace);
-    }
-
-    // Log the complete website data in a clean format
-    if (fetcher.data?.websiteData) {
+        setNamespace(websiteNamespace);
+      }
     }
   }, [fetcher.data]);
 
@@ -1625,7 +1135,6 @@ export default function Index() {
       // Reset all state
       setAccessKey("");
       setNamespace(null);
-      setTrainingData(null);
 
       // Clear any in-memory data
       if (fetcher) {
@@ -1665,7 +1174,6 @@ export default function Index() {
       setError("");
 
       // Step 1: Initial sync
-
       const syncInitResponse = await fetch("/api/sync", {
         method: "GET",
       });
@@ -1675,20 +1183,10 @@ export default function Index() {
       let data;
       try {
         data = JSON.parse(responseText);
-
-        // Log the complete data in a clean format
         console.log("Sync API Response:", data);
-
-        // Specifically log the pages data
         console.log("Pages data from sync:", data.pages);
-
-        // Log policy pages specifically
         const policyPages = data.pages.filter((page) => page.isPolicy);
         console.log("Policy pages from sync:", policyPages);
-
-        // If there's an error, log it in a more readable format
-        if (data.error) {
-        }
       } catch (e) {
         console.error("Failed to parse JSON response:", e);
         throw new Error(`Invalid JSON response: ${responseText}`);
@@ -1708,7 +1206,6 @@ export default function Index() {
       }
 
       // Step 2: Send data to backend
-
       const syncResponse = await fetch(`${urls.voiceroApi}/api/shopify/sync`, {
         method: "POST",
         headers: {
@@ -1733,7 +1230,6 @@ export default function Index() {
       }
 
       // Step 3: Start vectorization
-
       setLoadingText(
         "Vectorizing your store content... This may take a few minutes.",
       );
@@ -1781,7 +1277,6 @@ export default function Index() {
       }
 
       // Step 4: Create or get assistant
-
       setLoadingText("Setting up your AI assistant...");
       const assistantResponse = await fetch(
         `${urls.voiceroApi}/api/shopify/assistant`,
@@ -1814,38 +1309,19 @@ export default function Index() {
       }
 
       // After assistant setup, start individual training
-
       setIsTraining(true);
       setLoadingText("Starting content training process...");
-
-      // Initialize training state
-      setTrainingData({
-        status: "processing",
-        progress: 0,
-        message: "Preparing to train content...",
-        steps: [],
-        currentCategory: 0,
-        categories: ["products", "pages", "posts", "collections", "discounts"],
-      });
 
       // Use the parallel training approach
       await trainUntrainedItems(
         accessKey,
         assistantData.content,
-        setTrainingData,
         setUntrainedItems,
         assistantData.website,
       );
 
       // Step 5: Train general QAs
-
       setLoadingText("Training general QAs...");
-      setTrainingData((prev) => ({
-        ...prev,
-        status: "processing",
-        message: "Training general QAs...",
-        currentCategory: 5,
-      }));
 
       const generalTrainingResponse = await fetch(
         `${urls.voiceroApi}/api/shopify/train/general`,
@@ -1872,17 +1348,6 @@ export default function Index() {
         );
       }
 
-      const generalTrainingData = await generalTrainingResponse.json();
-
-      // Update training data to show completion
-      setTrainingData((prev) => ({
-        ...prev,
-        status: "success",
-        progress: 100,
-        message: `Training complete! Your AI assistant is ready to use. Last synced: ${fetcher.data?.websiteData?.lastSyncedAt ? new Date(fetcher.data?.websiteData?.lastSyncedAt).toLocaleString() : "Never"}`,
-        currentCategory: 6,
-      }));
-
       setLoadingText("Training complete! Your AI assistant is ready to use.");
       setIsSuccess(true);
       setIsSyncing(false);
@@ -1899,14 +1364,14 @@ export default function Index() {
 
   // Helper to get formatted training status message
   const getTrainingStatusMessage = useCallback(() => {
-    if (!trainingData) return "No training data available";
+    if (!fetcher.data) return "No training data available";
 
     // If there's a message, use it
-    if (trainingData.message) {
-      return trainingData.message;
+    if (fetcher.data.message) {
+      return fetcher.data.message;
     }
 
-    const { status, steps, currentCategory, categories } = trainingData;
+    const { status, steps, currentCategory, categories } = fetcher.data;
 
     if (
       status === "complete" ||
@@ -1931,7 +1396,7 @@ export default function Index() {
     }
 
     return progressMessage;
-  }, [trainingData]);
+  }, [fetcher.data]);
 
   const handleViewStatus = async () => {
     try {
@@ -1947,13 +1412,13 @@ export default function Index() {
       }
 
       // Show current data in a banner if we have it
-      if (trainingData) {
+      if (fetcher.data) {
         // Display status in a banner
         setError(
           <Banner status="info" onDismiss={() => setError("")}>
             <p>Assistant Status:</p>
             <pre style={{ whiteSpace: "pre-wrap" }}>
-              {JSON.stringify(trainingData, null, 2)}
+              {JSON.stringify(fetcher.data, null, 2)}
             </pre>
           </Banner>,
         );
@@ -1975,7 +1440,7 @@ export default function Index() {
   return (
     <Page>
       {/* Training Status Banner */}
-      {trainingData && trainingData.status === "processing" && (
+      {fetcher.data?.status === "processing" && (
         <Box paddingBlockEnd="400">
           <div
             style={{
