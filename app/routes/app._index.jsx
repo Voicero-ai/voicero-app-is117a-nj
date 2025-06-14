@@ -1644,7 +1644,7 @@ export default function Index() {
           {/* Main Content */}
           <BlockStack gap="600">
             {/* NEW: Contacts Card - Add this before the Content Overview section */}
-            {accessKey && fetcher.data?.success && (
+            {accessKey && fetcher.data?.success && contactsData.length > 0 && (
               <div
                 style={{
                   backgroundColor: "white",
@@ -1667,10 +1667,6 @@ export default function Index() {
                   <InlineStack gap="400" blockAlign="center">
                     {isLoadingContacts ? (
                       <Spinner size="small" />
-                    ) : contactsError ? (
-                      <Text variant="bodyMd" color="critical">
-                        Error loading contacts
-                      </Text>
                     ) : (
                       <>
                         {unreadContacts > 0 && (
@@ -1912,12 +1908,14 @@ export default function Index() {
                           </Text>
                           <InlineStack gap="200" blockAlign="baseline">
                             <Text variant="headingMd" fontWeight="semibold">
-                              {fetcher.data?.websiteData?.monthlyQueries}
+                              {fetcher.data?.websiteData?.plan === "Starter"
+                                ? "1000"
+                                : fetcher.data?.websiteData?.monthlyQueries}
                             </Text>
                             <Text variant="bodySm" color="subdued">
                               {fetcher.data?.websiteData?.plan === "Enterprise"
                                 ? "/ Unlimited"
-                                : `/ ${fetcher.data?.websiteData?.queryLimit}`}
+                                : `/ ${fetcher.data?.websiteData?.plan === "Starter" ? "1000" : fetcher.data?.websiteData?.queryLimit}`}
                             </Text>
                           </InlineStack>
                         </BlockStack>
