@@ -686,10 +686,10 @@ const trainUntrainedItems = async (
       discounts: [],
     });
 
-    // Reload the page after training is complete
-    setTimeout(() => {
-      window.location.href = "/app";
-    }, 2000);
+    // Remove the automatic page reload
+    // setTimeout(() => {
+    //   window.location.href = "/app";
+    // }, 2000);
   } catch (error) {
     console.error("Error during parallel training:", error);
     throw error;
@@ -1473,9 +1473,56 @@ export default function Index() {
                 </div>
               </InlineStack>
 
-              <Text variant="bodyMd" color="subdued">
-                {getTrainingStatusMessage()}
-              </Text>
+              <BlockStack gap="200">
+                <Text variant="bodyMd" color="subdued">
+                  {getTrainingStatusMessage()}
+                </Text>
+
+                {/* Add detailed status information */}
+                {loadingText && (
+                  <Text variant="bodyMd" color="subdued">
+                    {loadingText}
+                  </Text>
+                )}
+
+                {/* Show item counts if available */}
+                {untrainedItems && (
+                  <div style={{ marginTop: "8px" }}>
+                    <Text variant="bodyMd" color="subdued">
+                      Items being processed:
+                    </Text>
+                    <InlineStack gap="400" wrap={false}>
+                      {Object.entries(untrainedItems).map(([type, items]) => {
+                        if (items.length > 0) {
+                          return (
+                            <div
+                              key={type}
+                              style={{
+                                backgroundColor: "#F4F6F8",
+                                padding: "4px 8px",
+                                borderRadius: "4px",
+                                fontSize: "13px",
+                              }}
+                            >
+                              {type.charAt(0).toUpperCase() + type.slice(1)}:{" "}
+                              {items.length}
+                            </div>
+                          );
+                        }
+                        return null;
+                      })}
+                    </InlineStack>
+                  </div>
+                )}
+
+                {/* Show estimated time remaining */}
+                {timeRemaining > 0 && (
+                  <Text variant="bodyMd" color="subdued">
+                    Estimated time remaining:{" "}
+                    {formatTimeRemaining(timeRemaining)}
+                  </Text>
+                )}
+              </BlockStack>
 
               {/* Progress Bar */}
               <div
@@ -1498,15 +1545,6 @@ export default function Index() {
                   }}
                 />
               </div>
-
-              <InlineStack align="space-between">
-                <Text variant="bodySm" color="subdued">
-                  Estimated time remaining: {formatTimeRemaining(timeRemaining)}
-                </Text>
-                <Text variant="bodySm" color="subdued">
-                  Please keep this page open
-                </Text>
-              </InlineStack>
             </BlockStack>
           </div>
         </Box>
