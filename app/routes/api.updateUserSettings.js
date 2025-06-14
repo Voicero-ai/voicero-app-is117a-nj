@@ -1,8 +1,8 @@
-export const dynamic = "force-dynamic";
-
-import { authenticate } from "../shopify.server";
 import { json } from "@remix-run/node";
-import { urls } from "~/utils/urls";
+import { authenticate } from "../shopify.server";
+import urls from "../config/urls";
+
+export const dynamic = "force-dynamic";
 
 export async function action({ request }) {
   const { admin } = await authenticate.admin(request);
