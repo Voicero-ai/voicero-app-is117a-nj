@@ -1908,14 +1908,14 @@ export default function Index() {
                           </Text>
                           <InlineStack gap="200" blockAlign="baseline">
                             <Text variant="headingMd" fontWeight="semibold">
-                              {fetcher.data?.websiteData?.plan === "Starter"
-                                ? "1000"
-                                : fetcher.data?.websiteData?.monthlyQueries}
+                              {fetcher.data?.websiteData?.monthlyQueries}
                             </Text>
                             <Text variant="bodySm" color="subdued">
                               {fetcher.data?.websiteData?.plan === "Enterprise"
                                 ? "/ Unlimited"
-                                : `/ ${fetcher.data?.websiteData?.plan === "Starter" ? "1000" : fetcher.data?.websiteData?.queryLimit}`}
+                                : fetcher.data?.websiteData?.plan === "Starter"
+                                  ? "/ 1000"
+                                  : `/ ${fetcher.data?.websiteData?.queryLimit}`}
                             </Text>
                           </InlineStack>
                         </BlockStack>
@@ -2209,6 +2209,16 @@ export default function Index() {
                         >
                           {isSyncing ? "Syncing..." : "Sync Content"}
                         </Button>
+                        {isSyncing && (
+                          <Text
+                            variant="bodySm"
+                            color="subdued"
+                            style={{ marginTop: 8 }}
+                          >
+                            {syncStatusText ||
+                              "Syncing content... Please wait."}
+                          </Text>
+                        )}
                       </InlineStack>
 
                       {/* Content Type Stats */}
