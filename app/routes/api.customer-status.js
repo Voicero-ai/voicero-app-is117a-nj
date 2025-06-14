@@ -1,6 +1,8 @@
-import { json } from "@remix-run/node";
-import { authenticate } from "../shopify.server";
 export const dynamic = "force-dynamic";
+
+import { authenticate } from "../shopify.server";
+import { json } from "@remix-run/node";
+import { urls } from "~/utils/urls";
 
 /**
  * API endpoint to check if a customer is logged in

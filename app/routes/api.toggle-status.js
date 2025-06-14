@@ -1,4 +1,8 @@
+export const dynamic = "force-dynamic";
+
+import { authenticate } from "../shopify.server";
 import { json } from "@remix-run/node";
+import { urls } from "~/utils/urls";
 import urls from "../config/urls";
 
 export async function action({ request }) {

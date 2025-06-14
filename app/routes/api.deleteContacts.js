@@ -1,8 +1,8 @@
-import { json } from "@remix-run/node";
-import { authenticate } from "../shopify.server";
-import urls from "../config/urls";
-
 export const dynamic = "force-dynamic";
+
+import { authenticate } from "../shopify.server";
+import { json } from "@remix-run/node";
+import { urls } from "~/utils/urls";
 
 export async function action({ request }) {
   const { admin } = await authenticate.admin(request);
@@ -35,15 +35,18 @@ export async function action({ request }) {
     }
 
     // Call the API to delete contact
-    const response = await fetch(`${urls.voiceroApi}/api/shopify/deleteContacts`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        Authorization: `Bearer ${accessKey}`,
+    const response = await fetch(
+      `${urls.voiceroApi}/api/shopify/deleteContacts`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${accessKey}`,
+        },
+        body: JSON.stringify({ id }),
       },
-      body: JSON.stringify({ id }),
-    });
+    );
 
     if (!response.ok) {
       const errorData = await response.json();

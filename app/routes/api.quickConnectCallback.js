@@ -1,17 +1,16 @@
+export const dynamic = "force-dynamic";
+
 import { authenticate } from "../shopify.server";
 import { json, redirect } from "@remix-run/node";
-
-export const dynamic = "force-dynamic";
+import { urls } from "~/utils/urls";
 
 export async function action({ request }) {
   const { admin, session } = await authenticate.admin(request);
-
 
   try {
     // Parse the form data from the request
     const formData = await request.formData();
     const accessKey = formData.get("access_key");
-
 
     if (!accessKey) {
       console.error("No access key received in callback");
