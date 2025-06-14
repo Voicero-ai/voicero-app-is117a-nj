@@ -851,6 +851,7 @@ export default function Index() {
   const [extendedWebsiteData, setExtendedWebsiteData] = useState(null);
   const [isLoadingExtendedData, setIsLoadingExtendedData] = useState(false);
   const [selectedContentTab, setSelectedContentTab] = useState(0);
+  const [timeRemaining, setTimeRemaining] = useState(0);
 
   // State for UI and data
   const fetcher = useFetcher();
