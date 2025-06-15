@@ -1497,20 +1497,70 @@ export default function Index() {
         "Training complete! Please refresh the page to see your changes.",
       );
       setIsSuccess(true);
-      setIsSyncing(false);
+
+      // Set syncing to false after a delay to ensure notifications are shown
+      setTimeout(() => {
+        setIsSyncing(false);
+      }, 2000);
 
       // Create a banner with refresh instructions
       setError(
         <Banner status="success" onDismiss={() => setError("")}>
           <p>
             Training complete!{" "}
-            <Button onClick={() => window.location.reload()}>
+            <Button onClick={() => window.location.reload()} primary>
               Refresh Page
             </Button>{" "}
             to see your changes.
           </p>
         </Banner>,
       );
+
+      // Show a full-page refresh notification overlay
+      document.body.insertAdjacentHTML(
+        "beforeend",
+        `<div id="refresh-overlay" style="
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-color: rgba(0, 0, 0, 0.7);
+          z-index: 9999;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        ">
+          <div style="
+            background-color: white;
+            border-radius: 8px;
+            padding: 32px;
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+          ">
+            <div style="font-size: 24px; font-weight: bold; margin-bottom: 16px;">Training Complete!</div>
+            <p style="font-size: 16px; margin-bottom: 24px;">Please refresh the page to see your updated content and AI assistant.</p>
+            <button id="refresh-button" style="
+              background-color: #008060;
+              color: white;
+              border: none;
+              padding: 12px 24px;
+              border-radius: 4px;
+              font-size: 16px;
+              font-weight: bold;
+              cursor: pointer;
+            ">Refresh Page</button>
+          </div>
+        </div>`,
+      );
+
+      // Add event listener to refresh button
+      document
+        .getElementById("refresh-button")
+        .addEventListener("click", () => {
+          window.location.reload();
+        });
     } catch (error) {
       console.error("Sync process failed:", error);
       setError(
@@ -1540,6 +1590,57 @@ export default function Index() {
       status === "success" ||
       status === "finished"
     ) {
+      // Show refresh notification if status is complete
+      setTimeout(() => {
+        // Create a banner with refresh instructions if it doesn't exist
+        if (!document.getElementById("refresh-overlay")) {
+          document.body.insertAdjacentHTML(
+            "beforeend",
+            `<div id="refresh-overlay" style="
+              position: fixed;
+              top: 0;
+              left: 0;
+              right: 0;
+              bottom: 0;
+              background-color: rgba(0, 0, 0, 0.7);
+              z-index: 9999;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            ">
+              <div style="
+                background-color: white;
+                border-radius: 8px;
+                padding: 32px;
+                max-width: 500px;
+                text-align: center;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+              ">
+                <div style="font-size: 24px; font-weight: bold; margin-bottom: 16px;">Training Complete!</div>
+                <p style="font-size: 16px; margin-bottom: 24px;">Please refresh the page to see your updated content and AI assistant.</p>
+                <button id="refresh-button-status" style="
+                  background-color: #008060;
+                  color: white;
+                  border: none;
+                  padding: 12px 24px;
+                  border-radius: 4px;
+                  font-size: 16px;
+                  font-weight: bold;
+                  cursor: pointer;
+                ">Refresh Page</button>
+              </div>
+            </div>`,
+          );
+
+          // Add event listener
+          document
+            .getElementById("refresh-button-status")
+            .addEventListener("click", () => {
+              window.location.reload();
+            });
+        }
+      }, 1000);
+
       return "Training process complete! Please refresh the page to see your changes.";
     }
 
