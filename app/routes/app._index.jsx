@@ -1908,7 +1908,7 @@ export default function Index() {
                           </Text>
                           <InlineStack gap="200" blockAlign="baseline">
                             <Text variant="headingMd" fontWeight="semibold">
-                              {fetcher.data?.websiteData?.monthlyQueries}
+                              {fetcher.data?.websiteData?.monthlyQueries || 0}
                             </Text>
                             <Text variant="bodySm" color="subdued">
                               {fetcher.data?.websiteData?.plan === "beta"
@@ -1919,7 +1919,7 @@ export default function Index() {
                                   : fetcher.data?.websiteData?.plan ===
                                       "starter"
                                     ? "/ 1000"
-                                    : `/ ${fetcher.data?.websiteData?.queryLimit}`}
+                                    : `/ ${fetcher.data?.websiteData?.queryLimit || 0}`}
                             </Text>
                           </InlineStack>
                         </BlockStack>

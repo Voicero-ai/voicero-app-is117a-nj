@@ -1297,6 +1297,7 @@ export default function SettingsPage() {
             {websiteData.plan || "Free"}
           </span>
         </div>
+
         <div style={styles.infoRow}>
           <span style={styles.label}>Price:</span>
           <span>
@@ -1304,23 +1305,12 @@ export default function SettingsPage() {
               ? "Free (Unlimited Queries)"
               : websiteData.plan === "starter"
                 ? "$120/month"
-                : websiteData.plan === "enterprise"
-                  ? "$0.10 per query"
-                  : "Free"}
+              : websiteData.plan === "enterprise"
+                ? "$0.10 per query"
+                : "Free"}
           </span>
         </div>
-        <div style={styles.infoRow}>
-          <span style={styles.label}>Query Limit:</span>
-          <span>
-            {websiteData.plan === "beta"
-              ? "Unlimited"
-              : websiteData.plan === "starter"
-                ? "1,000 queries/month"
-                : websiteData.plan === "enterprise"
-                  ? "Pay per query"
-                  : "Limited"}
-          </span>
-        </div>
+
         <div style={styles.infoRow}>
           <span style={styles.label}>Last Synced:</span>
           <span>
