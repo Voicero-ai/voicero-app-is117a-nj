@@ -656,71 +656,103 @@ const trainUntrainedItems = async (
       // This could be used to update a progress state if needed
     };
 
-    // Process each category in batches
-    const categories = [
+    // Create a flattened array of all untrained items with their category information
+    const allItems = [];
+
+    // Add all items to the combined array with their category information
+    for (const category of [
       "products",
       "pages",
       "posts",
       "collections",
       "discounts",
-    ];
-    for (const category of categories) {
-      // Skip if no items in this category
-      if (remainingItems[category].length === 0) continue;
+    ]) {
+      remainingItems[category].forEach((item) => {
+        allItems.push({
+          category,
+          item,
+          type: category === "posts" ? "post" : category.slice(0, -1), // Convert plural to singular
+        });
+      });
+    }
 
-      console.log(
-        `Starting batch processing for ${category}: ${remainingItems[category].length} items`,
+    console.log(
+      `Combined ${allItems.length} items for training in batches of 12`,
+    );
+
+    // Process all items in batches of 12 regardless of category
+    while (allItems.length > 0) {
+      // Get the next batch of up to 12 items
+      const batchItems = allItems.splice(0, 12);
+
+      console.log(`Processing batch of ${batchItems.length} mixed items`);
+
+      // Create tracking objects for this batch
+      const batchByCategory = {
+        products: [],
+        pages: [],
+        posts: [],
+        collections: [],
+        discounts: [],
+      };
+
+      // Sort the batch items into their respective categories
+      batchItems.forEach(({ category, item }) => {
+        batchByCategory[category].push(item);
+      });
+
+      // Create an array of promises for this batch
+      const batchPromises = batchItems.map(({ item, type }) =>
+        trainContentItem(accessKey, type, item),
       );
 
-      // Process this category in batches of 12
-      while (remainingItems[category].length > 0) {
-        // Get the next batch of items (up to 12)
-        const batch = remainingItems[category].splice(0, 12);
+      // Wait for all promises in this batch to complete
+      await Promise.all(batchPromises);
 
-        console.log(`Processing batch of ${batch.length} ${category}`);
+      // Update progress
+      processedItems += batchItems.length;
+      updateProgress();
 
-        // Create an array of promises for this batch
-        const batchPromises = batch.map((item) =>
-          trainContentItem(
-            accessKey,
-            category === "posts" ? "post" : category.slice(0, -1),
-            item,
-          ),
-        );
+      // Update the remaining items for each category
+      const processedIds = {};
+      batchItems.forEach(({ category, item }) => {
+        if (!processedIds[category]) {
+          processedIds[category] = [];
+        }
+        processedIds[category].push(item.id);
+      });
 
-        // Wait for all promises in this batch to complete
-        await Promise.all(batchPromises);
+      // Update the UI states after each batch
+      setUntrainedItems((prev) => {
+        const updated = { ...prev };
 
-        // Update progress
-        processedItems += batch.length;
-        updateProgress();
-
-        // Update the UI states after each batch
-        setUntrainedItems((prev) => {
-          // Create a copy of the current state
-          const updated = { ...prev };
-          // Update the specific category with remaining items
-          updated[category] = [...remainingItems[category]];
-          return updated;
-        });
-
-        // Update items in training to remove the processed batch
-        setItemsInTraining((prev) => {
-          const updated = { ...prev };
-          // Remove processed batch items from itemsInTraining
-          const itemIds = batch.map((item) => item.id);
+        // Update each category with filtered remaining items
+        for (const category in processedIds) {
+          const categoryIds = processedIds[category];
           updated[category] = prev[category].filter(
-            (item) => !itemIds.includes(item.id),
+            (item) => !categoryIds.includes(item.id),
           );
-          return updated;
-        });
+        }
 
-        console.log(
-          `Completed batch. ${remainingItems[category].length} ${category} remaining`,
-        );
-      }
+        return updated;
+      });
 
-      console.log(`Finished processing all ${category}`);
+      // Update items in training to remove the processed batch
+      setItemsInTraining((prev) => {
+        const updated = { ...prev };
+
+        // Remove processed items from each category
+        for (const category in processedIds) {
+          const categoryIds = processedIds[category];
+          updated[category] = prev[category].filter(
+            (item) => !categoryIds.includes(item.id),
+          );
+        }
+
+        return updated;
+      });
+
+      console.log(`Completed batch. ${allItems.length} total items remaining`);
     }
 
     // After all individual items are trained, train general if needed
@@ -1496,7 +1528,7 @@ export default function Index() {
     }
 
     if (!steps || !steps.length) {
-      // Calculate remaining items
+      // Calculate remaining items across all categories
       let remainingCount = 0;
       Object.values(untrainedItems).forEach((items) => {
         if (Array.isArray(items)) {
@@ -1505,7 +1537,27 @@ export default function Index() {
       });
 
       if (remainingCount > 0) {
-        return `Processing items in batches of 12... ${remainingCount} items remaining.`;
+        // Format item breakdown by category if available
+        let categoryBreakdown = "";
+        const categoryNames = {
+          products: "products",
+          pages: "pages",
+          posts: "posts",
+          collections: "collections",
+          discounts: "discounts",
+        };
+
+        const nonEmptyCategories = Object.entries(untrainedItems)
+          .filter(([_, items]) => Array.isArray(items) && items.length > 0)
+          .map(
+            ([category, items]) => `${items.length} ${categoryNames[category]}`,
+          );
+
+        if (nonEmptyCategories.length > 0) {
+          categoryBreakdown = ` (${nonEmptyCategories.join(", ")})`;
+        }
+
+        return `Processing items in batches of 12... ${remainingCount} items remaining${categoryBreakdown}.`;
       }
 
       return "Training in progress...";
