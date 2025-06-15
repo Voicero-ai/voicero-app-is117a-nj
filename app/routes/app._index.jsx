@@ -969,6 +969,7 @@ export default function Index() {
   const [selectedContentTab, setSelectedContentTab] = useState(0);
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [syncStatusText, setSyncStatusText] = useState("");
+  const [showActivationGuide, setShowActivationGuide] = useState(false);
 
   // State for UI and data
   const fetcher = useFetcher();
@@ -1461,8 +1462,8 @@ export default function Index() {
       );
 
       // Step 5: Train general QAs
-      setLoadingText("Training general QAs...");
-      setSyncStatusText("Training general QAs...");
+      setLoadingText("Wrapping up training...");
+      setSyncStatusText("Wrapping up training...");
 
       const generalTrainingResponse = await fetch(
         `${urls.voiceroApi}/api/shopify/train/general`,
@@ -1982,48 +1983,74 @@ export default function Index() {
                               Upgrade Now
                             </Button>
                           ) : (
-                            <Button
-                              size="slim"
-                              onClick={() => {
-                                fetch("/api/toggle-status", {
-                                  method: "POST",
-                                  headers: {
-                                    "Content-Type": "application/json",
-                                  },
-                                  body: JSON.stringify({
-                                    accessKey: accessKey.trim(),
-                                  }),
-                                })
-                                  .then((response) => {
-                                    if (!response.ok) {
-                                      throw new Error(
-                                        `HTTP error! status: ${response.status}`,
-                                      );
-                                    }
-                                    fetcher.submit(
-                                      { accessKey, action: "manual_connect" },
-                                      { method: "POST" },
-                                    );
+                            <>
+                              <Button
+                                size="slim"
+                                onClick={() => {
+                                  fetch("/api/toggle-status", {
+                                    method: "POST",
+                                    headers: {
+                                      "Content-Type": "application/json",
+                                    },
+                                    body: JSON.stringify({
+                                      accessKey: accessKey.trim(),
+                                    }),
                                   })
-                                  .catch((error) => {
-                                    console.error(
-                                      "Error toggling status:",
-                                      error,
-                                    );
-                                    setError("Failed to toggle website status");
-                                  });
-                              }}
-                              disabled={
-                                !fetcher.data?.websiteData?.lastSyncedAt ||
+                                    .then((response) => {
+                                      if (!response.ok) {
+                                        throw new Error(
+                                          `HTTP error! status: ${response.status}`,
+                                        );
+                                      }
+                                      // If activating (not deactivating), show activation guide
+                                      if (!fetcher.data?.websiteData?.active) {
+                                        setShowActivationGuide(true);
+                                      }
+                                      fetcher.submit(
+                                        { accessKey, action: "manual_connect" },
+                                        { method: "POST" },
+                                      );
+                                    })
+                                    .catch((error) => {
+                                      console.error(
+                                        "Error toggling status:",
+                                        error,
+                                      );
+                                      setError(
+                                        "Failed to toggle website status",
+                                      );
+                                    });
+                                }}
+                                disabled={
+                                  !fetcher.data?.websiteData?.lastSyncedAt ||
+                                  fetcher.data?.websiteData?.lastSyncedAt ===
+                                    "Never" ||
+                                  !fetcher.data?.websiteData?.plan
+                                }
+                              >
+                                {fetcher.data?.websiteData?.active
+                                  ? "Deactivate"
+                                  : "Activate"}
+                              </Button>
+                              {(!fetcher.data?.websiteData?.lastSyncedAt ||
                                 fetcher.data?.websiteData?.lastSyncedAt ===
-                                  "Never" ||
-                                !fetcher.data?.websiteData?.plan
-                              }
-                            >
-                              {fetcher.data?.websiteData?.active
-                                ? "Deactivate"
-                                : "Activate"}
-                            </Button>
+                                  "Never") &&
+                                !fetcher.data?.websiteData?.active && (
+                                  <div
+                                    style={{
+                                      marginTop: "8px",
+                                      backgroundColor: "#FFF4E4",
+                                      padding: "4px 8px",
+                                      borderRadius: "4px",
+                                      fontSize: "12px",
+                                    }}
+                                  >
+                                    <Text variant="bodySm" tone="warning">
+                                      Sync your content before activating
+                                    </Text>
+                                  </div>
+                                )}
+                            </>
                           )}
                         </InlineStack>
                       </InlineStack>
@@ -3150,6 +3177,79 @@ export default function Index() {
           </BlockStack>
         </Layout.Section>
       </Layout>
+
+      {/* Activation Guide Banner */}
+      {showActivationGuide && (
+        <div
+          style={{
+            position: "fixed",
+            top: "0",
+            left: "0",
+            right: "0",
+            backgroundColor: "#F0F7FF",
+            padding: "16px",
+            zIndex: "100",
+            borderBottom: "1px solid #B3D7FF",
+            boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+          }}
+        >
+          <div style={{ maxWidth: "1000px", margin: "0 auto" }}>
+            <InlineStack align="space-between" blockAlign="center">
+              <InlineStack gap="300" blockAlign="center">
+                <Icon source={InfoIcon} color="highlight" />
+                <Text variant="bodyMd" fontWeight="semibold">
+                  Complete Setup: Add the Assistant to Your Theme
+                </Text>
+              </InlineStack>
+              <Button
+                size="slim"
+                plain
+                onClick={() => setShowActivationGuide(false)}
+                icon={
+                  <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                    <path
+                      d="M13.4143 6.58579C13.7043 6.29529 14.1791 6.29529 14.4696 6.58579C14.7601 6.87628 14.7601 7.35114 14.4696 7.64164L11.1157 10.9956L14.4696 14.3495C14.7601 14.64 14.7601 15.1149 14.4696 15.4054C14.1791 15.6959 13.7043 15.6959 13.4143 15.4054L10.0604 12.0515L6.70651 15.4054C6.41602 15.6959 5.94115 15.6959 5.65066 15.4054C5.36016 15.1149 5.36016 14.64 5.65066 14.3495L9.00457 10.9956L5.65066 7.64164C5.36016 7.35114 5.36016 6.87628 5.65066 6.58579C5.94115 6.29529 6.41602 6.29529 6.70651 6.58579L10.0604 9.93969L13.4143 6.58579Z"
+                      fill="currentColor"
+                    />
+                  </svg>
+                }
+              />
+            </InlineStack>
+
+            <div style={{ marginTop: "12px" }}>
+              <Text variant="bodyMd">
+                To finish setup and display your AI assistant on your store,
+                follow these steps:
+              </Text>
+              <ol style={{ marginTop: "12px", paddingLeft: "24px" }}>
+                <li style={{ marginBottom: "8px" }}>
+                  <Text variant="bodyMd">
+                    Go to <strong>Online Store</strong> →{" "}
+                    <strong>Themes</strong> in your Shopify admin
+                  </Text>
+                </li>
+                <li style={{ marginBottom: "8px" }}>
+                  <Text variant="bodyMd">
+                    Click the <strong>Customize</strong> button on your active
+                    theme
+                  </Text>
+                </li>
+                <li style={{ marginBottom: "8px" }}>
+                  <Text variant="bodyMd">
+                    In the sidebar, click <strong>App embeds</strong>
+                  </Text>
+                </li>
+                <li>
+                  <Text variant="bodyMd">
+                    Find <strong>Voicero AI Assistant</strong> and toggle it{" "}
+                    <strong>ON</strong>
+                  </Text>
+                </li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      )}
     </Page>
   );
 }
