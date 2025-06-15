@@ -1911,13 +1911,13 @@ export default function Index() {
                               {fetcher.data?.websiteData?.monthlyQueries || 0}
                             </Text>
                             <Text variant="bodySm" color="subdued">
-                              {fetcher.data?.websiteData?.plan === "beta"
+                              {fetcher.data?.websiteData?.plan === "Beta"
                                 ? "/ Unlimited"
                                 : fetcher.data?.websiteData?.plan ===
-                                    "enterprise"
+                                    "Enterprise"
                                   ? "/ Pay per query"
                                   : fetcher.data?.websiteData?.plan ===
-                                      "starter"
+                                      "Starter"
                                     ? "/ 1000"
                                     : `/ ${fetcher.data?.websiteData?.queryLimit || 0}`}
                             </Text>

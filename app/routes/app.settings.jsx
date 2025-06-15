@@ -1301,11 +1301,11 @@ export default function SettingsPage() {
         <div style={styles.infoRow}>
           <span style={styles.label}>Price:</span>
           <span>
-            {websiteData.plan === "beta"
+            {websiteData.plan === "Beta"
               ? "Free (Unlimited Queries)"
-              : websiteData.plan === "starter"
+              : websiteData.plan === "Starter"
                 ? "$120/month"
-              : websiteData.plan === "enterprise"
+              : websiteData.plan === "Enterprise"
                 ? "$0.10 per query"
                 : "Free"}
           </span>
