@@ -356,11 +356,24 @@ export default function AIOverviewPage() {
 
   // Calculate usage percentages - use the correct property names
   const monthlyUsage = websiteData?.monthlyQueries || 0;
-  const monthlyQuota = websiteData?.queryLimit || 1000;
-  const isEnterprisePlan = websiteData?.plan === "enterprise";
-  const isBetaPlan = websiteData?.plan === "beta";
+
+  // Check for plan type with proper capitalization
+  const isPlan = (plan) =>
+    websiteData?.plan?.toLowerCase() === plan.toLowerCase();
+  const isEnterprisePlan = isPlan("Enterprise");
+  const isBetaPlan = isPlan("Beta");
+  const isStarterPlan = isPlan("Starter");
+
+  // Determine quota based on plan
+  let monthlyQuota = 1000; // Default for Starter plan
+  if (isEnterprisePlan) {
+    monthlyQuota = "Unlimited"; // Enterprise has pay-per-query
+  } else if (isBetaPlan) {
+    monthlyQuota = "Unlimited"; // Beta has unlimited
+  }
+
   const usagePercentage =
-    isEnterprisePlan || isBetaPlan
+    isEnterprisePlan || isBetaPlan || monthlyQuota === "Unlimited"
       ? 0
       : Math.min(100, (monthlyUsage / monthlyQuota) * 100);
 
@@ -695,7 +708,12 @@ export default function AIOverviewPage() {
                         <Text as="p" variant="bodyMd" fontWeight="bold">
                           Current Plan:
                         </Text>
-                        <Badge>{websiteData?.plan || "Basic"}</Badge>
+                        <Badge>
+                          {websiteData?.plan
+                            ? websiteData.plan.charAt(0).toUpperCase() +
+                              websiteData.plan.slice(1)
+                            : "Basic"}
+                        </Badge>
                       </InlineStack>
                     </BlockStack>
                   </InlineStack>
