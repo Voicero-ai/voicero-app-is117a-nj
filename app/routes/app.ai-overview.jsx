@@ -357,10 +357,12 @@ export default function AIOverviewPage() {
   // Calculate usage percentages - use the correct property names
   const monthlyUsage = websiteData?.monthlyQueries || 0;
   const monthlyQuota = websiteData?.queryLimit || 1000;
-  const isEnterprisePlan = websiteData?.plan === "Enterprise";
-  const usagePercentage = isEnterprisePlan
-    ? 0
-    : Math.min(100, (monthlyUsage / monthlyQuota) * 100);
+  const isEnterprisePlan = websiteData?.plan === "enterprise";
+  const isBetaPlan = websiteData?.plan === "beta";
+  const usagePercentage =
+    isEnterprisePlan || isBetaPlan
+      ? 0
+      : Math.min(100, (monthlyUsage / monthlyQuota) * 100);
 
   if (disconnected) {
     return null; // Don't render anything while redirecting
@@ -406,7 +408,7 @@ export default function AIOverviewPage() {
                       Monthly Query Usage
                     </Text>
                   </InlineStack>
-                  {!isEnterprisePlan && (
+                  {!isEnterprisePlan && !isBetaPlan && (
                     <Badge
                       status={usagePercentage < 90 ? "success" : "critical"}
                     >
@@ -420,10 +422,14 @@ export default function AIOverviewPage() {
                     <BlockStack gap="400">
                       <Text variant="headingLg" as="h2" alignment="center">
                         {monthlyUsage} /{" "}
-                        {isEnterprisePlan ? "Unlimited" : monthlyQuota} queries
-                        used this month
+                        {isBetaPlan
+                          ? "Unlimited"
+                          : isEnterprisePlan
+                            ? "Pay per query"
+                            : monthlyQuota}{" "}
+                        queries used this month
                       </Text>
-                      {!isEnterprisePlan && (
+                      {!isEnterprisePlan && !isBetaPlan && (
                         <div>
                           <CustomProgressBar
                             progress={usagePercentage}
@@ -432,11 +438,13 @@ export default function AIOverviewPage() {
                         </div>
                       )}
                       <Text variant="bodyMd" as="p" alignment="center">
-                        {isEnterprisePlan
-                          ? "Enterprise plan includes unlimited queries"
-                          : 100 - usagePercentage > 0
-                            ? `${(100 - usagePercentage).toFixed(1)}% remaining`
-                            : "Quota exceeded"}
+                        {isBetaPlan
+                          ? "Beta plan includes unlimited queries"
+                          : isEnterprisePlan
+                            ? "Enterprise plan includes pay-per-query pricing"
+                            : 100 - usagePercentage > 0
+                              ? `${(100 - usagePercentage).toFixed(1)}% remaining`
+                              : "Quota exceeded"}
                       </Text>
                     </BlockStack>
                   </Box>

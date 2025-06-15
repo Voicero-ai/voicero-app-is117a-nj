@@ -805,7 +805,7 @@ export default function CustomizeChatbotPage() {
                       label="Remove highlighting from AI answers"
                       checked={removeHighlight}
                       onChange={setRemoveHighlight}
-                      helpText="When enabled, color highlighting will be removed from AI responses"
+                      helpText="When enabled, color highlighting will be removed from Chooser"
                     />
 
                     <InlineStack gap="400" blockAlign="center">
