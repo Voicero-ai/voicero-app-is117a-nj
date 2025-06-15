@@ -1490,12 +1490,27 @@ export default function Index() {
         );
       }
 
-      setLoadingText("Training complete! Your AI assistant is ready to use.");
+      setLoadingText(
+        "Training complete! Please refresh the page to see your changes.",
+      );
       setSyncStatusText(
-        "Training complete! Your AI assistant is ready to use.",
+        "Training complete! Please refresh the page to see your changes.",
       );
       setIsSuccess(true);
       setIsSyncing(false);
+
+      // Create a banner with refresh instructions
+      setError(
+        <Banner status="success" onDismiss={() => setError("")}>
+          <p>
+            Training complete!{" "}
+            <Button onClick={() => window.location.reload()}>
+              Refresh Page
+            </Button>{" "}
+            to see your changes.
+          </p>
+        </Banner>,
+      );
     } catch (error) {
       console.error("Sync process failed:", error);
       setError(
@@ -1525,7 +1540,7 @@ export default function Index() {
       status === "success" ||
       status === "finished"
     ) {
-      return "Training process complete! Your AI assistant is ready.";
+      return "Training process complete! Please refresh the page to see your changes.";
     }
 
     if (!steps || !steps.length) {

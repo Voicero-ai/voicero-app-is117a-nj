@@ -682,9 +682,7 @@ const VoiceroText = {
 Feel free to ask me anything, and I'll do my best to assist you!`;
     }
 
-    let welcomeMessage = `
-
-Hi, I'm ${botName}! ${welcomeMessageContent}
+    let welcomeMessage = `Hi, I'm ${botName}! ${welcomeMessageContent}
 
 **Start Typing to Chat**
 `;

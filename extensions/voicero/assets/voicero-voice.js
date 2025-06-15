@@ -3629,9 +3629,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
     }
 
     // Create base welcome message
-    let welcomeMessage = `
-
-Hi, I'm ${botName}! ${welcomeMessageContent}
+    let welcomeMessage = `Hi, I'm ${botName}! ${welcomeMessageContent}
 
 **Click the microphone to start talking**
 `;
