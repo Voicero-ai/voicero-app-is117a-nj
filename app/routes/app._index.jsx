@@ -1449,8 +1449,12 @@ export default function Index() {
 
       // After assistant setup, start individual training
       setIsTraining(true);
-      setLoadingText("Starting content training process...");
-      setSyncStatusText("Starting content training process...");
+      setLoadingText(
+        "Starting content training process... This may take a few minutes.",
+      );
+      setSyncStatusText(
+        "Starting content training process... This may take a few minutes.",
+      );
 
       // Use the parallel training approach
       await trainUntrainedItems(
