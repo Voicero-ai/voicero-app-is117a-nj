@@ -605,6 +605,7 @@ const trainUntrainedItems = async (
   untrainedItems,
   setUntrainedItems,
   websiteData,
+  setItemsInTraining = () => {}, // Add setItemsInTraining parameter with default value
 ) => {
   // Get websiteId from any untrained item (they all belong to the same website)
   const websiteId =
@@ -629,41 +630,102 @@ const trainUntrainedItems = async (
   }
 
   try {
-    // Create arrays of promises for each category
-    const trainingPromises = [];
+    // Make copies of the untrained items to work with
+    const remainingItems = {
+      products: [...(untrainedItems.products || [])],
+      pages: [...(untrainedItems.pages || [])],
+      posts: [...(untrainedItems.posts || [])],
+      collections: [...(untrainedItems.collections || [])],
+      discounts: [...(untrainedItems.discounts || [])],
+    };
 
-    // Add product training promises
-    untrainedItems.products?.forEach((product) => {
-      trainingPromises.push(trainContentItem(accessKey, "product", product));
+    // Initialize itemsInTraining with all items
+    setItemsInTraining({
+      products: [...(untrainedItems.products || [])],
+      pages: [...(untrainedItems.pages || [])],
+      posts: [...(untrainedItems.posts || [])],
+      collections: [...(untrainedItems.collections || [])],
+      discounts: [...(untrainedItems.discounts || [])],
     });
 
-    // Add page training promises
-    untrainedItems.pages?.forEach((page) => {
-      trainingPromises.push(trainContentItem(accessKey, "page", page));
-    });
+    // Track processed items for progress calculation
+    let processedItems = 0;
+    const updateProgress = () => {
+      // Calculate and show progress
+      const progress = Math.round((processedItems / totalItems) * 100);
+      // This could be used to update a progress state if needed
+    };
 
-    // Add blog post training promises
-    untrainedItems.posts?.forEach((post) => {
-      trainingPromises.push(trainContentItem(accessKey, "post", post));
-    });
+    // Process each category in batches
+    const categories = [
+      "products",
+      "pages",
+      "posts",
+      "collections",
+      "discounts",
+    ];
+    for (const category of categories) {
+      // Skip if no items in this category
+      if (remainingItems[category].length === 0) continue;
 
-    // Add collection training promises
-    untrainedItems.collections?.forEach((collection) => {
-      trainingPromises.push(
-        trainContentItem(accessKey, "collection", collection),
+      console.log(
+        `Starting batch processing for ${category}: ${remainingItems[category].length} items`,
       );
-    });
 
-    // Add discount training promises
-    untrainedItems.discounts?.forEach((discount) => {
-      trainingPromises.push(trainContentItem(accessKey, "discount", discount));
-    });
+      // Process this category in batches of 12
+      while (remainingItems[category].length > 0) {
+        // Get the next batch of items (up to 12)
+        const batch = remainingItems[category].splice(0, 12);
 
-    // Wait for all training promises to complete
-    await Promise.all(trainingPromises);
+        console.log(`Processing batch of ${batch.length} ${category}`);
+
+        // Create an array of promises for this batch
+        const batchPromises = batch.map((item) =>
+          trainContentItem(
+            accessKey,
+            category === "posts" ? "post" : category.slice(0, -1),
+            item,
+          ),
+        );
+
+        // Wait for all promises in this batch to complete
+        await Promise.all(batchPromises);
+
+        // Update progress
+        processedItems += batch.length;
+        updateProgress();
+
+        // Update the UI states after each batch
+        setUntrainedItems((prev) => {
+          // Create a copy of the current state
+          const updated = { ...prev };
+          // Update the specific category with remaining items
+          updated[category] = [...remainingItems[category]];
+          return updated;
+        });
+
+        // Update items in training to remove the processed batch
+        setItemsInTraining((prev) => {
+          const updated = { ...prev };
+          // Remove processed batch items from itemsInTraining
+          const itemIds = batch.map((item) => item.id);
+          updated[category] = prev[category].filter(
+            (item) => !itemIds.includes(item.id),
+          );
+          return updated;
+        });
+
+        console.log(
+          `Completed batch. ${remainingItems[category].length} ${category} remaining`,
+        );
+      }
+
+      console.log(`Finished processing all ${category}`);
+    }
 
     // After all individual items are trained, train general if needed
     if (hasUntrainedItems && websiteId) {
+      console.log("Starting general training");
       await fetch(`${urls.voiceroApi}/api/shopify/train/general`, {
         method: "POST",
         headers: {
@@ -675,9 +737,12 @@ const trainUntrainedItems = async (
           websiteId: websiteId,
         }),
       });
+      processedItems += 1; // Count general training as one item
+      updateProgress();
+      console.log("Completed general training");
     }
 
-    // Clear all untrained items since training is complete
+    // Clear all untrained items and items in training since training is complete
     setUntrainedItems({
       products: [],
       pages: [],
@@ -686,20 +751,39 @@ const trainUntrainedItems = async (
       discounts: [],
     });
 
-    // Remove the automatic page reload
-    // setTimeout(() => {
-    //   window.location.href = "/app";
-    // }, 2000);
+    setItemsInTraining({
+      products: [],
+      pages: [],
+      posts: [],
+      collections: [],
+      discounts: [],
+    });
+
+    console.log("Training process complete");
   } catch (error) {
-    console.error("Error during parallel training:", error);
+    console.error("Error during batch training:", error);
     throw error;
   }
 };
 
 // Add new helper function for training individual content
 const trainContentItem = async (accessKey, contentType, item) => {
+  // Convert plural category names to singular if needed
+  const endpoint =
+    contentType === "post"
+      ? "post"
+      : contentType === "product"
+        ? "product"
+        : contentType === "page"
+          ? "page"
+          : contentType === "collection"
+            ? "collection"
+            : contentType === "discount"
+              ? "discount"
+              : contentType;
+
   const response = await fetch(
-    `${urls.voiceroApi}/api/shopify/train/${contentType}`,
+    `${urls.voiceroApi}/api/shopify/train/${endpoint}`,
     {
       method: "POST",
       headers: {
@@ -718,7 +802,7 @@ const trainContentItem = async (accessKey, contentType, item) => {
   if (!response.ok) {
     const errorData = await response.json();
     throw new Error(
-      `Training failed for ${contentType} ${item.shopifyId}: ${errorData.error || "Unknown error"}`,
+      `Training failed for ${endpoint} ${item.shopifyId}: ${errorData.error || "Unknown error"}`,
     );
   }
 
@@ -953,18 +1037,33 @@ export default function Index() {
       }
     }
 
-    // Calculate progress based on untrained items and items in training
-    const totalItems =
-      calculateTotalItems(untrainedItems) +
-      calculateTotalItems(itemsInTraining);
-    const remainingItems = calculateUntrainedItems(untrainedItems);
+    // Calculate progress based on total items and remaining untrained items
+    let totalItemCount = 0;
+    let remainingItemCount = 0;
 
-    if (totalItems === 0) return 0;
+    // Count total items (across all categories)
+    Object.values(untrainedItems).forEach((items) => {
+      if (Array.isArray(items)) {
+        remainingItemCount += items.length;
+      }
+    });
+
+    Object.values(itemsInTraining).forEach((items) => {
+      if (Array.isArray(items)) {
+        totalItemCount += items.length;
+      }
+    });
+
+    // Add remaining items to total count
+    totalItemCount += remainingItemCount;
+
+    if (totalItemCount === 0) return 0;
+
+    // Calculate completed items
+    const completedItems = totalItemCount - remainingItemCount;
 
     // Calculate progress percentage
-    const progress = Math.round(
-      ((totalItems - remainingItems) / totalItems) * 100,
-    );
+    const progress = Math.round((completedItems / totalItemCount) * 100);
 
     // Ensure progress is between 0 and 100
     return Math.min(Math.max(progress, 0), 100);
@@ -1326,6 +1425,7 @@ export default function Index() {
         assistantData.content,
         setUntrainedItems,
         assistantData.website,
+        setItemsInTraining,
       );
 
       // Step 5: Train general QAs
@@ -1395,7 +1495,21 @@ export default function Index() {
       return "Training process complete! Your AI assistant is ready.";
     }
 
-    if (!steps || !steps.length) return "Training in progress...";
+    if (!steps || !steps.length) {
+      // Calculate remaining items
+      let remainingCount = 0;
+      Object.values(untrainedItems).forEach((items) => {
+        if (Array.isArray(items)) {
+          remainingCount += items.length;
+        }
+      });
+
+      if (remainingCount > 0) {
+        return `Processing items in batches of 12... ${remainingCount} items remaining.`;
+      }
+
+      return "Training in progress...";
+    }
 
     // Get the latest step message
     const latestStep = steps[steps.length - 1];
@@ -1409,7 +1523,7 @@ export default function Index() {
     }
 
     return progressMessage;
-  }, [fetcher.data]);
+  }, [fetcher.data, untrainedItems]);
 
   const handleViewStatus = async () => {
     try {
