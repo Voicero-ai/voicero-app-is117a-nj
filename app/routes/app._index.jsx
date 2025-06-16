@@ -677,13 +677,13 @@ const trainUntrainedItems = async (
     }
 
     console.log(
-      `Combined ${allItems.length} items for training in batches of 20`,
+      `Combined ${allItems.length} items for training in batches of 17`,
     );
 
-    // Process all items in batches of 20 regardless of category
+    // Process all items in batches of 17 regardless of category
     while (allItems.length > 0) {
-      // Get the next batch of up to 20 items
-      const batchItems = allItems.splice(0, 20);
+      // Get the next batch of up to 17 items
+      const batchItems = allItems.splice(0, 17);
 
       console.log(`Processing batch of ${batchItems.length} mixed items`);
 
@@ -1678,7 +1678,7 @@ export default function Index() {
           categoryBreakdown = ` (${nonEmptyCategories.join(", ")})`;
         }
 
-        return `Processing items in batches of 20... ${remainingCount} items remaining${categoryBreakdown}.`;
+        return `Processing items in batches of 17... ${remainingCount} items remaining${categoryBreakdown}.`;
       }
 
       return "Training in progress...";
