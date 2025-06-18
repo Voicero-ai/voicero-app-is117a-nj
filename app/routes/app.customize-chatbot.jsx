@@ -252,6 +252,8 @@ export const loader = async ({ request }) => {
         iconBot: website.iconBot || "robot",
         iconVoice: website.iconVoice || "microphone",
         iconMessage: website.iconMessage || "chat",
+        clickMessage: website.clickMessage || "",
+        allowMultiAIReview: website.allowMultiAIReview || false,
         // Additional fields for compatibility with UI
         monthlyQueries: website.monthlyQueries,
         queryLimit: website.queryLimit,
@@ -397,6 +399,9 @@ export default function CustomizeChatbotPage() {
   const [customInstructions, setCustomInstructions] = useState(
     chatbotSettings?.customInstructions || "",
   );
+  const [clickMessage, setClickMessage] = useState(
+    chatbotSettings?.clickMessage || "",
+  );
   const [popUpQuestions, setPopUpQuestions] = useState(
     chatbotSettings?.popUpQuestions || [],
   );
@@ -407,6 +412,9 @@ export default function CustomizeChatbotPage() {
   );
   const [removeHighlight, setRemoveHighlight] = useState(
     chatbotSettings?.removeHighlight || false,
+  );
+  const [allowMultiAIReview, setAllowMultiAIReview] = useState(
+    chatbotSettings?.allowMultiAIReview || false,
   );
 
   // Icon selection state
@@ -422,6 +430,7 @@ export default function CustomizeChatbotPage() {
   const [botNameError, setBotNameError] = useState("");
   const [welcomeMessageError, setWelcomeMessageError] = useState("");
   const [customInstructionsError, setCustomInstructionsError] = useState("");
+  const [clickMessageError, setClickMessageError] = useState("");
   const [popUpQuestionsError, setPopUpQuestionsError] = useState("");
 
   // New popup question input
@@ -469,6 +478,20 @@ export default function CustomizeChatbotPage() {
     }
 
     setCustomInstructionsError("");
+    return true;
+  }, []);
+  
+  const validateClickMessage = useCallback((value) => {
+    const words = countWords(value);
+
+    if (words > 15) {
+      setClickMessageError(
+        "Click message cannot be more than 15 words",
+      );
+      return false;
+    }
+
+    setClickMessageError("");
     return true;
   }, []);
 
@@ -519,8 +542,9 @@ export default function CustomizeChatbotPage() {
     const isNameValid = validateBotName(botName);
     const isWelcomeValid = validateWelcomeMessage(welcomeMessage);
     const isInstructionsValid = validateCustomInstructions(customInstructions);
+    const isClickMessageValid = validateClickMessage(clickMessage);
 
-    if (!isNameValid || !isWelcomeValid || !isInstructionsValid) {
+    if (!isNameValid || !isWelcomeValid || !isInstructionsValid || !isClickMessageValid) {
       return;
     }
 
@@ -546,9 +570,11 @@ export default function CustomizeChatbotPage() {
         botName,
         customWelcomeMessage: welcomeMessage,
         customInstructions,
+        clickMessage,
         popUpQuestions: formattedQuestions,
         color: colorHex,
         removeHighlight,
+        allowMultiAIReview,
         iconBot,
         iconVoice,
         iconMessage,
@@ -681,6 +707,25 @@ export default function CustomizeChatbotPage() {
                       autoComplete="off"
                       helpText="Specific instructions for how the AI should behave or respond (max 50 words)"
                       error={customInstructionsError}
+                    />
+                    
+                    <Checkbox
+                      label="Allow Multi-AI Review"
+                      checked={allowMultiAIReview}
+                      onChange={setAllowMultiAIReview}
+                      helpText="When enabled, multiple AI models will review responses for better quality"
+                    />
+
+                    <TextField
+                      label="Click Message"
+                      value={clickMessage}
+                      onChange={(value) => {
+                        setClickMessage(value);
+                        validateClickMessage(value);
+                      }}
+                      autoComplete="off"
+                      helpText="Message shown when user clicks on the chatbot button (max 15 words)"
+                      error={clickMessageError}
                     />
                   </BlockStack>
                 </BlockStack>
