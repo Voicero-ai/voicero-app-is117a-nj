@@ -677,13 +677,13 @@ const trainUntrainedItems = async (
     }
 
     console.log(
-      `Combined ${allItems.length} items for training in batches of 10`,
+      `Combined ${allItems.length} items for training in batches of 8`,
     );
 
-    // Process all items in batches of 10 regardless of category
+    // Process all items in batches of 8 regardless of category
     while (allItems.length > 0) {
-      // Get the next batch of up to 10 items
-      const batchItems = allItems.splice(0, 10);
+      // Get the next batch of up to 8 items
+      const batchItems = allItems.splice(0, 8);
 
       console.log(`Processing batch of ${batchItems.length} mixed items`);
 

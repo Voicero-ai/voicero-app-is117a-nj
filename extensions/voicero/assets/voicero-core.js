@@ -41,6 +41,63 @@
     pendingSessionOperations: [],
 
     // Initialize on page load
+    // Observe DOM for changes that might affect positioning
+    setupPositionObserver: function() {
+      // If we already have an observer, disconnect it first
+      if (this.positionObserver) {
+        this.positionObserver.disconnect();
+      }
+      
+      // Create a mutation observer to watch for added elements
+      this.positionObserver = new MutationObserver((mutations) => {
+        // Check if any mutations might have affected bottom-right elements
+        let shouldReposition = false;
+        
+        mutations.forEach((mutation) => {
+          if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+            // Check if added nodes might be positioned in bottom right
+            for (let i = 0; i < mutation.addedNodes.length; i++) {
+              const node = mutation.addedNodes[i];
+              if (node.nodeType === 1) { // Element node
+                // Look for potential back-to-top buttons or similar elements
+                if ((node.classList && 
+                    (node.classList.contains('back-to-top') || 
+                     node.classList.contains('scroll-to-top'))) ||
+                    node.tagName.toLowerCase() === 'back-to-top') {
+                  shouldReposition = true;
+                  break;
+                }
+              }
+            }
+          }
+        });
+        
+        // Reposition if needed
+        if (shouldReposition) {
+          console.log("VoiceroCore: DOM changed, repositioning button");
+          this.ensureMainButtonVisible();
+        }
+      });
+      
+      // Start observing the body for all changes
+      this.positionObserver.observe(document.body, { 
+        childList: true, 
+        subtree: true 
+      });
+      
+      // Also listen for window resize events
+      window.addEventListener('resize', () => {
+        // Debounce the resize event
+        clearTimeout(this.resizeTimeout);
+        this.resizeTimeout = setTimeout(() => {
+          console.log("VoiceroCore: Window resized, checking button position");
+          this.ensureMainButtonVisible();
+        }, 200);
+      });
+      
+      console.log("VoiceroCore: Position observer set up");
+    },
+    
     init: function () {
       console.log("VoiceroCore: Initializing");
 
@@ -83,6 +140,9 @@
 
       // Apply button animation to ensure it's attractive
       this.applyButtonAnimation();
+      
+      // Set up position observer to adjust button position when DOM changes
+      this.setupPositionObserver();
 
       // Clear initializing flag after a delay
       setTimeout(() => {
@@ -110,6 +170,66 @@
       this.createVoiceChatInterface();
     },
 
+    // Check for elements in the bottom right corner that might overlap with our button
+    checkForBottomRightElements: function() {
+      console.log("VoiceroCore: Checking for elements in bottom right corner");
+      
+      // Define elements we're looking for (by class or ID)
+      const potentialOverlaps = [
+        'back-to-top',
+        'scroll-to-top',
+        'scroll-top',
+        'back-top',
+        'to-top',
+        'top-button',
+        'scrolltop'
+      ];
+      
+      // Look for these elements in the document
+      let foundElement = null;
+      let bottomOffset = 20; // Default bottom offset
+      
+      for (const selector of potentialOverlaps) {
+        // Look by class, ID, or element name
+        const elements = document.querySelectorAll(
+          `.${selector}, #${selector}, ${selector}, [data-id="${selector}"]`
+        );
+        
+        if (elements.length > 0) {
+          for (const el of elements) {
+            const rect = el.getBoundingClientRect();
+            const style = window.getComputedStyle(el);
+            
+            // Check if the element is positioned near the bottom right
+            const isBottomRight = 
+              (rect.bottom > window.innerHeight - 150) && 
+              (rect.right > window.innerWidth - 150) &&
+              style.display !== 'none' &&
+              style.visibility !== 'hidden' &&
+              style.opacity !== '0';
+            
+            if (isBottomRight) {
+              console.log(`VoiceroCore: Found overlap with element:`, el);
+              foundElement = el;
+              
+              // Calculate the necessary offset to place our button above this element
+              // We add 20px padding for good measure
+              bottomOffset = window.innerHeight - rect.top + 20;
+              break;
+            }
+          }
+        }
+        
+        if (foundElement) break;
+      }
+      
+      return {
+        hasOverlap: !!foundElement,
+        bottomOffset: bottomOffset,
+        element: foundElement
+      };
+    },
+
     // Create the main interface with the two option buttons
     createButton: function () {
       // DON'T SKIP BUTTON CREATION - Even if API isn't connected, we need the main button
@@ -119,6 +239,9 @@
 
       // Make sure theme colors are updated
       this.updateThemeColor(this.websiteColor);
+      
+      // Check for elements that might overlap with our button
+      const overlapCheck = this.checkForBottomRightElements();
 
       // Add CSS Animations for fade-in effect only (button styling is now in updateThemeColor)
       const styleEl = document.createElement("style");
@@ -226,10 +349,17 @@
         );
 
         if (buttonContainer) {
+          // Calculate bottom offset based on overlap check
+          const bottomOffset = overlapCheck.hasOverlap ? overlapCheck.bottomOffset : 20;
+          
+          if (overlapCheck.hasOverlap) {
+            console.log(`VoiceroCore: Adjusting button position to avoid overlap. Using bottom offset: ${bottomOffset}px`);
+          }
+          
           // Apply styles directly to the element with !important to override injected styles
           buttonContainer.style.cssText = `
           position: fixed !important;
-          bottom: 20px !important;
+          bottom: ${bottomOffset}px !important;
           right: 20px !important;
           z-index: 2147483647 !important; /* Maximum z-index value to ensure it's always on top */
           display: block !important;
@@ -278,11 +408,23 @@
         `;
 
           // Add help bubble
+          // Get clickMessage from multiple possible sources in order of priority
+          const clickMessage = 
+            (this.session && this.session.clickMessage) ? this.session.clickMessage : 
+            (this.clickMessage) ? this.clickMessage :
+            (window.voiceroClickMessage) ? window.voiceroClickMessage :
+            "Need Help Shopping?";
+            
+          console.log("VoiceroCore: Using clickMessage for help bubble:", clickMessage);
+          
+          // Position the help bubble above the button by the appropriate offset
+          const helpBubbleBottomOffset = overlapCheck.hasOverlap ? overlapCheck.bottomOffset + 50 : 80;
+            
           buttonContainer.insertAdjacentHTML(
             "beforeend",
-            `<div id="voicero-help-bubble">
+            `<div id="voicero-help-bubble" style="bottom: ${helpBubbleBottomOffset}px !important;">
               <button id="voicero-help-close">×</button>
-              Need Help Shopping?
+              ${clickMessage}
             </div>`,
           );
 
@@ -314,6 +456,9 @@
             `;
           }
 
+          // Calculate chooser position - needs to be at least 60px above the button
+          const chooserBottomOffset = overlapCheck.hasOverlap ? overlapCheck.bottomOffset + 60 : 80;
+          
           // Add the chooser as a separate element
           buttonContainer.insertAdjacentHTML(
             "beforeend",
@@ -322,7 +467,7 @@
             id="interaction-chooser"
             style="
               position: fixed !important;
-              bottom: 80px !important;
+              bottom: ${chooserBottomOffset}px !important;
               right: 20px !important;
               z-index: 10001 !important;
               background-color: #c8c8c8 !important;
@@ -441,7 +586,7 @@
             });
           }
 
-          // Set a timeout to show the help bubble after 4 seconds if core button is visible
+                      // Set a timeout to show the help bubble after 4 seconds if core button is visible
           this.helpBubbleTimeout = setTimeout(() => {
             if (
               window.VoiceroCore &&
@@ -454,6 +599,38 @@
             ) {
               const helpBubble = document.getElementById("voicero-help-bubble");
               if (helpBubble) {
+                // Update clickMessage one more time before showing the bubble
+                // in case it was loaded after initial creation
+                const updatedClickMessage = 
+                  (window.VoiceroCore.session && window.VoiceroCore.session.clickMessage) ? 
+                    window.VoiceroCore.session.clickMessage : 
+                  (window.VoiceroCore.clickMessage) ? 
+                    window.VoiceroCore.clickMessage :
+                  (window.voiceroClickMessage) ? 
+                    window.voiceroClickMessage :
+                    "Need Help Shopping?";
+                
+                // Update the content of the help bubble
+                const helpBubbleContent = helpBubble.childNodes[1];
+                if (helpBubbleContent && helpBubbleContent.nodeType === 3) {
+                  helpBubbleContent.nodeValue = updatedClickMessage;
+                } else {
+                  // If we can't update the text node directly, update the whole content
+                  helpBubble.innerHTML = `<button id="voicero-help-close">×</button>${updatedClickMessage}`;
+                  
+                  // Re-add click handler for the close button
+                  const helpClose = helpBubble.querySelector("#voicero-help-close");
+                  if (helpClose) {
+                    helpClose.addEventListener("click", function(e) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      helpBubble.style.display = "none";
+                      window.VoiceroCore.appState.hasShownHelpBubble = true;
+                    });
+                  }
+                }
+                
+                console.log("VoiceroCore: Showing help bubble with message:", updatedClickMessage);
                 helpBubble.style.display = "block";
                 window.VoiceroCore.appState.hasShownHelpBubble = true;
               }
@@ -828,6 +1005,15 @@
               window.voiceroCustomWelcomeMessage =
                 data.website.customWelcomeMessage;
             }
+            
+            if (data.website?.clickMessage) {
+              console.log(
+                "VoiceroCore: Got clickMessage from API:",
+                data.website.clickMessage,
+              );
+              this.clickMessage = data.website.clickMessage;
+              window.voiceroClickMessage = data.website.clickMessage;
+            }
 
             // ADDED: Store popup questions directly on VoiceroCore
             if (data.website?.popUpQuestions) {
@@ -928,36 +1114,51 @@
                       // Update local session with latest data
                       this.session = data.session;
 
-                      // Make sure botName and customWelcomeMessage are transferred
-                      if (data.website && data.website.botName) {
-                        console.log(
-                          "VoiceroCore: Setting botName in session from website data:",
-                          data.website.botName,
-                        );
-                        this.session.botName = data.website.botName;
-                      } else if (this.botName) {
-                        console.log(
-                          "VoiceroCore: Setting botName in session from core property:",
-                          this.botName,
-                        );
-                        this.session.botName = this.botName;
-                      }
+                                    // Make sure botName and customWelcomeMessage are transferred
+              if (data.website && data.website.botName) {
+                console.log(
+                  "VoiceroCore: Setting botName in session from website data:",
+                  data.website.botName,
+                );
+                this.session.botName = data.website.botName;
+              } else if (this.botName) {
+                console.log(
+                  "VoiceroCore: Setting botName in session from core property:",
+                  this.botName,
+                );
+                this.session.botName = this.botName;
+              }
 
-                      if (data.website && data.website.customWelcomeMessage) {
-                        console.log(
-                          "VoiceroCore: Setting customWelcomeMessage in session from website data:",
-                          data.website.customWelcomeMessage,
-                        );
-                        this.session.customWelcomeMessage =
-                          data.website.customWelcomeMessage;
-                      } else if (this.customWelcomeMessage) {
-                        console.log(
-                          "VoiceroCore: Setting customWelcomeMessage in session from core property:",
-                          this.customWelcomeMessage,
-                        );
-                        this.session.customWelcomeMessage =
-                          this.customWelcomeMessage;
-                      }
+              if (data.website && data.website.customWelcomeMessage) {
+                console.log(
+                  "VoiceroCore: Setting customWelcomeMessage in session from website data:",
+                  data.website.customWelcomeMessage,
+                );
+                this.session.customWelcomeMessage =
+                  data.website.customWelcomeMessage;
+              } else if (this.customWelcomeMessage) {
+                console.log(
+                  "VoiceroCore: Setting customWelcomeMessage in session from core property:",
+                  this.customWelcomeMessage,
+                );
+                this.session.customWelcomeMessage =
+                  this.customWelcomeMessage;
+              }
+              
+              // Make sure clickMessage is transferred
+              if (data.website && data.website.clickMessage) {
+                console.log(
+                  "VoiceroCore: Setting clickMessage in session from website data:",
+                  data.website.clickMessage,
+                );
+                this.session.clickMessage = data.website.clickMessage;
+              } else if (this.clickMessage) {
+                console.log(
+                  "VoiceroCore: Setting clickMessage in session from core property:",
+                  this.clickMessage,
+                );
+                this.session.clickMessage = this.clickMessage;
+              }
 
                       // Make sure removeHighlight setting is transferred from website data to session
                       if (
@@ -1529,6 +1730,13 @@
               // Store session ID in localStorage
               if (data.session.id) {
                 this.sessionId = data.session.id;
+                
+                // Add clickMessage to session if available from API but not in session
+                if (this.clickMessage && !data.session.clickMessage) {
+                  data.session.clickMessage = this.clickMessage;
+                  console.log("VoiceroCore: Added clickMessage to session:", this.clickMessage);
+                }
+                
                 // Store both the session ID and the full session object
                 localStorage.setItem("voicero_session_id", data.session.id);
                 localStorage.setItem(
@@ -1759,6 +1967,16 @@
         container.style.opacity = "1";
       }
 
+      // Check for elements that might overlap with our button
+      const overlapCheck = this.checkForBottomRightElements();
+      
+      // Calculate bottom offset based on overlap check
+      const bottomOffset = overlapCheck.hasOverlap ? overlapCheck.bottomOffset : 20;
+      
+      if (overlapCheck.hasOverlap) {
+        console.log(`VoiceroCore: Repositioning button to avoid overlap. Using bottom offset: ${bottomOffset}px`);
+      }
+
       // Make sure button container is visible
       const buttonContainer = document.getElementById("voice-toggle-container");
       if (buttonContainer) {
@@ -1769,7 +1987,7 @@
         // Apply critical positioning styles
         buttonContainer.style.cssText = `
           position: fixed !important;
-          bottom: 20px !important;
+          bottom: ${bottomOffset}px !important;
           right: 20px !important;
           z-index: 2147483647 !important;
           display: block !important;
