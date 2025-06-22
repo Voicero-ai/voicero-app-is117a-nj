@@ -107,11 +107,14 @@
       // Set up global reference
       window.VoiceroCore = this;
 
-      // Initialize appState with default values
+      // Initialize appState with default values - ensure it's always available
       this.appState = this.appState || {};
       this.appState.hasShownVoiceWelcome = false;
       this.appState.hasShownTextWelcome = false;
       this.appState.hasShownHelpBubble = false; // Track if help bubble has been shown
+
+      // Create additional backup for appState to prevent it from being undefined
+      window.voiceroAppState = this.appState;
 
       // Set initializing flag to prevent button flickering during startup
       this.isInitializing = true;
@@ -240,6 +243,15 @@
       // DON'T SKIP BUTTON CREATION - Even if API isn't connected, we need the main button
       // Just log a warning instead of completely skipping
       if (!this.apiConnected) {
+      }
+
+      // Clean up any existing help bubble timeouts to prevent duplicates
+      if (this.helpBubbleTimeouts && this.helpBubbleTimeouts.length > 0) {
+        this.helpBubbleTimeouts.forEach((timeoutId) => clearTimeout(timeoutId));
+        this.helpBubbleTimeouts = [];
+      }
+      if (this.helpBubbleTimeout) {
+        clearTimeout(this.helpBubbleTimeout);
       }
 
       // Make sure theme colors are updated
@@ -506,62 +518,87 @@
             });
           }
 
-          // Set a timeout to show the help bubble after 4 seconds if core button is visible
-          this.helpBubbleTimeout = setTimeout(() => {
+          // Improved help bubble display with multiple attempts and more relaxed conditions
+          this.showHelpBubble = function () {
+            // If bubble has already been shown this session, don't show it again
             if (
               window.VoiceroCore &&
-              !window.VoiceroCore.appState.hasShownHelpBubble &&
-              window.VoiceroCore.session &&
-              window.VoiceroCore.session.coreOpen &&
-              !window.VoiceroCore.session.chooserOpen &&
-              !window.VoiceroCore.session.textOpen &&
-              !window.VoiceroCore.session.voiceOpen
+              window.VoiceroCore.appState &&
+              window.VoiceroCore.appState.hasShownHelpBubble
             ) {
-              const helpBubble = document.getElementById("voicero-help-bubble");
-              if (helpBubble) {
-                // Update clickMessage one more time before showing the bubble
-                // in case it was loaded after initial creation
-                const updatedClickMessage =
-                  window.VoiceroCore.session &&
-                  window.VoiceroCore.session.clickMessage
-                    ? window.VoiceroCore.session.clickMessage
-                    : window.VoiceroCore.clickMessage
-                      ? window.VoiceroCore.clickMessage
-                      : window.voiceroClickMessage
-                        ? window.voiceroClickMessage
-                        : "Need Help Shopping?";
+              return;
+            }
 
-                // Update the content of the help bubble
-                const helpBubbleContent = helpBubble.childNodes[1];
-                if (helpBubbleContent && helpBubbleContent.nodeType === 3) {
-                  helpBubbleContent.nodeValue = updatedClickMessage;
-                } else {
-                  // If we can't update the text node directly, update the whole content
-                  helpBubble.innerHTML = `<button id="voicero-help-close">×</button>${updatedClickMessage}`;
+            // Check if any chat interface is open, don't show if one is
+            const textInterface = document.getElementById(
+              "voicero-text-chat-container",
+            );
+            const voiceInterface = document.getElementById(
+              "voice-chat-interface",
+            );
+            if (
+              (textInterface &&
+                window.getComputedStyle(textInterface).display === "block") ||
+              (voiceInterface &&
+                window.getComputedStyle(voiceInterface).display === "block")
+            ) {
+              return;
+            }
 
-                  // Re-add click handler for the close button
-                  const helpClose = helpBubble.querySelector(
-                    "#voicero-help-close",
-                  );
-                  if (helpClose) {
-                    helpClose.addEventListener("click", function (e) {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      helpBubble.style.display = "none";
-                      window.VoiceroCore.appState.hasShownHelpBubble = true;
-                    });
+            const helpBubble = document.getElementById("voicero-help-bubble");
+            const mainButton = document.getElementById("chat-website-button");
+
+            // Only proceed if help bubble exists and main button is visible
+            if (
+              helpBubble &&
+              mainButton &&
+              window.getComputedStyle(mainButton).display !== "none" &&
+              window.getComputedStyle(mainButton).visibility !== "hidden"
+            ) {
+              // Get the message content from multiple possible sources
+              const updatedClickMessage =
+                window.VoiceroCore.session &&
+                window.VoiceroCore.session.clickMessage
+                  ? window.VoiceroCore.session.clickMessage
+                  : window.VoiceroCore.clickMessage
+                    ? window.VoiceroCore.clickMessage
+                    : window.voiceroClickMessage
+                      ? window.voiceroClickMessage
+                      : "Need Help Shopping?";
+
+              // Update the content of the help bubble
+              helpBubble.innerHTML = `<button id="voicero-help-close">×</button>${updatedClickMessage}`;
+
+              // Add click handler for the close button
+              const helpClose = helpBubble.querySelector("#voicero-help-close");
+              if (helpClose) {
+                helpClose.addEventListener("click", function (e) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  helpBubble.style.display = "none";
+                  if (window.VoiceroCore) {
+                    window.VoiceroCore.appState.hasShownHelpBubble = true;
                   }
-                }
+                });
+              }
 
-                console.log(
-                  "VoiceroCore: Showing help bubble with message:",
-                  updatedClickMessage,
-                );
-                helpBubble.style.display = "block";
+              console.log(
+                "VoiceroCore: Showing help bubble with message:",
+                updatedClickMessage,
+              );
+              helpBubble.style.display = "block";
+              if (window.VoiceroCore) {
                 window.VoiceroCore.appState.hasShownHelpBubble = true;
               }
             }
-          }, 4000);
+          };
+
+          // Set multiple attempts to show the help bubble
+          this.helpBubbleTimeouts = [
+            setTimeout(() => this.showHelpBubble(), 2000), // First attempt after 2 seconds
+            setTimeout(() => this.showHelpBubble(), 4000), // Second attempt after 4 seconds
+            setTimeout(() => this.showHelpBubble(), 6000), // Third attempt after 6 seconds
+          ];
 
           if (mainButton) {
             mainButton.addEventListener("click", function (e) {
@@ -1994,6 +2031,20 @@
 
       // Update the button icon
       this.updateButtonIcon();
+
+      // Try to show help bubble whenever button becomes visible
+      // (but only if it hasn't been shown before)
+      if (
+        this.showHelpBubble &&
+        this.appState &&
+        !this.appState.hasShownHelpBubble
+      ) {
+        setTimeout(() => {
+          if (this.showHelpBubble) {
+            this.showHelpBubble();
+          }
+        }, 500);
+      }
     },
 
     // Add control buttons to interface
@@ -3135,13 +3186,23 @@
             window.VoiceroText.thread = window.VoiceroCore.thread;
           }
 
-          // Try to open text interface immediately after loading
+          // Only try to open text interface if the session explicitly has textOpen = true
           setTimeout(() => {
-            if (window.VoiceroText && window.VoiceroText.openTextChat) {
+            if (
+              window.VoiceroCore &&
+              window.VoiceroCore.session &&
+              window.VoiceroCore.session.textOpen === true &&
+              window.VoiceroText &&
+              window.VoiceroText.openTextChat
+            ) {
               console.log(
-                "VoiceroCore: Auto-opening text interface after module load",
+                "VoiceroCore: Auto-opening text interface after module load (session has textOpen=true)",
               );
               window.VoiceroText.openTextChat();
+            } else {
+              console.log(
+                "VoiceroCore: NOT auto-opening text interface after module load (session doesn't have textOpen=true)",
+              );
             }
           }, 100);
         }

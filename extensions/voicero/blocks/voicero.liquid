@@ -321,10 +321,13 @@
                     loadScript("{{ 'voicero-wait.js' | asset_url }}", function() {
                       // Then load text module
                       loadScript("{{ 'voicero-text.js' | asset_url }}", function() {
-                        // Auto-open text interface if it was the last active one
+                        // Auto-open text interface if it was the last active one AND session textOpen is true
                         if (window.voiceroConfig.wasOpen) {
                           setTimeout(function() {
-                            if (window.VoiceroText && window.VoiceroText.openTextChat) {
+                            // CRITICAL: Only open if session state explicitly says so
+                            if (window.VoiceroCore && window.VoiceroCore.session && 
+                                window.VoiceroCore.session.textOpen === true &&
+                                window.VoiceroText && window.VoiceroText.openTextChat) {
                               window.VoiceroText.openTextChat();
                             }
                           }, 300);

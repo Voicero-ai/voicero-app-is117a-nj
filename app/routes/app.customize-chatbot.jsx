@@ -391,7 +391,7 @@ export default function CustomizeChatbotPage() {
 
   // Form state for chatbot settings
   const [botName, setBotName] = useState(
-    chatbotSettings?.botName || "AI Assistant",
+    chatbotSettings?.botName || "Voicero AI",
   );
   const [welcomeMessage, setWelcomeMessage] = useState(
     chatbotSettings?.customWelcomeMessage || "",
@@ -419,12 +419,6 @@ export default function CustomizeChatbotPage() {
 
   // Icon selection state
   const [iconBot, setIconBot] = useState(chatbotSettings?.iconBot || "robot");
-  const [iconVoice, setIconVoice] = useState(
-    chatbotSettings?.iconVoice || "microphone",
-  );
-  const [iconMessage, setIconMessage] = useState(
-    chatbotSettings?.iconMessage || "chat",
-  );
 
   // Validation states
   const [botNameError, setBotNameError] = useState("");
@@ -438,16 +432,10 @@ export default function CustomizeChatbotPage() {
 
   // Validation handlers
   const validateBotName = useCallback((value) => {
-    const words = countWords(value);
     const chars = value.length;
 
-    if (words > 3) {
-      setBotNameError("Bot name cannot be more than 3 words");
-      return false;
-    }
-
-    if (chars > 10) {
-      setBotNameError("Bot name cannot be more than 10 characters");
+    if (chars > 120) {
+      setBotNameError("Bot name cannot be more than 120 characters");
       return false;
     }
 
@@ -480,14 +468,12 @@ export default function CustomizeChatbotPage() {
     setCustomInstructionsError("");
     return true;
   }, []);
-  
+
   const validateClickMessage = useCallback((value) => {
     const words = countWords(value);
 
     if (words > 15) {
-      setClickMessageError(
-        "Click message cannot be more than 15 words",
-      );
+      setClickMessageError("Click message cannot be more than 15 words");
       return false;
     }
 
@@ -524,27 +510,20 @@ export default function CustomizeChatbotPage() {
     { label: "Message", value: "message" },
   ];
 
-  const voiceIconOptions = [
-    { label: "Microphone", value: "microphone" },
-    { label: "Waveform", value: "waveform" },
-    { label: "Speaker", value: "speaker" },
-  ];
-
-  const messageIconOptions = [
-    { label: "Message", value: "message" },
-    { label: "Document", value: "document" },
-    { label: "Cursor", value: "cursor" },
-  ];
-
   // Form submission
   const handleSave = async () => {
     // Validate all fields
-    const isNameValid = validateBotName(botName);
+    const isNameValid = botName ? validateBotName(botName) : true;
     const isWelcomeValid = validateWelcomeMessage(welcomeMessage);
     const isInstructionsValid = validateCustomInstructions(customInstructions);
     const isClickMessageValid = validateClickMessage(clickMessage);
 
-    if (!isNameValid || !isWelcomeValid || !isInstructionsValid || !isClickMessageValid) {
+    if (
+      !isNameValid ||
+      !isWelcomeValid ||
+      !isInstructionsValid ||
+      !isClickMessageValid
+    ) {
       return;
     }
 
@@ -576,8 +555,6 @@ export default function CustomizeChatbotPage() {
         removeHighlight,
         allowMultiAIReview,
         iconBot,
-        iconVoice,
-        iconMessage,
       };
 
       console.log("Saving chatbot settings:", updateData);
@@ -667,7 +644,6 @@ export default function CustomizeChatbotPage() {
                         Chatbot Identity
                       </Text>
                     </InlineStack>
-                    <Badge status="info">Required</Badge>
                   </InlineStack>
                   <Divider />
                   <BlockStack gap="400">
@@ -679,7 +655,7 @@ export default function CustomizeChatbotPage() {
                         validateBotName(value);
                       }}
                       autoComplete="off"
-                      helpText="The name displayed to your customers (max 3 words, 10 characters)"
+                      helpText="The name displayed to your customers (max 120 characters)"
                       error={botNameError}
                     />
 
@@ -708,7 +684,7 @@ export default function CustomizeChatbotPage() {
                       helpText="Specific instructions for how the AI should behave or respond (max 50 words)"
                       error={customInstructionsError}
                     />
-                    
+
                     <Checkbox
                       label="Allow Multi-AI Review"
                       checked={allowMultiAIReview}
@@ -864,36 +840,6 @@ export default function CustomizeChatbotPage() {
                       <div style={{ marginTop: "1.6rem", marginLeft: "1rem" }}>
                         <div style={{ color: "#2c6ecb" }}>
                           {getIconForType("bot", iconBot)}
-                        </div>
-                      </div>
-                    </InlineStack>
-
-                    <InlineStack gap="400" blockAlign="center">
-                      <Select
-                        label="Voice Icon Type"
-                        options={voiceIconOptions}
-                        onChange={setIconVoice}
-                        value={iconVoice}
-                        helpText="Icon displayed for voice input (if enabled)"
-                      />
-                      <div style={{ marginTop: "1.6rem", marginLeft: "1rem" }}>
-                        <div style={{ color: "#2c6ecb" }}>
-                          {getIconForType("voice", iconVoice)}
-                        </div>
-                      </div>
-                    </InlineStack>
-
-                    <InlineStack gap="400" blockAlign="center">
-                      <Select
-                        label="Message Icon Type"
-                        options={messageIconOptions}
-                        onChange={setIconMessage}
-                        value={iconMessage}
-                        helpText="Icon displayed for chat messages"
-                      />
-                      <div style={{ marginTop: "1.6rem", marginLeft: "1rem" }}>
-                        <div style={{ color: "#2c6ecb" }}>
-                          {getIconForType("message", iconMessage)}
                         </div>
                       </div>
                     </InlineStack>

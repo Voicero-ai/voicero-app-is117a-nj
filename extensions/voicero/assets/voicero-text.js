@@ -112,10 +112,19 @@
       // Make sure all UI elements have the correct colors
       setTimeout(() => this.applyDynamicColors(), 100);
 
-      // Hide the shadow host if it exists
+      // CRITICAL: Ensure shadow host and text container are hidden on init
+      // This prevents the interface from showing up when it shouldn't
       const shadowHost = document.getElementById("voicero-shadow-host");
       if (shadowHost) {
         shadowHost.style.display = "none";
+      }
+
+      // Also ensure the text chat container is hidden
+      const textContainer = document.getElementById(
+        "voicero-text-chat-container",
+      );
+      if (textContainer) {
+        textContainer.style.display = "none";
       }
     },
 
@@ -198,6 +207,29 @@
 
     // Open text chat interface
     openTextChat: function () {
+      // CRITICAL CHECK: Only proceed if textOpen is explicitly set to true in the session
+      // This prevents the interface from showing up when it shouldn't
+
+      // Double check session state to ensure text interface should be opened
+      if (
+        window.VoiceroCore &&
+        window.VoiceroCore.session &&
+        window.VoiceroCore.session.textOpen !== true
+      ) {
+        console.log(
+          "VoiceroText: Not opening text interface as textOpen is not true in session",
+        );
+        return;
+      }
+
+      // Additional safety check - don't open if the session is being initialized
+      if (window.VoiceroCore && window.VoiceroCore.isInitializingSession) {
+        console.log(
+          "VoiceroText: Not opening text interface during session initialization",
+        );
+        return;
+      }
+
       console.log(
         "VoiceroText: Opening text chat interface - ensuring it's maximized",
       );
