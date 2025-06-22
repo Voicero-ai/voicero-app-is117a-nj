@@ -34,6 +34,7 @@
     lastSessionOperationTime: 0, // Track when the last session operation completed
     sessionOperationTimeout: 2000, // Timeout in ms to consider session operation as stuck
     appState: {}, // Store application state, including UI flags
+    currentPageUrl: window.location.href, // Track current page URL
 
     // Queue for pending window state updates
     pendingWindowStateUpdates: [],
@@ -42,6 +43,66 @@
 
     // Initialize on page load
     // Observe DOM for changes that might affect positioning
+    // Set up URL change tracking
+    setupUrlChangeTracking: function () {
+      // Track initial URL as soon as session is available
+      const checkSessionAndTrackUrl = () => {
+        if (this.sessionId) {
+          this.trackUrlMovement(window.location.href);
+        } else {
+          // If session ID isn't available yet, check again after a delay
+          setTimeout(checkSessionAndTrackUrl, 1000);
+        }
+      };
+
+      // Start the check
+      checkSessionAndTrackUrl();
+
+      // Listen for URL changes in SPAs using history API
+      if (window.history && window.history.pushState) {
+        // Store original methods
+        const originalPushState = window.history.pushState;
+        const originalReplaceState = window.history.replaceState;
+
+        // Override pushState
+        window.history.pushState = function () {
+          originalPushState.apply(this, arguments);
+          // Trigger a custom event
+          const urlChangeEvent = new Event("urlChange");
+          window.dispatchEvent(urlChangeEvent);
+        };
+
+        // Override replaceState
+        window.history.replaceState = function () {
+          originalReplaceState.apply(this, arguments);
+          // Trigger a custom event
+          const urlChangeEvent = new Event("urlChange");
+          window.dispatchEvent(urlChangeEvent);
+        };
+
+        // Listen for our custom urlChange event
+        window.addEventListener("urlChange", () => {
+          if (this.sessionId) {
+            this.trackUrlMovement(window.location.href);
+          }
+        });
+
+        // Also listen for popstate events
+        window.addEventListener("popstate", () => {
+          if (this.sessionId) {
+            this.trackUrlMovement(window.location.href);
+          }
+        });
+      }
+
+      // Check for URL changes every 2 seconds as a fallback
+      setInterval(() => {
+        if (this.sessionId && window.location.href !== this.currentPageUrl) {
+          this.trackUrlMovement(window.location.href);
+        }
+      }, 2000);
+    },
+
     setupPositionObserver: function () {
       // If we already have an observer, disconnect it first
       if (this.positionObserver) {
@@ -127,6 +188,13 @@
 
       // Make sure apiConnected is false by default until we get a successful API response
       this.apiConnected = false;
+
+      // Store the initial page URL
+      this.currentPageUrl = window.location.href;
+      this.hasTrackedInitialUrl = false;
+
+      // Set up URL change tracking
+      this.setupUrlChangeTracking();
 
       // Check if config is available
       if (typeof voiceroConfig !== "undefined") {
@@ -1383,7 +1451,8 @@
       }
 
       // Ask our REST proxy for this specific sessionId
-      const proxyUrl = `https://www.voicero.ai/api/session?sessionId=${sessionId}`;
+      const currentUrl = encodeURIComponent(window.location.href);
+      const proxyUrl = `https://www.voicero.ai/api/session?sessionId=${sessionId}&pageUrl=${currentUrl}`;
 
       fetch(proxyUrl, {
         method: "GET",
@@ -1672,9 +1741,13 @@
       // Check if Shopify customer ID is available
       const shopifyCustomerId = window.__VoiceroCustomerId || null;
 
-      // Create request body with websiteId and shopifyCustomerId if available
+      // Get current page URL
+      const currentPageUrl = window.location.href;
+
+      // Create request body with websiteId, pageUrl and shopifyCustomerId if available
       const requestBody = JSON.stringify({
         websiteId: this.websiteId,
+        pageUrl: currentPageUrl,
         ...(shopifyCustomerId && { shopifyCustomerId }),
       });
 
@@ -1779,6 +1852,9 @@
             this.isSessionOperationInProgress = false;
             this.lastSessionOperationTime = Date.now();
             console.log("VoiceroCore: Session initialization complete");
+
+            // Track the current URL with the new session ID
+            this.trackUrlMovement(window.location.href);
           })
           .catch((error) => {
             console.error("VoiceroCore: Session creation failed:", error);
@@ -1804,6 +1880,7 @@
       // Only run if jQuery is available
       if (typeof window.jQuery === "undefined") {
         // Use fetch as a fallback if jQuery isn't available
+        const currentPageUrl = window.location.href;
         fetch("https://www.voicero.ai/api/session", {
           method: "POST",
           headers: {
@@ -1811,6 +1888,7 @@
           },
           body: JSON.stringify({
             websiteId: this.websiteId,
+            pageUrl: currentPageUrl,
             ...(shopifyCustomerId && { shopifyCustomerId }),
           }),
         })
@@ -1838,11 +1916,13 @@
       }
 
       // Use jQuery if available
+      const currentPageUrl = window.location.href;
       window.jQuery.ajax({
         url: "https://www.voicero.ai/api/session",
         type: "POST",
         data: JSON.stringify({
           websiteId: this.websiteId,
+          pageUrl: currentPageUrl,
           ...(shopifyCustomerId && { shopifyCustomerId }),
         }),
         contentType: "application/json",
@@ -1872,6 +1952,49 @@
     // Get the working API base URL
     getApiBaseUrl: function () {
       return this.apiBaseUrl || this.apiBaseUrls[0];
+    },
+
+    // Track URL movement to the backend
+    trackUrlMovement: function (url) {
+      if (!this.sessionId || !url) return;
+
+      // Don't track if URL hasn't changed
+      if (url === this.currentPageUrl && this.hasTrackedInitialUrl) return;
+
+      // Update current URL
+      this.currentPageUrl = url;
+      this.hasTrackedInitialUrl = true;
+
+      console.log("VoiceroCore: Tracking URL movement:", url);
+
+      const apiUrl = `https://www.voicero.ai/api/session/url-movement`;
+
+      fetch(apiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          ...(window.voiceroConfig?.getAuthHeaders
+            ? window.voiceroConfig.getAuthHeaders()
+            : {}),
+        },
+        body: JSON.stringify({
+          sessionId: this.sessionId,
+          url: url,
+        }),
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error(`URL movement tracking failed: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then((data) => {
+          console.log("VoiceroCore: URL movement tracked successfully:", data);
+        })
+        .catch((error) => {
+          console.error("VoiceroCore: URL movement tracking error:", error);
+        });
     },
 
     // Show the chooser interface when an active interface is closed
