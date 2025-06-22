@@ -20,6 +20,7 @@ import {
   Toast,
   EmptyState,
   Icon,
+  Collapsible,
 } from "@shopify/polaris";
 import {
   DataPresentationIcon,
@@ -27,6 +28,8 @@ import {
   ChatIcon,
   RefreshIcon,
   GlobeIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
 } from "@shopify/polaris-icons";
 import { authenticate } from "../shopify.server";
 import urls from "../config/urls";
@@ -194,6 +197,14 @@ export default function AIOverviewPage() {
   const [aiHistoryData, setAiHistoryData] = useState(null);
   const [aiHistoryError, setAiHistoryError] = useState(false);
   const [updatedAnalysis, setUpdatedAnalysis] = useState(analysis);
+
+  // Track which thread is expanded
+  const [expandedThreadId, setExpandedThreadId] = useState(null);
+
+  // Toggle thread expansion
+  const toggleThreadExpansion = (threadId) => {
+    setExpandedThreadId(expandedThreadId === threadId ? null : threadId);
+  };
 
   // Fetch AI history data on client side
   useEffect(() => {
@@ -795,47 +806,150 @@ export default function AIOverviewPage() {
                             ? firstUserMessage.content
                             : thread.initialQuery || "Untitled conversation";
 
+                          // Sort messages with most recent first
+                          const sortedMessages = thread.messages
+                            ? [...thread.messages].sort(
+                                (a, b) =>
+                                  new Date(b.createdAt) - new Date(a.createdAt),
+                              )
+                            : [];
+
                           return (
-                            <Box
-                              key={index}
-                              background="bg-surface-secondary"
-                              padding="300"
-                              borderRadius="200"
-                            >
-                              {/* Simplified single-line layout */}
-                              <InlineStack align="space-between">
-                                <BlockStack gap="0">
-                                  <Text variant="bodyMd" fontWeight="semibold">
-                                    {queryText}
-                                  </Text>
-                                  <Text variant="bodySm" color="subdued">
-                                    {new Date(
-                                      thread.lastMessageAt,
-                                    ).toLocaleDateString()}{" "}
-                                    {new Date(
-                                      thread.lastMessageAt,
-                                    ).toLocaleTimeString([], {
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                    })}
-                                  </Text>
-                                </BlockStack>
-                                <InlineStack gap="200" align="center">
-                                  <Badge>
-                                    {thread.messageCount > 0
-                                      ? `${thread.messageCount} messages`
-                                      : "New"}
-                                  </Badge>
-                                  <Button
-                                    size="slim"
-                                    url={`https://www.voicero.ai/app/chats/session?id=${thread.id}`}
-                                    external={true}
-                                  >
-                                    View More
-                                  </Button>
+                            <BlockStack key={index} gap="100">
+                              <Box
+                                background="bg-surface-secondary"
+                                padding="300"
+                                borderRadius={
+                                  expandedThreadId === thread.id
+                                    ? "200 200 0 0"
+                                    : "200"
+                                }
+                              >
+                                {/* Simplified single-line layout */}
+                                <InlineStack align="space-between">
+                                  <BlockStack gap="0">
+                                    <Text
+                                      variant="bodyMd"
+                                      fontWeight="semibold"
+                                    >
+                                      {queryText}
+                                    </Text>
+                                    <Text variant="bodySm" color="subdued">
+                                      {new Date(
+                                        thread.lastMessageAt,
+                                      ).toLocaleDateString()}{" "}
+                                      {new Date(
+                                        thread.lastMessageAt,
+                                      ).toLocaleTimeString([], {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                      })}
+                                    </Text>
+                                  </BlockStack>
+                                  <InlineStack gap="200" align="center">
+                                    <Badge>
+                                      {thread.messageCount > 0
+                                        ? `${thread.messageCount} messages`
+                                        : "New"}
+                                    </Badge>
+                                    <Button
+                                      size="slim"
+                                      icon={
+                                        expandedThreadId === thread.id
+                                          ? ChevronUpIcon
+                                          : ChevronDownIcon
+                                      }
+                                      onClick={() =>
+                                        toggleThreadExpansion(thread.id)
+                                      }
+                                    >
+                                      {expandedThreadId === thread.id
+                                        ? "Hide"
+                                        : "View More"}
+                                    </Button>
+                                  </InlineStack>
                                 </InlineStack>
-                              </InlineStack>
-                            </Box>
+                              </Box>
+
+                              <Collapsible
+                                open={expandedThreadId === thread.id}
+                                id={`thread-${thread.id}`}
+                              >
+                                <Box
+                                  padding="300"
+                                  background="bg-surface-subdued"
+                                  borderRadius="0 0 200 200"
+                                >
+                                  <BlockStack gap="300">
+                                    {sortedMessages &&
+                                    sortedMessages.length > 0 ? (
+                                      sortedMessages.map((message, msgIdx) => (
+                                        <InlineStack
+                                          key={msgIdx}
+                                          align={
+                                            message.role === "assistant"
+                                              ? "start"
+                                              : "end"
+                                          }
+                                          blockAlign="start"
+                                          gap="300"
+                                        >
+                                          {message.role === "assistant" && (
+                                            <div
+                                              style={{
+                                                width: "24px",
+                                                height: "24px",
+                                              }}
+                                            >
+                                              <Icon source={ChatIcon} />
+                                            </div>
+                                          )}
+                                          <Box
+                                            padding="300"
+                                            background={
+                                              message.role === "assistant"
+                                                ? "bg-surface"
+                                                : "bg-surface-active"
+                                            }
+                                            borderRadius="200"
+                                            maxWidth="80%"
+                                          >
+                                            <Text variant="bodyMd">
+                                              {message.content}
+                                            </Text>
+                                            <Text
+                                              variant="bodySm"
+                                              color="subdued"
+                                            >
+                                              {new Date(
+                                                message.createdAt,
+                                              ).toLocaleTimeString([], {
+                                                hour: "2-digit",
+                                                minute: "2-digit",
+                                              })}
+                                            </Text>
+                                          </Box>
+                                          {message.role === "user" && (
+                                            <div
+                                              style={{
+                                                width: "24px",
+                                                height: "24px",
+                                              }}
+                                            >
+                                              <Icon source={ChatIcon} />
+                                            </div>
+                                          )}
+                                        </InlineStack>
+                                      ))
+                                    ) : (
+                                      <Text alignment="center">
+                                        No messages available
+                                      </Text>
+                                    )}
+                                  </BlockStack>
+                                </Box>
+                              </Collapsible>
+                            </BlockStack>
                           );
                         })}
 

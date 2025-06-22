@@ -722,6 +722,96 @@
       return links;
     },
 
+    // Check if current page is a contact page
+    isContactPage: function () {
+      try {
+        // Check URL patterns
+        const url = window.location.href.toLowerCase();
+        const hasContactInUrl =
+          url.includes("/contact") ||
+          url.includes("contact-us") ||
+          url.includes("get-in-touch") ||
+          url.includes("reach-us");
+
+        // Check page content for contact-related keywords
+        const pageText = document.body.innerText.toLowerCase();
+        const hasContactKeywords =
+          pageText.includes("contact us") ||
+          pageText.includes("get in touch") ||
+          pageText.includes("reach out to us") ||
+          (pageText.includes("contact") &&
+            (pageText.includes("email us") || pageText.includes("call us")));
+
+        // Check for common contact form fields
+        const inputFields = Array.from(
+          document.querySelectorAll("input, textarea"),
+        );
+        const formLabels = Array.from(document.querySelectorAll("label"));
+        const labelTexts = formLabels.map((label) =>
+          label.textContent.toLowerCase(),
+        );
+
+        const hasNameField =
+          inputFields.some(
+            (input) => input.name && input.name.toLowerCase().includes("name"),
+          ) || labelTexts.some((text) => text.includes("name"));
+
+        const hasEmailField =
+          inputFields.some(
+            (input) =>
+              input.type === "email" ||
+              (input.name && input.name.toLowerCase().includes("email")),
+          ) || labelTexts.some((text) => text.includes("email"));
+
+        const hasMessageField =
+          document.querySelector("textarea") !== null ||
+          inputFields.some(
+            (input) =>
+              input.name &&
+              (input.name.toLowerCase().includes("message") ||
+                input.name.toLowerCase().includes("comment")),
+          ) ||
+          labelTexts.some(
+            (text) => text.includes("message") || text.includes("comment"),
+          );
+
+        const hasPhoneField =
+          inputFields.some(
+            (input) =>
+              input.type === "tel" ||
+              (input.name && input.name.toLowerCase().includes("phone")),
+          ) ||
+          labelTexts.some(
+            (text) =>
+              text.includes("phone") ||
+              text.includes("telephone") ||
+              text.includes("mobile"),
+          );
+
+        // Check if there's both contact indicators and contact form fields
+        const isLikelyContactPage =
+          (hasContactInUrl || hasContactKeywords) &&
+          hasNameField &&
+          hasEmailField &&
+          (hasMessageField || hasPhoneField);
+
+        console.log("VoiceroSecond: Contact page detection:", {
+          hasContactInUrl,
+          hasContactKeywords,
+          hasNameField,
+          hasEmailField,
+          hasMessageField,
+          hasPhoneField,
+          isLikelyContactPage,
+        });
+
+        return isLikelyContactPage;
+      } catch (error) {
+        console.error("VoiceroSecond: Error in isContactPage:", error);
+        return false;
+      }
+    },
+
     // Determine if the page should be analyzed
     shouldAnalyzePage: function (websiteData) {
       try {
@@ -738,6 +828,319 @@
         console.log("VoiceroSecond: Is product page?", isProductPage);
         if (isProductPage) {
           console.log("VoiceroSecond: This is a product page - will analyze");
+          return true;
+        }
+
+        // Check if it's a contact page - ALWAYS analyze contact pages
+        const isContactPage = this.isContactPage();
+        console.log("VoiceroSecond: Is contact page?", isContactPage);
+        if (isContactPage) {
+          console.log("VoiceroSecond: This is a contact page - will analyze");
+
+          // SIMPLE DIRECT CODE: Immediately remove any core buttons
+          const coreButton = document.getElementById("chat-website-button");
+          if (coreButton) {
+            coreButton.style.display = "none";
+            coreButton.style.opacity = "0";
+            coreButton.style.visibility = "hidden";
+            console.log("VoiceroSecond: Removed core button");
+          }
+
+          // Also hide the toggle container
+          const toggleContainer = document.getElementById(
+            "voice-toggle-container",
+          );
+          if (toggleContainer) {
+            toggleContainer.style.display = "none";
+            toggleContainer.style.visibility = "hidden";
+            toggleContainer.style.opacity = "0";
+          }
+
+          // Automatically open the VoiceroText chat when we detect a contact page
+          if (window.VoiceroText) {
+            console.log(
+              "VoiceroSecond: Opening VoiceroText chat for contact page",
+            );
+
+            // Wait a moment for the page to fully load before opening chat
+            setTimeout(() => {
+              // CRITICAL: First update session state to ensure text chat will open
+              if (window.VoiceroCore) {
+                console.log(
+                  "VoiceroSecond: Setting session state to open text chat",
+                );
+
+                // Update session object directly first
+                if (window.VoiceroCore.session) {
+                  window.VoiceroCore.session.textOpen = true;
+                  window.VoiceroCore.session.textOpenWindowUp = true;
+                  window.VoiceroCore.session.coreOpen = false; // Close main button
+                  window.VoiceroCore.session.voiceOpen = false; // Ensure voice is closed
+
+                  console.log(
+                    "VoiceroSecond: Updated session state directly:",
+                    {
+                      textOpen: window.VoiceroCore.session.textOpen,
+                      textOpenWindowUp:
+                        window.VoiceroCore.session.textOpenWindowUp,
+                    },
+                  );
+                }
+
+                // Then use the official update method if available
+                if (
+                  typeof window.VoiceroCore.updateWindowState === "function"
+                ) {
+                  window.VoiceroCore.updateWindowState({
+                    textOpen: true,
+                    textOpenWindowUp: true,
+                    coreOpen: false,
+                    voiceOpen: false,
+                  });
+                  console.log(
+                    "VoiceroSecond: Called updateWindowState to open text chat",
+                  );
+                }
+              }
+
+              // Force hide the main button
+              if (
+                window.VoiceroCore &&
+                typeof window.VoiceroCore.hideMainButton === "function"
+              ) {
+                window.VoiceroCore.hideMainButton();
+              }
+
+              // Only now try to open the text chat
+              console.log("VoiceroSecond: Now calling openTextChat directly");
+              window.VoiceroText.openTextChat();
+
+              // Update the initial greeting message for contact pages
+              // Add an initial greeting specifically for contact pages
+              setTimeout(() => {
+                console.log("VoiceroSecond: Setting up contact page greeting");
+
+                // Create a flag to prevent other components from adding automated messages
+                window.voiceroIsContactPage = true;
+
+                // Get the shadowHost reference first
+                const shadowHost = document.getElementById(
+                  "voicero-text-chat-container",
+                );
+
+                // Clear any existing messages from other components
+                if (window.VoiceroText && window.VoiceroText.messages) {
+                  // Clear messages array
+                  window.VoiceroText.messages = [];
+
+                  // Also clear the messages in the UI
+                  if (shadowHost && shadowHost.shadowRoot) {
+                    const messagesContainer =
+                      shadowHost.shadowRoot.getElementById("chat-messages");
+                    if (messagesContainer) {
+                      // Keep the container but remove children (except initial suggestions)
+                      const children = Array.from(messagesContainer.children);
+                      for (const child of children) {
+                        if (child.id !== "initial-suggestions") {
+                          messagesContainer.removeChild(child);
+                        }
+                      }
+                    }
+                  }
+
+                  // Now add our simple greeting
+                  window.VoiceroText.addMessage("How can I help you?", "ai");
+
+                  // Also patch the SecondLook message processing
+                  if (
+                    window.VoiceroSecond &&
+                    window.VoiceroSecond.sendDataToApi
+                  ) {
+                    // Store the original function
+                    const originalSendDataToApi =
+                      window.VoiceroSecond.sendDataToApi;
+
+                    // Replace with our patched version
+                    window.VoiceroSecond.sendDataToApi = function (
+                      websiteData,
+                    ) {
+                      // If this is a contact page, don't add automated form messages
+                      if (window.voiceroIsContactPage) {
+                        console.log(
+                          "VoiceroSecond: Skipping automated form analysis on contact page",
+                        );
+                        return; // Skip the API call for forms analysis
+                      }
+
+                      // Otherwise call the original function
+                      return originalSendDataToApi.call(
+                        window.VoiceroSecond,
+                        websiteData,
+                      );
+                    };
+                  }
+                } else {
+                  // If VoiceroText is not ready yet, try again in a moment
+                  setTimeout(() => {
+                    if (window.VoiceroText && window.VoiceroText.messages) {
+                      window.VoiceroText.messages = [];
+                      window.VoiceroText.addMessage(
+                        "How can I help you?",
+                        "ai",
+                      );
+                    }
+                  }, 500);
+                }
+
+                // Make the interface much larger specifically for contact pages
+                if (shadowHost && shadowHost.shadowRoot) {
+                  console.log(
+                    "VoiceroSecond: Enlarging text chat interface for contact page",
+                  );
+
+                  // Scale up the main container
+                  shadowHost.style.maxWidth = "1440px"; // Triple the normal 480px
+                  shadowHost.style.width = "95%";
+                  shadowHost.style.height = "60vh"; // Set height to 60% of viewport height
+                  shadowHost.style.minHeight = "60vh"; // Enforce minimum height as well
+
+                  // Access shadow DOM elements
+                  const chatMessages =
+                    shadowHost.shadowRoot.getElementById("chat-messages");
+                  const chatInputWrapper =
+                    shadowHost.shadowRoot.getElementById("chat-input-wrapper");
+                  const chatInput =
+                    shadowHost.shadowRoot.getElementById("chat-input");
+
+                  // Make messages container taller to fill most of the shadowHost
+                  if (chatMessages) {
+                    chatMessages.style.maxHeight = "50vh"; // Allow messages to fill most of the 60vh container
+                    chatMessages.style.minHeight = "40vh"; // Enforce minimum height
+                    chatMessages.style.height = "auto"; // Allow content to determine height within min/max constraints
+                    chatMessages.style.fontSize = "18px"; // Larger text
+                  }
+
+                  // Style the chat interface within shadowRoot
+                  const containerStyle = document.createElement("style");
+                  containerStyle.id = "voicero-contact-page-container-style";
+                  containerStyle.textContent = `
+                    :host {
+                      height: 60vh !important;
+                      min-height: 500px !important;
+                      display: flex !important;
+                      flex-direction: column !important;
+                    }
+                  `;
+                  shadowHost.shadowRoot.appendChild(containerStyle);
+
+                  // Make input larger
+                  if (chatInput) {
+                    chatInput.style.fontSize = "18px";
+                    chatInput.style.padding = "12px 16px";
+                    chatInput.style.minHeight = "48px";
+                  }
+
+                  // Adjust send button size
+                  const sendButton =
+                    shadowHost.shadowRoot.getElementById("send-message-btn");
+                  if (sendButton) {
+                    sendButton.style.width = "48px";
+                    sendButton.style.height = "48px";
+                  }
+
+                  // Increase message bubble size
+                  const style = document.createElement("style");
+                  style.textContent = `
+                    .user-message .message-content,
+                    .ai-message .message-content {
+                      font-size: 18px !important;
+                      padding: 16px 20px !important;
+                      line-height: 1.5 !important;
+                      max-width: 85% !important;
+                    }
+                    
+                    #chat-controls-header {
+                      height: 50px !important;
+                      padding: 15px 20px !important;
+                    }
+                    
+                    #chat-messages {
+                      flex-grow: 1 !important;
+                      min-height: 40vh !important;
+                      max-height: 50vh !important;
+                    }
+                    
+                    #chat-input-wrapper {
+                      position: sticky !important;
+                      bottom: 0 !important;
+                    }
+                  `;
+                  shadowHost.shadowRoot.appendChild(style);
+
+                  // Fix the close button functionality
+                  const closeButton =
+                    shadowHost.shadowRoot.querySelector(".close-button");
+                  if (closeButton) {
+                    console.log(
+                      "VoiceroSecond: Overriding close button behavior for contact page",
+                    );
+                    // Remove existing event listeners by cloning and replacing the element
+                    const newCloseButton = closeButton.cloneNode(true);
+                    closeButton.parentNode.replaceChild(
+                      newCloseButton,
+                      closeButton,
+                    );
+
+                    // Add our custom close handler for contact pages
+                    newCloseButton.addEventListener("click", function (e) {
+                      e.preventDefault();
+                      e.stopPropagation();
+
+                      console.log(
+                        "VoiceroSecond: Contact page close button clicked",
+                      );
+
+                      // Hide the chat interface
+                      if (shadowHost) {
+                        shadowHost.style.display = "none";
+                        shadowHost.style.visibility = "hidden";
+                        shadowHost.style.opacity = "0";
+                      }
+
+                      // Also update session state if needed
+                      if (window.VoiceroCore && window.VoiceroCore.session) {
+                        window.VoiceroCore.session.textOpen = false;
+                        window.VoiceroCore.session.textOpenWindowUp = false;
+
+                        // Use official update method if available
+                        if (
+                          typeof window.VoiceroCore.updateWindowState ===
+                          "function"
+                        ) {
+                          window.VoiceroCore.updateWindowState({
+                            textOpen: false,
+                            textOpenWindowUp: false,
+                            coreOpen: false,
+                          });
+                        }
+                      }
+
+                      return false;
+                    });
+                  }
+                }
+
+                // Force display the chat container to ensure it's visible
+                if (shadowHost) {
+                  console.log("VoiceroSecond: Force showing the shadow host");
+                  shadowHost.style.display = "block";
+                  shadowHost.style.opacity = "1";
+                  shadowHost.style.visibility = "visible";
+                }
+              }, 300);
+            }, 1000);
+          }
+
           return true;
         }
 
@@ -774,16 +1177,18 @@
 
         // We don't need to analyze collection pages without specific forms
         // Search pages are also not relevant unless they have specific product data
-        if (
-          url.includes("collection") ||
-          url.includes("collections") ||
-          url.includes("search")
-        ) {
-          // Unless it has significant number of input fields (for potential filtering)
-          const inputs = websiteData.inputs || [];
-          const hasMultipleInputs = Array.isArray(inputs) && inputs.length > 3;
+        const urlLower = url.toLowerCase();
+        const isCollectionOrSearch =
+          urlLower.indexOf("collection") > -1 ||
+          urlLower.indexOf("collections") > -1 ||
+          urlLower.indexOf("search") > -1;
 
-          if (!hasMultipleInputs) {
+        if (isCollectionOrSearch) {
+          // Unless it has significant number of input fields (for potential filtering)
+          const collectionInputs = websiteData.inputs || [];
+          const collectionHasMultipleInputs = collectionInputs.length > 3;
+
+          if (!collectionHasMultipleInputs) {
             console.log(
               "VoiceroSecond: This is a collection/search page without significant forms - skipping",
             );
@@ -797,7 +1202,7 @@
         console.log(
           "VoiceroSecond: Has multiple inputs?",
           hasMultipleInputs,
-          `(found ${Array.isArray(inputs) ? inputs.length : 0})`,
+          "(found " + (Array.isArray(inputs) ? inputs.length : 0) + ")",
         );
 
         if (Array.isArray(inputs) && inputs.length > 0) {

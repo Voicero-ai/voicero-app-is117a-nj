@@ -2967,13 +2967,53 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
         this.isClosingTextChat = false;
       }
 
-      // Hide both the interface and shadow host
+      // Hide both the interface and shadow host with more aggressive styling
       if (textInterface) {
-        textInterface.style.display = "none";
+        textInterface.style.cssText = `
+          display: none !important;
+          visibility: hidden !important;
+          opacity: 0 !important;
+          pointer-events: none !important;
+          height: 0 !important;
+          width: 0 !important;
+          overflow: hidden !important;
+          position: absolute !important;
+          z-index: -1 !important;
+        `;
       }
       if (shadowHost) {
-        shadowHost.style.display = "none";
+        shadowHost.style.cssText = `
+          display: none !important;
+          visibility: hidden !important;
+          opacity: 0 !important;
+          pointer-events: none !important;
+          height: 0 !important;
+          width: 0 !important;
+          overflow: hidden !important;
+          position: absolute !important;
+          z-index: -1 !important;
+        `;
       }
+
+      // Add multiple redundant attempts to ensure the chat is closed
+      setTimeout(() => {
+        if (shadowHost) {
+          shadowHost.style.cssText = `
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+            z-index: -1 !important;
+          `;
+        }
+      }, 100);
+
+      // Also attempt to show the main button with a delay
+      setTimeout(() => {
+        if (window.VoiceroCore) {
+          window.VoiceroCore.ensureMainButtonVisible();
+        }
+      }, 200);
     },
 
     // Minimize the chat interface

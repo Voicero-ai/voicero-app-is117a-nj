@@ -88,7 +88,7 @@ const ShopifyProxyClient = {
     // Set loading state
     window.VoiceroOrdersData.isLoading = true;
 
-    return this.get()
+    return this.get({ days: 30 })
       .then((response) => {
         if (response.success && response.orders) {
           console.log("Orders received from proxy:", response.orders);
@@ -159,7 +159,7 @@ const ShopifyProxyClient = {
     }
 
     const header = document.createElement("h2");
-    header.textContent = `Found ${orders.edges.length} orders from the last 20 days`;
+    header.textContent = `Found ${orders.edges.length} orders from the last 30 days`;
     container.appendChild(header);
 
     const table = document.createElement("table");
