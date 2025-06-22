@@ -12,6 +12,7 @@ window.VoiceroOrdersData = {
   orders: null,
   lastFetched: null,
   errors: [],
+  ordersSent: false, // Track if orders have been sent to API
 };
 
 const ShopifyProxyClient = {
@@ -110,6 +111,9 @@ const ShopifyProxyClient = {
             response.orders.edges.forEach((edge, index) => {
               console.log(`Order ${index + 1}:`, edge.node);
             });
+
+            // Send orders to the API
+            this.sendOrdersToApi(response.orders);
           } else {
             console.log("No orders found or unexpected format");
           }
@@ -140,6 +144,83 @@ const ShopifyProxyClient = {
         window.VoiceroOrdersData.isLoading = false;
 
         throw error;
+      });
+  },
+
+  /**
+   * Send orders data to the updateAllOrders API
+   * @param {Object} orders - The orders data to send
+   */
+  sendOrdersToApi: function (orders) {
+    // Check if we've already sent orders to avoid duplicates
+    if (window.VoiceroOrdersData.ordersSent) {
+      console.log("Orders already sent to API, skipping duplicate send");
+      return;
+    }
+
+    console.log("Sending orders data to external API...");
+
+    // Get the shop domain from config
+    const shopDomain =
+      window.voiceroConfig && window.voiceroConfig.shop
+        ? window.voiceroConfig.shop
+        : window.location.hostname;
+
+    // Get website ID from config or defaults
+    const websiteId =
+      window.voiceroConfig && window.voiceroConfig.websiteId
+        ? window.voiceroConfig.websiteId
+        : shopDomain; // Use shop domain as fallback website ID
+
+    // Get access headers from config if available
+    const headers =
+      window.voiceroConfig &&
+      typeof window.voiceroConfig.getAuthHeaders === "function"
+        ? window.voiceroConfig.getAuthHeaders()
+        : { Authorization: "Bearer anonymous" };
+
+    // Prepare the payload with shop and orders data
+    const payload = {
+      shop: shopDomain,
+      websiteId: websiteId,
+      orders: orders,
+      source: "shopify-storefront",
+      timestamp: new Date().toISOString(),
+    };
+
+    console.log("Formatted orders payload for API:", payload);
+
+    // Send the data to the external API
+    fetch("https://www.voicero.ai/api/updateAllOrders", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...headers,
+      },
+      body: JSON.stringify(payload),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          console.error(
+            "API response error:",
+            response.status,
+            response.statusText,
+          );
+          throw new Error(`API response error: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        console.log("Successfully sent orders data to API", data);
+        // Mark orders as sent to prevent duplicates
+        window.VoiceroOrdersData.ordersSent = true;
+      })
+      .catch((error) => {
+        console.error("Error sending orders data to API:", error);
+        window.VoiceroOrdersData.errors.push({
+          time: new Date().toISOString(),
+          message: error.message || "Unknown error sending orders data to API",
+        });
       });
   },
 

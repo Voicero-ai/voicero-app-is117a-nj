@@ -915,7 +915,44 @@ export default function AIOverviewPage() {
                                             maxWidth="80%"
                                           >
                                             <Text variant="bodyMd">
-                                              {message.content}
+                                              {(() => {
+                                                // Check if the message content is JSON
+                                                try {
+                                                  const jsonContent =
+                                                    JSON.parse(message.content);
+                                                  // If it's structured JSON with answer and action fields
+                                                  if (
+                                                    jsonContent.answer &&
+                                                    jsonContent.action
+                                                  ) {
+                                                    return (
+                                                      <>
+                                                        <div>
+                                                          {jsonContent.answer}
+                                                        </div>
+                                                        <div
+                                                          style={{
+                                                            marginTop: "8px",
+                                                            fontStyle: "italic",
+                                                          }}
+                                                        >
+                                                          action:{" "}
+                                                          {jsonContent.action}
+                                                        </div>
+                                                      </>
+                                                    );
+                                                  }
+                                                  // If it's just regular JSON, stringify it nicely
+                                                  return JSON.stringify(
+                                                    jsonContent,
+                                                    null,
+                                                    2,
+                                                  );
+                                                } catch (e) {
+                                                  // Not JSON, just return the content as is
+                                                  return message.content;
+                                                }
+                                              })()}
                                             </Text>
                                             <Text
                                               variant="bodySm"
