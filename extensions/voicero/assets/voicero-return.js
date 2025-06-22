@@ -949,15 +949,9 @@ Would you like me to help you initiate a return request once you receive your or
    * @param {string} message - The message to display
    */
   notifyUser: function (message) {
-    // Try VoiceroText first
+    // Use VoiceroText - voice interface has been removed
     if (window.VoiceroText && window.VoiceroText.addMessage) {
       window.VoiceroText.addMessage(message, "ai");
-      return;
-    }
-
-    // Try VoiceroVoice next
-    if (window.VoiceroVoice && window.VoiceroVoice.addMessage) {
-      window.VoiceroVoice.addMessage(message, "ai");
       return;
     }
 

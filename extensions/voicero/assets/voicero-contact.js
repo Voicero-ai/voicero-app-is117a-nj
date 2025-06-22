@@ -108,16 +108,11 @@ const VoiceroContact = {
 
   // Apply styles to the form elements
   applyFormStyles: function (formContainer) {
-    // Get the main theme color from VoiceroText or VoiceroVoice - more comprehensive approach
+    // Get the main theme color from VoiceroText - voice functionality has been removed
     let mainColor;
 
-    // First try VoiceroVoice
-    if (window.VoiceroVoice && window.VoiceroVoice.websiteColor) {
-      mainColor = window.VoiceroVoice.websiteColor;
-      console.log("VoiceroContact: Using color from VoiceroVoice:", mainColor);
-    }
-    // Then try various ways to get it from VoiceroText
-    else if (window.VoiceroText) {
+    // Try various ways to get it from VoiceroText
+    if (window.VoiceroText) {
       if (window.VoiceroText.websiteColor) {
         mainColor = window.VoiceroText.websiteColor;
         console.log(
@@ -295,25 +290,13 @@ const VoiceroContact = {
       // Get the main theme color with more aggressive checks
       let buttonColor = "#882be6"; // Default purple
 
-      // First try getting from the current interface
-      if (
-        interfaceType === "voice" &&
-        window.VoiceroVoice &&
-        window.VoiceroVoice.websiteColor
-      ) {
-        buttonColor = window.VoiceroVoice.websiteColor;
-      } else if (
-        interfaceType === "text" &&
-        window.VoiceroText &&
-        window.VoiceroText.websiteColor
-      ) {
+      // Get color from text interface
+      if (window.VoiceroText && window.VoiceroText.websiteColor) {
         buttonColor = window.VoiceroText.websiteColor;
       }
       // If still default, try harder to get the color
       if (buttonColor === "#882be6") {
-        if (window.VoiceroVoice && window.VoiceroVoice.websiteColor) {
-          buttonColor = window.VoiceroVoice.websiteColor;
-        } else if (window.VoiceroText && window.VoiceroText.websiteColor) {
+        if (window.VoiceroText && window.VoiceroText.websiteColor) {
           buttonColor = window.VoiceroText.websiteColor;
         }
         // Try to get from document style if available
@@ -405,13 +388,7 @@ const VoiceroContact = {
         const cancelMessage =
           "No problem! Let me know if you have any other questions.";
 
-        if (
-          interfaceType === "voice" &&
-          window.VoiceroVoice &&
-          window.VoiceroVoice.addMessage
-        ) {
-          window.VoiceroVoice.addMessage(cancelMessage, "ai");
-        } else if (window.VoiceroText && window.VoiceroText.addMessage) {
+        if (window.VoiceroText && window.VoiceroText.addMessage) {
           window.VoiceroText.addMessage(cancelMessage, "ai");
         }
       });
@@ -560,13 +537,7 @@ const VoiceroContact = {
         const successMessage =
           "Thank you for your message! We've received your request and will get back to you soon.";
 
-        if (
-          interfaceType === "voice" &&
-          window.VoiceroVoice &&
-          window.VoiceroVoice.addMessage
-        ) {
-          window.VoiceroVoice.addMessage(successMessage, "ai");
-        } else if (window.VoiceroText && window.VoiceroText.addMessage) {
+        if (window.VoiceroText && window.VoiceroText.addMessage) {
           window.VoiceroText.addMessage(successMessage, "ai");
         }
       })

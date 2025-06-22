@@ -1222,8 +1222,6 @@ To make changes, please specify what you'd like to update.
   notify: function (msg) {
     if (window.VoiceroText?.addMessage) {
       window.VoiceroText.addMessage(msg, "ai");
-    } else if (window.VoiceroVoice?.addMessage) {
-      window.VoiceroVoice.addMessage(msg, "ai");
     } else {
       alert(msg);
     }
@@ -1505,9 +1503,6 @@ To make changes, please specify what you'd like to update.
       if (window.VoiceroText?.addMessage) {
         window.VoiceroText.addMessage(emailRequiredMessage, "ai");
       }
-      if (window.VoiceroVoice?.addMessage) {
-        window.VoiceroVoice.addMessage(emailRequiredMessage, "ai");
-      }
 
       // Save message to session
       this.saveMessageToSession(emailRequiredMessage, "assistant");
@@ -1531,9 +1526,6 @@ To make changes, please specify what you'd like to update.
         // Display the message
         if (window.VoiceroText?.addMessage) {
           window.VoiceroText.addMessage(emailMismatchMessage, "ai");
-        }
-        if (window.VoiceroVoice?.addMessage) {
-          window.VoiceroVoice.addMessage(emailMismatchMessage, "ai");
         }
 
         // Save message to session
@@ -1594,10 +1586,6 @@ To make changes, please specify what you'd like to update.
         if (window.VoiceroText?.addMessage) {
           window.VoiceroText.addMessage(message, "ai");
         }
-        // Display the message using VoiceroVoice as well
-        if (window.VoiceroVoice?.addMessage) {
-          window.VoiceroVoice.addMessage(message, "ai");
-        }
 
         // Save message to session if VoiceroCore is available
         this.saveMessageToSession(message, "assistant");
@@ -1610,9 +1598,6 @@ To make changes, please specify what you'd like to update.
         // Display the not found message
         if (window.VoiceroText?.addMessage) {
           window.VoiceroText.addMessage(notFoundMessage, "ai");
-        }
-        if (window.VoiceroVoice?.addMessage) {
-          window.VoiceroVoice.addMessage(notFoundMessage, "ai");
         }
 
         // Save message to session
@@ -1628,9 +1613,6 @@ To make changes, please specify what you'd like to update.
     // Display the login message
     if (window.VoiceroText?.addMessage) {
       window.VoiceroText.addMessage(loginMessage, "ai");
-    }
-    if (window.VoiceroVoice?.addMessage) {
-      window.VoiceroVoice.addMessage(loginMessage, "ai");
     }
 
     // Save message to session

@@ -313,39 +313,22 @@
             // Load our utility files before other modules
             loadScript("{{ 'voicero-color.js' | asset_url }}", function() {
               loadScript("{{ 'voicero-page-data.js' | asset_url }}", function() {
-                // Load the chooser module after utilities
-                loadScript("{{ 'voicero-chooser.js' | asset_url }}", function() {
-                  // Load the welcome module before voice and text modules
-                  loadScript("{{ 'voicero-welcome.js' | asset_url }}", function() {
-                    // Load second-look module before voice/text to analyze page
-                    loadScript("{{ 'voicero-second.js' | asset_url }}", function() {
-                      // Load the wait module first
-                      loadScript("{{ 'voicero-wait.js' | asset_url }}", function() {
-                        // Then load voice module
-                        loadScript("{{ 'voicero-voice.js' | asset_url }}", function() {
-                          
-                          // Auto-open voice interface if it was the last active one
-                          if (window.voiceroConfig.wasOpen && window.voiceroConfig.lastInterface === 'voice') {
-                            setTimeout(function() {
-                              if (window.VoiceroVoice && window.VoiceroVoice.openVoiceChat) {
-                                window.VoiceroVoice.openVoiceChat();
-                              }
-                            }, 300);
-                          }
-                        });
-                        
-                        // Load text module in parallel
-                        loadScript("{{ 'voicero-text.js' | asset_url }}", function() {
-                          
-                          // Auto-open text interface if it was the last active one
-                          if (window.voiceroConfig.wasOpen && window.voiceroConfig.lastInterface === 'text') {
-                            setTimeout(function() {
-                              if (window.VoiceroText && window.VoiceroText.openTextChat) {
-                                window.VoiceroText.openTextChat();
-                              }
-                            }, 300);
-                          }
-                        });
+                // Load the welcome module before text module
+                loadScript("{{ 'voicero-welcome.js' | asset_url }}", function() {
+                  // Load second-look module before text to analyze page
+                  loadScript("{{ 'voicero-second.js' | asset_url }}", function() {
+                    // Load the wait module first
+                    loadScript("{{ 'voicero-wait.js' | asset_url }}", function() {
+                      // Then load text module
+                      loadScript("{{ 'voicero-text.js' | asset_url }}", function() {
+                        // Auto-open text interface if it was the last active one
+                        if (window.voiceroConfig.wasOpen) {
+                          setTimeout(function() {
+                            if (window.VoiceroText && window.VoiceroText.openTextChat) {
+                              window.VoiceroText.openTextChat();
+                            }
+                          }, 300);
+                        }
                       });
                     });
                   });

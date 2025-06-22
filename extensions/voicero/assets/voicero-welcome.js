@@ -1,6 +1,6 @@
 /**
  * VoiceroAI Welcome Module
- * Handles welcome messages for both voice and text interfaces
+ * Handles welcome messages for text interface
  */
 
 const VoiceroWelcome = {
@@ -25,21 +25,6 @@ const VoiceroWelcome = {
     // Check for changes to the session object every second
     this.sessionCheckInterval = setInterval(() => {
       if (window.VoiceroCore && window.VoiceroCore.session) {
-        // Check if we need to show voice welcome
-        if (
-          window.VoiceroCore.session.voiceWelcome &&
-          window.VoiceroCore.session.voiceOpen
-        ) {
-          this.showVoiceWelcome();
-
-          // Update state to prevent showing welcome again
-          if (window.VoiceroCore.updateWindowState) {
-            window.VoiceroCore.updateWindowState({
-              voiceWelcome: false,
-            });
-          }
-        }
-
         // Check if we need to show text welcome
         if (
           window.VoiceroCore.session.textWelcome &&
@@ -62,47 +47,12 @@ const VoiceroWelcome = {
   checkAndDisplayWelcomeMessages: function () {
     if (!window.VoiceroCore || !window.VoiceroCore.session) return;
 
-    // Check for voice welcome
-    if (
-      window.VoiceroCore.session.voiceWelcome &&
-      window.VoiceroCore.session.voiceOpen
-    ) {
-      this.showVoiceWelcome();
-    }
-
     // Check for text welcome
     if (
       window.VoiceroCore.session.textWelcome &&
       window.VoiceroCore.session.textOpen
     ) {
       this.showTextWelcome();
-    }
-  },
-
-  // Show welcome message in voice interface
-  showVoiceWelcome: function () {
-    // Only proceed if voice interface is active
-    if (!window.VoiceroVoice || !document.getElementById("voice-messages")) {
-      console.log("Voice interface not ready for welcome message");
-      return;
-    }
-
-    console.log("Showing voice welcome message");
-
-    // Get website name if available
-    const websiteName = this.getWebsiteName();
-
-    // Create welcome message
-    const welcomeMessage = this.getWelcomeMessage(websiteName, "voice");
-
-    // Add the message to the voice interface
-    window.VoiceroVoice.addMessage(welcomeMessage, "ai");
-
-    // Update state to prevent showing welcome again
-    if (window.VoiceroCore && window.VoiceroCore.updateWindowState) {
-      window.VoiceroCore.updateWindowState({
-        voiceWelcome: false,
-      });
     }
   },
 
@@ -164,12 +114,7 @@ const VoiceroWelcome = {
 
   // Generate appropriate welcome message with personalization
   getWelcomeMessage: function (websiteName, interfaceType) {
-    // Voice interface should have a shorter, more conversational message
-    if (interfaceType === "voice") {
-      return `👋 Welcome to ${websiteName}! I'm your AI assistant. You can ask me questions about products, services, or anything else about ${websiteName}. How can I help you today?`;
-    }
-
-    // Text interface can have a slightly longer message with more details
+    // Text interface message
     return `👋 Welcome to ${websiteName}! 
 
 I'm your AI assistant powered by VoiceroAI. I'm here to help answer your questions about products, services, or anything else related to ${websiteName}.

@@ -952,9 +952,7 @@
               window.VoiceroText.addMessage(aiMessage, "assistant");
             }
 
-            if (window.VoiceroVoice && window.VoiceroVoice.addMessage) {
-              window.VoiceroVoice.addMessage(aiMessage, "assistant");
-            }
+            // Voice interface removed
 
             // Add the message to the current thread in memory
             if (

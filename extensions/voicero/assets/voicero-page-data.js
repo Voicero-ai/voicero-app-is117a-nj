@@ -137,7 +137,7 @@ const VoiceroPageData = {
         id.includes("voice-") ||
         id.includes("text-chat") ||
         id.includes("chat-") ||
-        id === "voice-chat-interface" ||
+        // voice interface removed ||
         id === "voice-messages" ||
         id === "voice-input-wrapper" ||
         id === "voice-controls-header" ||
@@ -153,7 +153,7 @@ const VoiceroPageData = {
         id === "maximize-chat" ||
         id === "close-text-chat" ||
         id === "clear-text-chat" ||
-        id === "toggle-to-voice-chat" ||
+        // toggle-to-voice removed ||
         id === "toggle-to-text-chat" ||
         id === "initial-suggestions"
       ) {

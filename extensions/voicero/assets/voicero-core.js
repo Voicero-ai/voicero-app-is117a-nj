@@ -42,28 +42,31 @@
 
     // Initialize on page load
     // Observe DOM for changes that might affect positioning
-    setupPositionObserver: function() {
+    setupPositionObserver: function () {
       // If we already have an observer, disconnect it first
       if (this.positionObserver) {
         this.positionObserver.disconnect();
       }
-      
+
       // Create a mutation observer to watch for added elements
       this.positionObserver = new MutationObserver((mutations) => {
         // Check if any mutations might have affected bottom-right elements
         let shouldReposition = false;
-        
+
         mutations.forEach((mutation) => {
-          if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+          if (mutation.type === "childList" && mutation.addedNodes.length > 0) {
             // Check if added nodes might be positioned in bottom right
             for (let i = 0; i < mutation.addedNodes.length; i++) {
               const node = mutation.addedNodes[i];
-              if (node.nodeType === 1) { // Element node
+              if (node.nodeType === 1) {
+                // Element node
                 // Look for potential back-to-top buttons or similar elements
-                if ((node.classList && 
-                    (node.classList.contains('back-to-top') || 
-                     node.classList.contains('scroll-to-top'))) ||
-                    node.tagName.toLowerCase() === 'back-to-top') {
+                if (
+                  (node.classList &&
+                    (node.classList.contains("back-to-top") ||
+                      node.classList.contains("scroll-to-top"))) ||
+                  node.tagName.toLowerCase() === "back-to-top"
+                ) {
                   shouldReposition = true;
                   break;
                 }
@@ -71,22 +74,22 @@
             }
           }
         });
-        
+
         // Reposition if needed
         if (shouldReposition) {
           console.log("VoiceroCore: DOM changed, repositioning button");
           this.ensureMainButtonVisible();
         }
       });
-      
+
       // Start observing the body for all changes
-      this.positionObserver.observe(document.body, { 
-        childList: true, 
-        subtree: true 
+      this.positionObserver.observe(document.body, {
+        childList: true,
+        subtree: true,
       });
-      
+
       // Also listen for window resize events
-      window.addEventListener('resize', () => {
+      window.addEventListener("resize", () => {
         // Debounce the resize event
         clearTimeout(this.resizeTimeout);
         this.resizeTimeout = setTimeout(() => {
@@ -94,10 +97,10 @@
           this.ensureMainButtonVisible();
         }, 200);
       });
-      
+
       console.log("VoiceroCore: Position observer set up");
     },
-    
+
     init: function () {
       console.log("VoiceroCore: Initializing");
 
@@ -132,7 +135,9 @@
       // Step 1: First set up basic containers (but not the button yet)
       console.log("VoiceroCore: Creating interfaces - voicero - app- is117a");
       this.createTextChatInterface();
-      this.createVoiceChatInterface();
+
+      // Make sure VoiceroText is loaded
+      this.ensureTextModuleLoaded();
 
       // Step 2: Initialize the API connection - this will create the button
       console.log("VoiceroCore: Checking API connection");
@@ -140,7 +145,7 @@
 
       // Apply button animation to ensure it's attractive
       this.applyButtonAnimation();
-      
+
       // Set up position observer to adjust button position when DOM changes
       this.setupPositionObserver();
 
@@ -171,47 +176,47 @@
     },
 
     // Check for elements in the bottom right corner that might overlap with our button
-    checkForBottomRightElements: function() {
+    checkForBottomRightElements: function () {
       console.log("VoiceroCore: Checking for elements in bottom right corner");
-      
+
       // Define elements we're looking for (by class or ID)
       const potentialOverlaps = [
-        'back-to-top',
-        'scroll-to-top',
-        'scroll-top',
-        'back-top',
-        'to-top',
-        'top-button',
-        'scrolltop'
+        "back-to-top",
+        "scroll-to-top",
+        "scroll-top",
+        "back-top",
+        "to-top",
+        "top-button",
+        "scrolltop",
       ];
-      
+
       // Look for these elements in the document
       let foundElement = null;
       let bottomOffset = 20; // Default bottom offset
-      
+
       for (const selector of potentialOverlaps) {
         // Look by class, ID, or element name
         const elements = document.querySelectorAll(
-          `.${selector}, #${selector}, ${selector}, [data-id="${selector}"]`
+          `.${selector}, #${selector}, ${selector}, [data-id="${selector}"]`,
         );
-        
+
         if (elements.length > 0) {
           for (const el of elements) {
             const rect = el.getBoundingClientRect();
             const style = window.getComputedStyle(el);
-            
+
             // Check if the element is positioned near the bottom right
-            const isBottomRight = 
-              (rect.bottom > window.innerHeight - 150) && 
-              (rect.right > window.innerWidth - 150) &&
-              style.display !== 'none' &&
-              style.visibility !== 'hidden' &&
-              style.opacity !== '0';
-            
+            const isBottomRight =
+              rect.bottom > window.innerHeight - 150 &&
+              rect.right > window.innerWidth - 150 &&
+              style.display !== "none" &&
+              style.visibility !== "hidden" &&
+              style.opacity !== "0";
+
             if (isBottomRight) {
               console.log(`VoiceroCore: Found overlap with element:`, el);
               foundElement = el;
-              
+
               // Calculate the necessary offset to place our button above this element
               // We add 20px padding for good measure
               bottomOffset = window.innerHeight - rect.top + 20;
@@ -219,14 +224,14 @@
             }
           }
         }
-        
+
         if (foundElement) break;
       }
-      
+
       return {
         hasOverlap: !!foundElement,
         bottomOffset: bottomOffset,
-        element: foundElement
+        element: foundElement,
       };
     },
 
@@ -239,7 +244,7 @@
 
       // Make sure theme colors are updated
       this.updateThemeColor(this.websiteColor);
-      
+
       // Check for elements that might overlap with our button
       const overlapCheck = this.checkForBottomRightElements();
 
@@ -350,12 +355,16 @@
 
         if (buttonContainer) {
           // Calculate bottom offset based on overlap check
-          const bottomOffset = overlapCheck.hasOverlap ? overlapCheck.bottomOffset : 20;
-          
+          const bottomOffset = overlapCheck.hasOverlap
+            ? overlapCheck.bottomOffset
+            : 20;
+
           if (overlapCheck.hasOverlap) {
-            console.log(`VoiceroCore: Adjusting button position to avoid overlap. Using bottom offset: ${bottomOffset}px`);
+            console.log(
+              `VoiceroCore: Adjusting button position to avoid overlap. Using bottom offset: ${bottomOffset}px`,
+            );
           }
-          
+
           // Apply styles directly to the element with !important to override injected styles
           buttonContainer.style.cssText = `
           position: fixed !important;
@@ -372,33 +381,10 @@
           left: auto !important;
         `;
 
-          // Get the iconBot value from session if available
-          const iconBot =
-            this.session && this.session.iconBot
-              ? this.session.iconBot
-              : "message";
-          let iconSvg = "";
-
-          // Choose the appropriate SVG based on iconBot value
-          if (iconBot === "bot") {
-            iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="24" height="24" fill="currentColor">
-              <rect x="12" y="16" width="40" height="32" rx="10" ry="10" stroke="white" stroke-width="2" fill="currentColor"/>
-              <circle cx="22" cy="32" r="4" fill="white"/>
-              <circle cx="42" cy="32" r="4" fill="white"/>
-              <path d="M24 42c4 4 12 4 16 0" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/>
-              <line x1="32" y1="8" x2="32" y2="16" stroke="white" stroke-width="2"/>
-              <circle cx="32" cy="6" r="2" fill="white"/>
-            </svg>`;
-          } else if (iconBot === "voice") {
-            iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M5 9v6h4l5 5V4L9 9H5zm13.54.12a1 1 0 1 0-1.41 1.42 3 3 0 0 1 0 4.24 1 1 0 1 0 1.41 1.41 5 5 0 0 0 0-7.07z"/>
-            </svg>`;
-          } else {
-            // Default to message icon
-            iconSvg = `<svg viewBox="0 0 24 24" width="24" height="24">
-              <path fill="currentColor" d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-            </svg>`;
-          }
+          // Always use message icon since we only have text interface now
+          const iconSvg = `<svg viewBox="0 0 24 24" width="24" height="24">
+            <path fill="currentColor" d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>`;
 
           // Add the main button with the chosen icon
           buttonContainer.innerHTML = `
@@ -409,17 +395,25 @@
 
           // Add help bubble
           // Get clickMessage from multiple possible sources in order of priority
-          const clickMessage = 
-            (this.session && this.session.clickMessage) ? this.session.clickMessage : 
-            (this.clickMessage) ? this.clickMessage :
-            (window.voiceroClickMessage) ? window.voiceroClickMessage :
-            "Need Help Shopping?";
-            
-          console.log("VoiceroCore: Using clickMessage for help bubble:", clickMessage);
-          
+          const clickMessage =
+            this.session && this.session.clickMessage
+              ? this.session.clickMessage
+              : this.clickMessage
+                ? this.clickMessage
+                : window.voiceroClickMessage
+                  ? window.voiceroClickMessage
+                  : "Need Help Shopping?";
+
+          console.log(
+            "VoiceroCore: Using clickMessage for help bubble:",
+            clickMessage,
+          );
+
           // Position the help bubble above the button by the appropriate offset
-          const helpBubbleBottomOffset = overlapCheck.hasOverlap ? overlapCheck.bottomOffset + 50 : 80;
-            
+          const helpBubbleBottomOffset = overlapCheck.hasOverlap
+            ? overlapCheck.bottomOffset + 50
+            : 80;
+
           buttonContainer.insertAdjacentHTML(
             "beforeend",
             `<div id="voicero-help-bubble" style="bottom: ${helpBubbleBottomOffset}px !important;">
@@ -457,95 +451,22 @@
           }
 
           // Calculate chooser position - needs to be at least 60px above the button
-          const chooserBottomOffset = overlapCheck.hasOverlap ? overlapCheck.bottomOffset + 60 : 80;
-          
-          // Add the chooser as a separate element
+          const chooserBottomOffset = overlapCheck.hasOverlap
+            ? overlapCheck.bottomOffset + 60
+            : 80;
+
+          // We no longer need the chooser element since we'll directly open the text interface
           buttonContainer.insertAdjacentHTML(
             "beforeend",
             `
-          <div
-            id="interaction-chooser"
-            style="
+            <div style="
               position: fixed !important;
               bottom: ${chooserBottomOffset}px !important;
               right: 20px !important;
               z-index: 10001 !important;
-              background-color: #c8c8c8 !important;
-              border-radius: 12px !important;
-              box-shadow: 6px 6px 0 ${themeColor} !important;
-              padding: 15px !important;
-              width: 280px !important;
-              border: 1px solid rgb(0, 0, 0) !important;
               display: none !important;
               visibility: hidden !important;
               opacity: 0 !important;
-              flex-direction: column !important;
-              align-items: center !important;
-              margin: 0 !important;
-              transform: none !important;
-            "
-          >
-            <div
-              id="voice-chooser-button"
-              class="interaction-option voice"
-              style="
-                position: relative;
-                display: flex;
-                align-items: center;
-                padding: 10px 10px;
-                margin-bottom: 10px;
-                margin-left: -30px;
-                cursor: pointer;
-                border-radius: 8px;
-                background-color: white;
-                border: 1px solid rgb(0, 0, 0);
-                box-shadow: 4px 4px 0 rgb(0, 0, 0);
-                transition: all 0.2s ease;
-                width: 200px;
-              "
-              onmouseover="this.style.transform='translateY(-2px)'"
-              onmouseout="this.style.transform='translateY(0)'"
-            >
-              <span style="font-weight: 700; color: rgb(0, 0, 0); font-size: 16px; width: 100%; text-align: center; white-space: nowrap;">
-                Voice Conversation
-              </span>
-              <svg width="35" height="35" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" style="position: absolute; right: -50px; width: 35px; height: 35px;">
-                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                <path d="M12 19v4"/>
-                <path d="M8 23h8"/>
-              </svg>
-            </div>
-
-            <div
-              id="text-chooser-button"
-              class="interaction-option text"
-              style="
-                position: relative;
-                display: flex;
-                align-items: center;
-                padding: 10px 10px;
-                margin-left: -30px;
-                cursor: pointer;
-                border-radius: 8px;
-                background-color: white;
-                border: 1px solid rgb(0, 0, 0);
-                box-shadow: 4px 4px 0 rgb(0, 0, 0);
-                transition: all 0.2s ease;
-                width: 200px;
-              "
-              onmouseover="this.style.transform='translateY(-2px)'"
-              onmouseout="this.style.transform='translateY(0)'"
-            >
-              <span style="font-weight: 700; color: rgb(0, 0, 0); font-size: 16px; width: 100%; text-align: center;">
-                Message
-              </span>
-              <svg width="35" height="35" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" style="position: absolute; right: -50px; width: 35px; height: 35px;">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-              </svg>
-            </div>
-            
-            <div style="
               text-align: center;
               margin-top: 18px;
               line-height: 1;
@@ -562,8 +483,7 @@
                 opacity: 0.6;
               ">Voicero AI can make mistakes</div>
             </div>
-          </div>
-        `,
+          `,
           );
 
           // Add click handler for the main button to toggle the chooser
@@ -586,7 +506,7 @@
             });
           }
 
-                      // Set a timeout to show the help bubble after 4 seconds if core button is visible
+          // Set a timeout to show the help bubble after 4 seconds if core button is visible
           this.helpBubbleTimeout = setTimeout(() => {
             if (
               window.VoiceroCore &&
@@ -601,15 +521,16 @@
               if (helpBubble) {
                 // Update clickMessage one more time before showing the bubble
                 // in case it was loaded after initial creation
-                const updatedClickMessage = 
-                  (window.VoiceroCore.session && window.VoiceroCore.session.clickMessage) ? 
-                    window.VoiceroCore.session.clickMessage : 
-                  (window.VoiceroCore.clickMessage) ? 
-                    window.VoiceroCore.clickMessage :
-                  (window.voiceroClickMessage) ? 
-                    window.voiceroClickMessage :
-                    "Need Help Shopping?";
-                
+                const updatedClickMessage =
+                  window.VoiceroCore.session &&
+                  window.VoiceroCore.session.clickMessage
+                    ? window.VoiceroCore.session.clickMessage
+                    : window.VoiceroCore.clickMessage
+                      ? window.VoiceroCore.clickMessage
+                      : window.voiceroClickMessage
+                        ? window.voiceroClickMessage
+                        : "Need Help Shopping?";
+
                 // Update the content of the help bubble
                 const helpBubbleContent = helpBubble.childNodes[1];
                 if (helpBubbleContent && helpBubbleContent.nodeType === 3) {
@@ -617,11 +538,13 @@
                 } else {
                   // If we can't update the text node directly, update the whole content
                   helpBubble.innerHTML = `<button id="voicero-help-close">×</button>${updatedClickMessage}`;
-                  
+
                   // Re-add click handler for the close button
-                  const helpClose = helpBubble.querySelector("#voicero-help-close");
+                  const helpClose = helpBubble.querySelector(
+                    "#voicero-help-close",
+                  );
                   if (helpClose) {
-                    helpClose.addEventListener("click", function(e) {
+                    helpClose.addEventListener("click", function (e) {
                       e.preventDefault();
                       e.stopPropagation();
                       helpBubble.style.display = "none";
@@ -629,15 +552,18 @@
                     });
                   }
                 }
-                
-                console.log("VoiceroCore: Showing help bubble with message:", updatedClickMessage);
+
+                console.log(
+                  "VoiceroCore: Showing help bubble with message:",
+                  updatedClickMessage,
+                );
                 helpBubble.style.display = "block";
                 window.VoiceroCore.appState.hasShownHelpBubble = true;
               }
             }
           }, 4000);
 
-          if (mainButton && chooser) {
+          if (mainButton) {
             mainButton.addEventListener("click", function (e) {
               e.preventDefault();
               e.stopPropagation();
@@ -657,75 +583,85 @@
                 return;
               }
 
-              // Check if any interfaces are open and close them (acting as home button)
-              const voiceInterface = document.getElementById(
-                "voice-chat-interface",
-              );
+              // Check if text interface is already open
               const textInterface = document.getElementById(
                 "voicero-text-chat-container",
               );
 
-              let interfacesOpen = false;
-
-              if (voiceInterface && voiceInterface.style.display === "block") {
-                // Close voice interface
-                if (window.VoiceroVoice && window.VoiceroVoice.closeVoiceChat) {
-                  window.VoiceroVoice.closeVoiceChat();
-                  interfacesOpen = true;
-                } else {
-                  voiceInterface.style.display = "none";
-                  interfacesOpen = true;
-                }
-              }
-
               if (textInterface && textInterface.style.display === "block") {
-                // Close text interface
+                // Close text interface if it's open
                 if (window.VoiceroText && window.VoiceroText.closeTextChat) {
                   window.VoiceroText.closeTextChat();
-                  interfacesOpen = true;
                 } else {
                   textInterface.style.display = "none";
-                  interfacesOpen = true;
                 }
-              }
-
-              // If no interfaces were open, then toggle the chooser
-              if (!interfacesOpen) {
-                // Simply toggle the chooserOpen state
-                const shouldShow = !window.VoiceroCore.session?.chooserOpen;
-                console.log("VoiceroCore: Toggling chooser to:", shouldShow);
-
-                // Update the session and UI
-                if (shouldShow) {
-                  // Session first then UI
-                  if (window.VoiceroCore.session) {
-                    window.VoiceroCore.session.chooserOpen = true;
-                  }
-
-                  // Show the UI
-                  if (window.VoiceroChooser) {
-                    window.VoiceroChooser.showChooser();
-                  }
-
-                  // Update API
+              } else {
+                // Update session state directly to open text chat
+                if (
+                  window.VoiceroCore &&
+                  window.VoiceroCore.updateWindowState
+                ) {
                   window.VoiceroCore.updateWindowState({
-                    chooserOpen: true,
+                    textOpen: true,
+                    textOpenWindowUp: true,
+                    coreOpen: false,
                   });
+                }
+
+                // Create text interface if needed
+                if (!textInterface) {
+                  const container = document.getElementById(
+                    "voicero-app-container",
+                  );
+                  if (container) {
+                    container.insertAdjacentHTML(
+                      "beforeend",
+                      `<div id="voicero-text-chat-container" style="display: none;"></div>`,
+                    );
+                  }
+                }
+
+                // Try to open text interface
+                if (window.VoiceroText && window.VoiceroText.openTextChat) {
+                  window.VoiceroText.openTextChat();
+                  // Force maximize after opening
+                  setTimeout(() => {
+                    if (window.VoiceroText && window.VoiceroText.maximizeChat) {
+                      window.VoiceroText.maximizeChat();
+                    }
+                  }, 100);
+                } else if (
+                  window.VoiceroText &&
+                  typeof window.VoiceroText.init === "function"
+                ) {
+                  // If VoiceroText exists but openTextChat doesn't, try initializing it first
+                  console.log(
+                    "VoiceroCore: VoiceroText found but openTextChat missing, initializing module",
+                  );
+                  window.VoiceroText.init();
+
+                  // Try again after initialization
+                  setTimeout(() => {
+                    if (window.VoiceroText && window.VoiceroText.openTextChat) {
+                      window.VoiceroText.openTextChat();
+
+                      // Force maximize after opening
+                      setTimeout(() => {
+                        if (
+                          window.VoiceroText &&
+                          window.VoiceroText.maximizeChat
+                        ) {
+                          window.VoiceroText.maximizeChat();
+                        }
+                      }, 100);
+                    }
+                  }, 200);
                 } else {
-                  // Session first then UI
-                  if (window.VoiceroCore.session) {
-                    window.VoiceroCore.session.chooserOpen = false;
-                  }
-
-                  // Hide the UI
-                  if (window.VoiceroChooser) {
-                    window.VoiceroChooser.hideChooser();
-                  }
-
-                  // Update API
-                  window.VoiceroCore.updateWindowState({
-                    chooserOpen: false,
-                  });
+                  console.error(
+                    "VoiceroCore: VoiceroText module not available or openTextChat method missing",
+                  );
+                  // Try to load the module
+                  window.VoiceroCore.ensureTextModuleLoaded();
                 }
               }
             });
@@ -864,8 +800,11 @@
     createTextChatInterface: function () {
       // Check if text chat interface already exists
       if (document.getElementById("voicero-text-chat-container")) {
+        console.log("VoiceroCore: Text chat container already exists");
         return;
       }
+
+      console.log("VoiceroCore: Creating text chat container");
 
       // Get the container or create it if not exists
       let container = document.getElementById("voicero-app-container");
@@ -883,7 +822,26 @@
           "beforeend",
           `<div id="voicero-text-chat-container" style="display: none;"></div>`,
         );
+
+        // Make sure VoiceroText is loaded
+        this.ensureTextModuleLoaded();
+
+        // Initialize VoiceroText if it exists
+        setTimeout(() => {
+          if (
+            window.VoiceroText &&
+            typeof window.VoiceroText.init === "function"
+          ) {
+            console.log(
+              "VoiceroCore: Initializing VoiceroText after container creation",
+            );
+            window.VoiceroText.init();
+          }
+        }, 100);
       } else {
+        console.error(
+          "VoiceroCore: Failed to create text chat container - app container not found",
+        );
       }
     },
 
@@ -1005,7 +963,7 @@
               window.voiceroCustomWelcomeMessage =
                 data.website.customWelcomeMessage;
             }
-            
+
             if (data.website?.clickMessage) {
               console.log(
                 "VoiceroCore: Got clickMessage from API:",
@@ -1114,51 +1072,51 @@
                       // Update local session with latest data
                       this.session = data.session;
 
-                                    // Make sure botName and customWelcomeMessage are transferred
-              if (data.website && data.website.botName) {
-                console.log(
-                  "VoiceroCore: Setting botName in session from website data:",
-                  data.website.botName,
-                );
-                this.session.botName = data.website.botName;
-              } else if (this.botName) {
-                console.log(
-                  "VoiceroCore: Setting botName in session from core property:",
-                  this.botName,
-                );
-                this.session.botName = this.botName;
-              }
+                      // Make sure botName and customWelcomeMessage are transferred
+                      if (data.website && data.website.botName) {
+                        console.log(
+                          "VoiceroCore: Setting botName in session from website data:",
+                          data.website.botName,
+                        );
+                        this.session.botName = data.website.botName;
+                      } else if (this.botName) {
+                        console.log(
+                          "VoiceroCore: Setting botName in session from core property:",
+                          this.botName,
+                        );
+                        this.session.botName = this.botName;
+                      }
 
-              if (data.website && data.website.customWelcomeMessage) {
-                console.log(
-                  "VoiceroCore: Setting customWelcomeMessage in session from website data:",
-                  data.website.customWelcomeMessage,
-                );
-                this.session.customWelcomeMessage =
-                  data.website.customWelcomeMessage;
-              } else if (this.customWelcomeMessage) {
-                console.log(
-                  "VoiceroCore: Setting customWelcomeMessage in session from core property:",
-                  this.customWelcomeMessage,
-                );
-                this.session.customWelcomeMessage =
-                  this.customWelcomeMessage;
-              }
-              
-              // Make sure clickMessage is transferred
-              if (data.website && data.website.clickMessage) {
-                console.log(
-                  "VoiceroCore: Setting clickMessage in session from website data:",
-                  data.website.clickMessage,
-                );
-                this.session.clickMessage = data.website.clickMessage;
-              } else if (this.clickMessage) {
-                console.log(
-                  "VoiceroCore: Setting clickMessage in session from core property:",
-                  this.clickMessage,
-                );
-                this.session.clickMessage = this.clickMessage;
-              }
+                      if (data.website && data.website.customWelcomeMessage) {
+                        console.log(
+                          "VoiceroCore: Setting customWelcomeMessage in session from website data:",
+                          data.website.customWelcomeMessage,
+                        );
+                        this.session.customWelcomeMessage =
+                          data.website.customWelcomeMessage;
+                      } else if (this.customWelcomeMessage) {
+                        console.log(
+                          "VoiceroCore: Setting customWelcomeMessage in session from core property:",
+                          this.customWelcomeMessage,
+                        );
+                        this.session.customWelcomeMessage =
+                          this.customWelcomeMessage;
+                      }
+
+                      // Make sure clickMessage is transferred
+                      if (data.website && data.website.clickMessage) {
+                        console.log(
+                          "VoiceroCore: Setting clickMessage in session from website data:",
+                          data.website.clickMessage,
+                        );
+                        this.session.clickMessage = data.website.clickMessage;
+                      } else if (this.clickMessage) {
+                        console.log(
+                          "VoiceroCore: Setting clickMessage in session from core property:",
+                          this.clickMessage,
+                        );
+                        this.session.clickMessage = this.clickMessage;
+                      }
 
                       // Make sure removeHighlight setting is transferred from website data to session
                       if (
@@ -1307,11 +1265,7 @@
         `;
       }
 
-      // Hide the chooser as well if it exists
-      const chooser = document.getElementById("interaction-chooser");
-      if (chooser) {
-        this.hideChooser();
-      }
+      // No chooser needed anymore - direct text interface only
 
       // Set a flag in the object to remember button is hidden
       this._buttonHidden = true;
@@ -1730,13 +1684,16 @@
               // Store session ID in localStorage
               if (data.session.id) {
                 this.sessionId = data.session.id;
-                
+
                 // Add clickMessage to session if available from API but not in session
                 if (this.clickMessage && !data.session.clickMessage) {
                   data.session.clickMessage = this.clickMessage;
-                  console.log("VoiceroCore: Added clickMessage to session:", this.clickMessage);
+                  console.log(
+                    "VoiceroCore: Added clickMessage to session:",
+                    this.clickMessage,
+                  );
                 }
-                
+
                 // Store both the session ID and the full session object
                 localStorage.setItem("voicero_session_id", data.session.id);
                 localStorage.setItem(
@@ -1969,12 +1926,16 @@
 
       // Check for elements that might overlap with our button
       const overlapCheck = this.checkForBottomRightElements();
-      
+
       // Calculate bottom offset based on overlap check
-      const bottomOffset = overlapCheck.hasOverlap ? overlapCheck.bottomOffset : 20;
-      
+      const bottomOffset = overlapCheck.hasOverlap
+        ? overlapCheck.bottomOffset
+        : 20;
+
       if (overlapCheck.hasOverlap) {
-        console.log(`VoiceroCore: Repositioning button to avoid overlap. Using bottom offset: ${bottomOffset}px`);
+        console.log(
+          `VoiceroCore: Repositioning button to avoid overlap. Using bottom offset: ${bottomOffset}px`,
+        );
       }
 
       // Make sure button container is visible
@@ -2763,46 +2724,78 @@
           }
         }
 
-        // If chooser exists now, show it
-        chooser = document.getElementById("interaction-chooser");
-        if (chooser) {
-          // Check current visibility
-          const computedStyle = window.getComputedStyle(chooser);
-          const isVisible =
-            computedStyle.display !== "none" &&
-            computedStyle.visibility !== "hidden" &&
-            computedStyle.opacity !== "0";
+        // Skip chooser and directly open text interface
+        console.log(
+          "VoiceroCore: Main button clicked - opening text interface directly",
+        );
 
-          if (isVisible) {
-            // Hide if already visible
-            window.VoiceroCore.hideChooser();
+        // Check if text interface is already open
+        const textInterface = document.getElementById(
+          "voicero-text-chat-container",
+        );
+
+        if (textInterface && textInterface.style.display === "block") {
+          // Close text interface if it's open
+          if (window.VoiceroText && window.VoiceroText.closeTextChat) {
+            window.VoiceroText.closeTextChat();
           } else {
-            // Show if hidden
-            window.VoiceroCore.displayChooser();
+            textInterface.style.display = "none";
           }
         } else {
-          // Last resort - create direct interface
-          const voiceInterface = document.getElementById(
-            "voice-chat-interface",
-          );
-          if (voiceInterface) {
-            voiceInterface.innerHTML = `<div style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%);width:400px;height:500px;background:white;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.2);z-index:999999;padding:20px;display:flex;flex-direction:column;border:1px solid #ccc;">
-              <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #eee;padding-bottom:10px;margin-bottom:15px;">
-                <h3 style="margin:0;font-size:18px;font-weight:600;">Voice Assistant</h3>
-                <button id="emergency-voice-close" style="background:none;border:none;font-size:20px;cursor:pointer;">×</button>
-              </div>
-              <div style="flex:1;overflow-y:auto;padding:10px;">
-                <p>The voice module is loading. Please try again in a moment.</p>
-              </div>
-            </div>`;
-            voiceInterface.style.display = "block";
+          // Update session state directly to open text chat
+          if (window.VoiceroCore && window.VoiceroCore.updateWindowState) {
+            window.VoiceroCore.updateWindowState({
+              textOpen: true,
+              textOpenWindowUp: true,
+              coreOpen: false,
+            });
+          }
 
-            // Add close button handler
-            const closeBtn = document.getElementById("emergency-voice-close");
-            if (closeBtn) {
-              closeBtn.addEventListener("click", () => {
-                voiceInterface.style.display = "none";
-              });
+          // Create text interface if needed
+          if (!textInterface) {
+            const container = document.getElementById("voicero-app-container");
+            if (container) {
+              container.insertAdjacentHTML(
+                "beforeend",
+                `<div id="voicero-text-chat-container" style="display: none;"></div>`,
+              );
+            }
+          }
+
+          // Try to open text interface
+          if (window.VoiceroText && window.VoiceroText.openTextChat) {
+            window.VoiceroText.openTextChat();
+            // Force maximize after opening
+            setTimeout(() => {
+              if (window.VoiceroText && window.VoiceroText.maximizeChat) {
+                window.VoiceroText.maximizeChat();
+              }
+            }, 100);
+          } else {
+            console.log(
+              "VoiceroCore: VoiceroText not available, trying to load it",
+            );
+
+            // Try to load VoiceroText module
+            if (
+              window.VoiceroCore &&
+              window.VoiceroCore.ensureTextModuleLoaded
+            ) {
+              window.VoiceroCore.ensureTextModuleLoaded();
+
+              // Try again after a delay
+              setTimeout(() => {
+                if (window.VoiceroText && window.VoiceroText.openTextChat) {
+                  window.VoiceroText.openTextChat();
+
+                  // Force maximize after opening
+                  setTimeout(() => {
+                    if (window.VoiceroText && window.VoiceroText.maximizeChat) {
+                      window.VoiceroText.maximizeChat();
+                    }
+                  }, 100);
+                }
+              }, 300);
             }
           }
         }
@@ -3063,42 +3056,101 @@
       this.ensureMainButtonVisible();
     },
 
-    // Update the main button icon based on iconBot
+    // Update the main button icon - always use message icon
     updateButtonIcon: function () {
       // Get button element
       const button = document.getElementById("chat-website-button");
       if (!button) return;
 
-      // Get the iconBot value
-      const iconBot =
-        this.session && this.session.iconBot
-          ? this.session.iconBot
-          : this.iconBot || "message";
-      let iconSvg = "";
-
-      // Choose the appropriate SVG based on iconBot value
-      if (iconBot === "bot") {
-        iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="24" height="24" fill="currentColor">
-          <rect x="12" y="16" width="40" height="32" rx="10" ry="10" stroke="white" stroke-width="2" fill="currentColor"/>
-          <circle cx="22" cy="32" r="4" fill="white"/>
-          <circle cx="42" cy="32" r="4" fill="white"/>
-          <path d="M24 42c4 4 12 4 16 0" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/>
-          <line x1="32" y1="8" x2="32" y2="16" stroke="white" stroke-width="2"/>
-          <circle cx="32" cy="6" r="2" fill="white"/>
-        </svg>`;
-      } else if (iconBot === "voice") {
-        iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M5 9v6h4l5 5V4L9 9H5zm13.54.12a1 1 0 1 0-1.41 1.42 3 3 0 0 1 0 4.24 1 1 0 1 0 1.41 1.41 5 5 0 0 0 0-7.07z"/>
-        </svg>`;
-      } else {
-        // Default to message icon
-        iconSvg = `<svg viewBox="0 0 24 24" width="24" height="24">
-          <path fill="currentColor" d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-        </svg>`;
-      }
+      // Always use the message icon since we only have text interface now
+      const iconSvg = `<svg viewBox="0 0 24 24" width="24" height="24">
+        <path fill="currentColor" d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+      </svg>`;
 
       // Update the button's inner HTML
       button.innerHTML = iconSvg;
+    },
+
+    // Ensure VoiceroText module is loaded and available
+    ensureTextModuleLoaded: function () {
+      // Check if VoiceroText is already available
+      if (window.VoiceroText) {
+        console.log("VoiceroCore: VoiceroText module already loaded");
+        return;
+      }
+
+      console.log("VoiceroCore: Loading VoiceroText module");
+
+      // Check if the text script is already in the document
+      const existingScript = document.querySelector(
+        'script[src*="voicero-text.js"]',
+      );
+      if (existingScript) {
+        console.log("VoiceroCore: VoiceroText script already exists in DOM");
+        return;
+      }
+
+      // Create and append the script element to load VoiceroText
+      const script = document.createElement("script");
+      // Try to get the current script's path to determine the correct path for voicero-text.js
+      const currentScript =
+        document.currentScript ||
+        document.querySelector('script[src*="voicero-core.js"]');
+
+      if (currentScript && currentScript.src) {
+        // Use the same directory as the current script
+        const scriptPath = currentScript.src.substring(
+          0,
+          currentScript.src.lastIndexOf("/"),
+        );
+        script.src = `${scriptPath}/voicero-text.js`;
+        console.log("VoiceroCore: Loading VoiceroText from path:", script.src);
+      } else {
+        // Fallback to relative path
+        script.src = "./voicero-text.js";
+        console.log("VoiceroCore: Loading VoiceroText from fallback path");
+      }
+      script.async = true;
+
+      // Store reference to VoiceroCore for use in callback
+      const self = this;
+
+      script.onload = () => {
+        console.log("VoiceroCore: VoiceroText module loaded successfully");
+
+        // Initialize VoiceroText if it exists after loading
+        if (
+          window.VoiceroText &&
+          typeof window.VoiceroText.init === "function"
+        ) {
+          console.log("VoiceroCore: Initializing VoiceroText module");
+          window.VoiceroText.init();
+
+          // Share session data with VoiceroText
+          if (window.VoiceroCore && window.VoiceroCore.session) {
+            console.log("VoiceroCore: Sharing session data with VoiceroText");
+            window.VoiceroText.session = window.VoiceroCore.session;
+          }
+          if (window.VoiceroCore && window.VoiceroCore.thread) {
+            window.VoiceroText.thread = window.VoiceroCore.thread;
+          }
+
+          // Try to open text interface immediately after loading
+          setTimeout(() => {
+            if (window.VoiceroText && window.VoiceroText.openTextChat) {
+              console.log(
+                "VoiceroCore: Auto-opening text interface after module load",
+              );
+              window.VoiceroText.openTextChat();
+            }
+          }, 100);
+        }
+      };
+      script.onerror = () => {
+        console.error("VoiceroCore: Failed to load VoiceroText module");
+      };
+
+      document.head.appendChild(script);
     },
   };
 
