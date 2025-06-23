@@ -188,6 +188,12 @@
           background-color: ${mainColor} !important;
           color: white !important;
         }
+
+        /* Force rounded corners on header */
+        #chat-controls-header {
+          border-radius: 12px 12px 0 0 !important;
+          overflow: hidden !important;
+        }
       `;
 
       // Remove existing custom variables if any
@@ -343,6 +349,7 @@
         shadowHost.style.height = "auto";
         shadowHost.style.width = "85%";
         shadowHost.style.zIndex = "9999999";
+        shadowHost.style.borderRadius = "12px 12px 12px 12px"; // Add rounded corners to parent container
 
         // Position in lower middle of screen to match voice interface
         shadowHost.style.position = "fixed";
@@ -351,6 +358,7 @@
         shadowHost.style.transform = "translateX(-50%)";
         shadowHost.style.maxWidth = "480px";
         shadowHost.style.minWidth = "280px";
+        shadowHost.style.overflow = "hidden"; // Ensure border radius is visible
       }
 
       // Make sure the header has high z-index
@@ -360,7 +368,8 @@
         );
         if (headerContainer) {
           headerContainer.style.zIndex = "9999999";
-          headerContainer.style.borderRadius = "0"; // Ensure square corners
+          headerContainer.style.borderRadius = "12px 12px 0 0 !important";
+          headerContainer.style.overflow = "hidden"; // Ensure the border radius is visible
         }
 
         // Also ensure messages container has square corners
@@ -1751,12 +1760,13 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
               margin-top: 0 !important;
               background-color: #f2f2f7 !important;
               border-bottom: 1px solid rgba(0, 0, 0, 0.1) !important;
-              border-radius: 0 !important;
+              border-radius: 12px 12px 0 0 !important;
               padding: 10px 15px !important;
               width: 100% !important;
               left: 0 !important;
               right: 0 !important;
               z-index: 9999999 !important; /* Very high z-index to ensure it stays on top */
+              overflow: hidden !important;
             }
 
             .user-message {
@@ -3769,19 +3779,20 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
         inputWrapper.style.borderRadius = "0 0 12px 12px";
         innerWrapper.style.borderRadius = "0 0 10px 10px";
 
-        // Make sure messages container has square top corners in maximized mode
+        // Make sure messages container has square corners in maximized mode
         const messagesContainer =
           this.shadowRoot.getElementById("chat-messages");
         if (messagesContainer) {
           messagesContainer.style.borderRadius = "0 0 0 0"; // Square corners on top
         }
 
-        // Ensure header has square corners too
+        // Ensure header has rounded corners at top
         const headerContainer = this.shadowRoot.getElementById(
           "chat-controls-header",
         );
         if (headerContainer) {
-          headerContainer.style.borderRadius = "0";
+          headerContainer.style.borderRadius = "12px 12px 0 0 !important";
+          headerContainer.style.overflow = "hidden"; // Ensure the border radius is visible
         }
       }
     },
