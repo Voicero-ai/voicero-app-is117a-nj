@@ -35,14 +35,8 @@
     initialized: false, // Initialize initialized flag
     lastProductUrl: null, // Store the last product URL for redirect
     isInterfaceBuilt: false, // Flag to check if interface is already built
-    websiteColor: "#882be6", // Default color if not provided by VoiceroCore
-    colorVariants: {
-      main: "#882be6",
-      light: "#9370db",
-      dark: "#7a5abf",
-      superlight: "#d5c5f3",
-      superdark: "#5e3b96",
-    },
+    websiteColor: null, // Will be populated from VoiceroCore
+    colorVariants: null, // Will be generated dynamically
 
     // Initialize the text module
     init: function () {
@@ -63,7 +57,25 @@
         this.thread = window.VoiceroCore.thread;
         this.sessionId = window.VoiceroCore.sessionId;
         this.websiteId = window.VoiceroCore.websiteId;
-        this.websiteColor = window.VoiceroCore.websiteColor;
+
+        // IMPORTANT: Always get the latest website color from VoiceroCore
+        if (window.VoiceroCore.websiteColor) {
+          console.log(
+            "VoiceroText: Using dynamic color from VoiceroCore:",
+            window.VoiceroCore.websiteColor,
+          );
+          this.websiteColor = window.VoiceroCore.websiteColor;
+        } else if (
+          window.VoiceroCore.session &&
+          window.VoiceroCore.session.website &&
+          window.VoiceroCore.session.website.color
+        ) {
+          console.log(
+            "VoiceroText: Using color from session.website:",
+            window.VoiceroCore.session.website.color,
+          );
+          this.websiteColor = window.VoiceroCore.session.website.color;
+        }
 
         // Ensure the text interface is always maximized by default
         if (this.session && this.session.textOpen) {
@@ -89,20 +101,37 @@
 
         // Get website color from VoiceroCore
         if (window.VoiceroCore.websiteColor) {
+          console.log(
+            "VoiceroText.init: Setting color from VoiceroCore:",
+            window.VoiceroCore.websiteColor,
+          );
           this.websiteColor = window.VoiceroCore.websiteColor;
-
-          // Generate color variants
-          this.getColorVariants(this.websiteColor);
+        } else if (
+          window.VoiceroCore.session &&
+          window.VoiceroCore.session.website &&
+          window.VoiceroCore.session.website.color
+        ) {
+          // Try to get from session.website if available
+          console.log(
+            "VoiceroText.init: Setting color from session.website:",
+            window.VoiceroCore.session.website.color,
+          );
+          this.websiteColor = window.VoiceroCore.session.website.color;
         } else {
-          // Use default color and generate variants
-
-          this.getColorVariants(this.websiteColor);
+          // Fallback to default purple if nothing else available
+          console.log(
+            "VoiceroText.init: No dynamic color found, using default",
+          );
+          this.websiteColor = "#882be6";
         }
+
+        // Generate color variants
+        this.getColorVariants(this.websiteColor);
 
         // SECURITY: Direct API access and accessKey handling removed - now using server-side proxy
       } else {
-        // Use default color and generate variants
-
+        // Use default color when VoiceroCore isn't available
+        this.websiteColor = "#882be6";
         this.getColorVariants(this.websiteColor);
       }
 
@@ -234,6 +263,31 @@
           "VoiceroText: Not opening text interface during session initialization",
         );
         return;
+      }
+
+      // IMPORTANT: Check for dynamic website color before opening
+      if (window.VoiceroCore) {
+        if (window.VoiceroCore.websiteColor) {
+          console.log(
+            "VoiceroText: Updating color from VoiceroCore before open:",
+            window.VoiceroCore.websiteColor,
+          );
+          this.websiteColor = window.VoiceroCore.websiteColor;
+          // Generate color variants with the updated color
+          this.getColorVariants(this.websiteColor);
+        } else if (
+          window.VoiceroCore.session &&
+          window.VoiceroCore.session.website &&
+          window.VoiceroCore.session.website.color
+        ) {
+          console.log(
+            "VoiceroText: Updating color from session.website before open:",
+            window.VoiceroCore.session.website.color,
+          );
+          this.websiteColor = window.VoiceroCore.session.website.color;
+          // Generate color variants with the updated color
+          this.getColorVariants(this.websiteColor);
+        }
       }
 
       console.log(

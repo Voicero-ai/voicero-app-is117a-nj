@@ -328,6 +328,14 @@
                             if (window.VoiceroCore && window.VoiceroCore.session && 
                                 window.VoiceroCore.session.textOpen === true &&
                                 window.VoiceroText && window.VoiceroText.openTextChat) {
+                              
+                              // Make sure to apply website color from core before opening
+                              if (window.VoiceroCore.websiteColor && window.VoiceroText.websiteColor !== window.VoiceroCore.websiteColor) {
+                                console.log("Auto-open: Updating VoiceroText color to match core:", window.VoiceroCore.websiteColor);
+                                window.VoiceroText.websiteColor = window.VoiceroCore.websiteColor;
+                                window.VoiceroText.getColorVariants(window.VoiceroText.websiteColor);
+                              }
+                              
                               window.VoiceroText.openTextChat();
                             }
                           }, 300);
