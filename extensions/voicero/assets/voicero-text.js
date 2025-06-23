@@ -57,43 +57,13 @@
       // Initialize the hasShownWelcome flag
       this.hasShownWelcome = false;
 
-      // CRITICAL: Immediately retrieve the website color from VoiceroCore
-      if (window.VoiceroCore && window.VoiceroCore.websiteColor) {
-        this.websiteColor = window.VoiceroCore.websiteColor;
-        console.log("VoiceroText: LOADING COLOR FROM CORE:", this.websiteColor);
-      } else {
-        // If VoiceroCore doesn't have a color yet, set up a watcher to grab it when available
-        const checkForColor = setInterval(() => {
-          if (window.VoiceroCore && window.VoiceroCore.websiteColor) {
-            this.websiteColor = window.VoiceroCore.websiteColor;
-            this.getColorVariants(this.websiteColor);
-            console.log(
-              "VoiceroText: Color loaded from VoiceroCore:",
-              this.websiteColor,
-            );
-            this.applyDynamicColors();
-            clearInterval(checkForColor);
-          }
-        }, 500);
-
-        // Default fallback color
-        this.websiteColor = "#882be6";
-      }
-
-      // Generate color variants immediately
-      this.getColorVariants(this.websiteColor);
-
       // Set session and thread from VoiceroCore if available
       if (window.VoiceroCore) {
         this.session = window.VoiceroCore.session;
         this.thread = window.VoiceroCore.thread;
         this.sessionId = window.VoiceroCore.sessionId;
         this.websiteId = window.VoiceroCore.websiteId;
-
-        // Double check color from VoiceroCore again
-        if (window.VoiceroCore.websiteColor) {
-          this.websiteColor = window.VoiceroCore.websiteColor;
-        }
+        this.websiteColor = window.VoiceroCore.websiteColor;
 
         // Ensure the text interface is always maximized by default
         if (this.session && this.session.textOpen) {
@@ -123,32 +93,24 @@
 
           // Generate color variants
           this.getColorVariants(this.websiteColor);
-          console.log(
-            "VoiceroText: Using color from VoiceroCore:",
-            this.websiteColor,
-          );
         } else {
           // Use default color and generate variants
-          console.log(
-            "VoiceroText: VoiceroCore exists but no color found, using default:",
-            this.websiteColor,
-          );
+
           this.getColorVariants(this.websiteColor);
         }
 
         // SECURITY: Direct API access and accessKey handling removed - now using server-side proxy
       } else {
         // Use default color and generate variants
+
         this.getColorVariants(this.websiteColor);
       }
 
       // Create HTML structure for the chat interface but keep it hidden
       this.createChatInterface();
 
-      // Make sure all UI elements have the correct colors - call it multiple times to ensure it applies
+      // Make sure all UI elements have the correct colors
       setTimeout(() => this.applyDynamicColors(), 100);
-      setTimeout(() => this.applyDynamicColors(), 500);
-      setTimeout(() => this.applyDynamicColors(), 1000);
 
       // CRITICAL: Ensure shadow host and text container are hidden on init
       // This prevents the interface from showing up when it shouldn't
@@ -177,58 +139,33 @@
 
       // Get the main color - USE WEBSITE COLOR DIRECTLY INSTEAD OF VARIANTS
       const mainColor = this.websiteColor || "#882be6"; // Use website color directly
-      console.log("VoiceroText: APPLYING COLORS - MAIN COLOR IS:", mainColor);
 
-      // FORCE OVERRIDE: Apply colors directly to all elements that need the theme color
-      const elementsToPaint = [
-        // Send button
-        { selector: "#send-message-btn", property: "backgroundColor" },
-        // User message bubbles
-        {
-          selector: ".user-message .message-content",
-          property: "backgroundColor",
-          multiple: true,
-        },
-        // Read status
-        {
-          selector: ".read-status",
-          property: "color",
-          condition: (el) => el.textContent === "Read",
-          multiple: true,
-        },
-        // Suggestions
-        {
-          selector: ".suggestion",
-          property: "backgroundColor",
-          multiple: true,
-        },
-        // Welcome questions
-        { selector: ".welcome-question", property: "color", multiple: true },
-        // Maximize button
-        { selector: "#maximize-chat button", property: "backgroundColor" },
-      ];
+      // Update send button color
+      const sendButton = this.shadowRoot.getElementById("send-message-btn");
+      if (sendButton) {
+        sendButton.style.backgroundColor = mainColor;
+      }
 
-      // Apply the color to each element
-      elementsToPaint.forEach((item) => {
-        try {
-          if (item.multiple) {
-            // Handle multiple elements
-            const elements = this.shadowRoot.querySelectorAll(item.selector);
-            elements.forEach((el) => {
-              if (!item.condition || item.condition(el)) {
-                el.style[item.property] = mainColor;
-              }
-            });
-          } else {
-            // Handle single element
-            const el = this.shadowRoot.querySelector(item.selector);
-            if (el) {
-              el.style[item.property] = mainColor;
-            }
-          }
-        } catch (e) {
-          console.error(`Error applying color to ${item.selector}:`, e);
+      // Update user message bubbles
+      const userMessages = this.shadowRoot.querySelectorAll(
+        ".user-message .message-content",
+      );
+      userMessages.forEach((msg) => {
+        msg.style.backgroundColor = mainColor;
+      });
+
+      // Update read status color
+      const readStatuses = this.shadowRoot.querySelectorAll(".read-status");
+      readStatuses.forEach((status) => {
+        if (status.textContent === "Read") {
+          status.style.color = mainColor;
         }
+      });
+
+      // Update suggestions
+      const suggestions = this.shadowRoot.querySelectorAll(".suggestion");
+      suggestions.forEach((suggestion) => {
+        suggestion.style.backgroundColor = mainColor;
       });
 
       // Add code to update CSS variables in the shadow DOM:
@@ -251,26 +188,6 @@
           background-color: ${mainColor} !important;
           color: white !important;
         }
-
-        /* Ensure all suggestions use the dynamic color */
-        .suggestion {
-          background-color: ${mainColor} !important;
-        }
-
-        /* Style welcome questions with dynamic color */
-        .welcome-question {
-          color: ${mainColor} !important;
-        }
-
-        /* Force user messages to use the theme color */
-        .user-message .message-content {
-          background-color: ${mainColor} !important;
-        }
-
-        /* Force send button to use theme color */
-        #send-message-btn {
-          background-color: ${mainColor} !important;
-        }
       `;
 
       // Remove existing custom variables if any
@@ -283,38 +200,8 @@
       styleEl.id = "voicero-css-vars";
       this.shadowRoot.appendChild(styleEl);
 
-      // Also add the variables to the document head for any elements outside shadow DOM
-      const docStyleEl = document.createElement("style");
-      docStyleEl.id = "voicero-global-css-vars";
-      docStyleEl.textContent = `
-        :root {
-          --voicero-theme-color: ${mainColor} !important;
-          --voicero-theme-color-light: ${this.colorVariants.light} !important;
-          --voicero-theme-color-hover: ${this.colorVariants.dark} !important;
-        }
-
-        /* Global styles to force theme color */
-        .voicero-theme-color {
-          color: ${mainColor} !important;
-        }
-        
-        .voicero-theme-background {
-          background-color: ${mainColor} !important;
-        }
-      `;
-
-      // Remove existing global variables if any
-      const existingGlobalVars = document.getElementById(
-        "voicero-global-css-vars",
-      );
-      if (existingGlobalVars) {
-        existingGlobalVars.remove();
-      }
-
-      document.head.appendChild(docStyleEl);
-
       console.log(
-        `VoiceroText: Applied CSS color ${mainColor} to all elements`,
+        `VoiceroText: Applied CSS variables to shadow DOM: ${mainColor}`,
       );
     },
 
@@ -374,6 +261,7 @@
 
       // Update window state if it hasn't been done already
       if (window.VoiceroCore && window.VoiceroCore.updateWindowState) {
+        // First update to close text chat
         window.VoiceroCore.updateWindowState({
           textOpen: true,
           textOpenWindowUp: true, // Always start maximized
@@ -444,15 +332,23 @@
       // Show the shadow host (which contains the chat interface)
       const shadowHost = document.getElementById("voicero-text-chat-container");
       if (shadowHost) {
+        // CRITICAL FIX: Reset ALL style properties that might be preventing display
+        shadowHost.style.cssText = "";
+
+        // Now set the required styles for visibility
         shadowHost.style.display = "block";
+        shadowHost.style.visibility = "visible";
+        shadowHost.style.opacity = "1";
+        shadowHost.style.pointerEvents = "auto";
+        shadowHost.style.height = "auto";
+        shadowHost.style.width = "85%";
+        shadowHost.style.zIndex = "9999999";
 
         // Position in lower middle of screen to match voice interface
         shadowHost.style.position = "fixed";
         shadowHost.style.left = "50%";
         shadowHost.style.bottom = "20px";
         shadowHost.style.transform = "translateX(-50%)";
-        shadowHost.style.zIndex = "9999999";
-        shadowHost.style.width = "85%";
         shadowHost.style.maxWidth = "480px";
         shadowHost.style.minWidth = "280px";
       }
@@ -922,7 +818,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
         customPopUpQuestions.forEach((item, index) => {
           const questionText = item.question || item;
           if (questionText && typeof questionText === "string") {
-            welcomeMessage += `\n- <span class="welcome-question" style="text-decoration: underline; cursor: pointer;" data-question="${questionText.replace(/"/g, "&quot;")}">${questionText}</span>`;
+            welcomeMessage += `\n- <span class="welcome-question" style="text-decoration: underline; color: ${this.websiteColor || "#882be6"}; cursor: pointer;" data-question="${questionText.replace(/"/g, "&quot;")}">${questionText}</span>`;
           }
         });
       }
@@ -1644,23 +1540,22 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
             transition: all 0.3s ease;
           }
           
-                      .suggestion {
-              background: ${this.websiteColor || "#882be6"} !important;
-              padding: 10px 15px !important;
-              border-radius: 17px !important;
-              cursor: pointer !important;
-              transition: all 0.2s ease !important;
-              color: white !important;
-              font-weight: 400 !important;
-              text-align: left !important;
-              font-size: 14px !important;
-              margin-bottom: 8px !important;
-              box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05) !important;
-            }
+          .suggestion {
+            background: ${this.websiteColor || "#882be6"} !important;
+            padding: 10px 15px !important;
+            border-radius: 17px !important;
+            cursor: pointer !important;
+            transition: all 0.2s ease !important;
+            color: white !important;
+            font-weight: 400 !important;
+            text-align: left !important;
+            font-size: 14px !important;
+            margin-bottom: 8px !important;
+            box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05) !important;
+          }
           
           .suggestion:hover {
             opacity: 0.9 !important;
-            background: var(--voicero-theme-color-hover, ${this.colorVariants ? this.colorVariants.dark : "#7a5abf"}) !important;
           }
         `;
         document.head.appendChild(styleEl);
@@ -2293,7 +2188,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
         if (maximizeButton) {
           // Reapply the main styling to ensure it's consistent
           maximizeButton.style.position = "relative";
-          this.applyThemeColor(maximizeButton, "background"); // Use our new helper method for consistent colors
+          maximizeButton.style.background = this.websiteColor || "#882be6"; // Use the dynamic website color
           maximizeButton.style.border = "none";
           maximizeButton.style.color = "white";
           maximizeButton.style.padding = "10px 20px";
@@ -3041,7 +2936,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
         const updateResult = window.VoiceroCore.updateWindowState({
           textOpen: false,
           textOpenWindowUp: false,
-          coreOpen: true,
+          coreOpen: true, // Always false when opening chat
           voiceOpen: false,
           autoMic: false,
           voiceOpenWindowUp: false,
@@ -3079,6 +2974,11 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
         // Reset busy flags if VoiceroCore isn't available
         this.isSessionOperationInProgress = false;
         this.isClosingTextChat = false;
+      }
+
+      // IMPORTANT: Store the shadow DOM reference to avoid it being garbage collected
+      if (!this._cachedShadowRoot && this.shadowRoot) {
+        this._cachedShadowRoot = this.shadowRoot;
       }
 
       // Hide both the interface and shadow host with more aggressive styling
@@ -3213,7 +3113,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
         if (maximizeButton) {
           // Reapply the main styling to ensure it's consistent
           maximizeButton.style.position = "relative";
-          this.applyThemeColor(maximizeButton, "background"); // Use our new helper method for consistent colors
+          maximizeButton.style.background = this.websiteColor || "#882be6"; // Use the dynamic website color
           maximizeButton.style.border = "none";
           maximizeButton.style.color = "white";
           maximizeButton.style.padding = "10px 20px";
@@ -3454,8 +3354,8 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
           }
         }
       } else if (role === "user") {
-        // Apply the main color to user messages - use CSS variable
-        contentDiv.style.backgroundColor = `var(--voicero-theme-color, ${this.websiteColor || "#882be6"})`;
+        // Apply the main color to user messages - use website color directly
+        contentDiv.style.backgroundColor = this.websiteColor || "#882be6";
 
         // Add delivery status for user messages (iPhone-style)
         const statusDiv = document.createElement("div");
@@ -3920,20 +3820,6 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
         // Add to shadow DOM
         this.shadowRoot.appendChild(styleEl);
       }
-    },
-
-    // Apply dynamic theme color to buttons and elements
-    applyThemeColor: function (element, property = "background") {
-      if (!element) return;
-
-      // Ensure we have color variants
-      if (!this.colorVariants) {
-        this.getColorVariants(this.websiteColor);
-      }
-
-      // Use CSS variable with fallback to the website color
-      element.style[property] =
-        `var(--voicero-theme-color, ${this.websiteColor || "#882be6"})`;
     },
   };
 })(window, document);
