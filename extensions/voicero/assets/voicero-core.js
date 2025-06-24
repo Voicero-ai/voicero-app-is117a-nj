@@ -35,6 +35,8 @@
     sessionOperationTimeout: 2000, // Timeout in ms to consider session operation as stuck
     appState: {}, // Store application state, including UI flags
     currentPageUrl: window.location.href, // Track current page URL
+    autoHelpTimer: null, // Timer for automatic help popup
+    hasShownAutoHelp: false, // Flag to track if auto help has been shown
 
     // Queue for pending window state updates
     pendingWindowStateUpdates: [],
@@ -85,6 +87,8 @@
           if (this.sessionId) {
             this.trackUrlMovement(window.location.href);
           }
+          // Reset auto help timer on URL change
+          this.resetAutoHelpTimer();
         });
 
         // Also listen for popstate events
@@ -92,6 +96,8 @@
           if (this.sessionId) {
             this.trackUrlMovement(window.location.href);
           }
+          // Reset auto help timer on URL change
+          this.resetAutoHelpTimer();
         });
       }
 
@@ -99,6 +105,8 @@
       setInterval(() => {
         if (this.sessionId && window.location.href !== this.currentPageUrl) {
           this.trackUrlMovement(window.location.href);
+          // Reset auto help timer when URL changes
+          this.resetAutoHelpTimer();
         }
       }, 2000);
     },
@@ -173,6 +181,7 @@
       this.appState.hasShownVoiceWelcome = false;
       this.appState.hasShownTextWelcome = false;
       this.appState.hasShownHelpBubble = false; // Track if help bubble has been shown
+      this.appState.hasShownAutoHelp = false; // Track if auto help has been shown
 
       // Create additional backup for appState to prevent it from being undefined
       window.voiceroAppState = this.appState;
@@ -219,6 +228,9 @@
 
       // Set up position observer to adjust button position when DOM changes
       this.setupPositionObserver();
+
+      // Set up auto help timer after initialization
+      this.setupAutoHelpTimer();
 
       // Clear initializing flag after a delay
       setTimeout(() => {
@@ -3335,6 +3347,334 @@
       };
 
       document.head.appendChild(script);
+    },
+
+    // Setup automatic help timer
+    setupAutoHelpTimer: function () {
+      console.log("VoiceroCore: Setting up auto help timer (60 seconds)");
+
+      // Clear any existing timer
+      if (this.autoHelpTimer) {
+        clearTimeout(this.autoHelpTimer);
+      }
+
+      // Set new timer for 60 seconds
+      this.autoHelpTimer = setTimeout(() => {
+        this.showAutoHelp();
+      }, 10000); // 60 seconds
+    },
+
+    // Reset automatic help timer (called on URL changes)
+    resetAutoHelpTimer: function () {
+      console.log("VoiceroCore: Resetting auto help timer");
+
+      // Reset the shown flag when navigating to a new page
+      this.hasShownAutoHelp = false;
+      this.appState.hasShownAutoHelp = false;
+
+      // Reset the timer
+      this.setupAutoHelpTimer();
+    },
+
+    // Show automatic help bubble with API-provided text
+    showAutoHelp: function () {
+      // Don't show if already shown this session or if any chat interface is open
+      if (this.hasShownAutoHelp || this.appState.hasShownAutoHelp) {
+        return;
+      }
+
+      // Check if any chat interface is open, don't show if one is
+      const textInterface = document.getElementById(
+        "voicero-text-chat-container",
+      );
+      const voiceInterface = document.getElementById("voice-chat-interface");
+
+      if (
+        (textInterface &&
+          window.getComputedStyle(textInterface).display === "block") ||
+        (voiceInterface &&
+          window.getComputedStyle(voiceInterface).display === "block")
+      ) {
+        return;
+      }
+
+      console.log("VoiceroCore: Fetching auto help message from API");
+
+      // Get the current page URL and title
+      const url = window.location.href;
+      const title = document.title;
+
+      // Prepare data for API call - include all required fields
+      const apiData = {
+        url: url,
+        title: title,
+        sessionId: this.sessionId || "",
+        websiteId: this.websiteId || "",
+        metadata: {
+          path: window.location.pathname,
+          query: window.location.search,
+          userAgent: navigator.userAgent,
+        },
+        // Add optional fields that may improve the response
+        pageContent: document.body.innerText.substring(0, 1000), // First 1000 chars of page text
+        pageStructure: {
+          headings: Array.from(
+            document.querySelectorAll("h1, h2, h3, h4, h5, h6"),
+          )
+            .map((h) => ({
+              level: h.tagName.toLowerCase(),
+              text: h.innerText,
+            }))
+            .slice(0, 10),
+          paragraphs: Array.from(document.querySelectorAll("p"))
+            .map((p) => p.innerText)
+            .slice(0, 5),
+        },
+        userQuestion: "I'm browsing this page and might need assistance.",
+      };
+
+      // Make API call to get help text
+      fetch("https://www.voicero.ai/api/needHelp", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(apiData),
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error(`API error: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then((responseData) => {
+          // API response could be either a string directly or a JSON object
+          let helpText = responseData;
+
+          // Handle various response formats
+          if (typeof responseData === "object" && responseData !== null) {
+            // Try to extract the message from the response object
+            helpText =
+              responseData.message ||
+              responseData.text ||
+              responseData.response ||
+              (Array.isArray(responseData) ? responseData[0] : responseData) ||
+              "Need help with something? Click me!";
+          }
+
+          // Show the help bubble with the API-provided text
+          this.displayAutoHelpBubble(
+            helpText || "Need help with something? Click me!",
+          );
+        })
+        .catch((error) => {
+          console.error(
+            "VoiceroCore: Error fetching auto help message:",
+            error,
+          );
+
+          // Try again with text response if JSON parsing failed
+          if (error.name === "SyntaxError") {
+            fetch("https://www.voicero.ai/api/needHelp", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Accept: "text/plain",
+              },
+              body: JSON.stringify(apiData),
+            })
+              .then((response) => response.text())
+              .then((plainText) => {
+                this.displayAutoHelpBubble(plainText || "Need help shopping?");
+              })
+              .catch((fallbackError) => {
+                console.error(
+                  "VoiceroCore: Fallback API error:",
+                  fallbackError,
+                );
+                this.displayAutoHelpBubble(
+                  "Need help shopping? I'm here to assist!",
+                );
+              });
+          } else {
+            // Show default message if API call fails
+            this.displayAutoHelpBubble(
+              "Need help shopping? I'm here to assist!",
+            );
+          }
+        });
+    },
+
+    // Display the auto help bubble with provided text
+    displayAutoHelpBubble: function (helpText) {
+      const mainButton = document.getElementById("chat-website-button");
+      if (!mainButton) return;
+
+      // Mark as shown
+      this.hasShownAutoHelp = true;
+      this.appState.hasShownAutoHelp = true;
+
+      // Create auto help bubble if it doesn't exist
+      let autoHelpBubble = document.getElementById("voicero-auto-help-bubble");
+
+      if (!autoHelpBubble) {
+        // Check for elements that might overlap with our button
+        const overlapCheck = this.checkForBottomRightElements();
+
+        // Position the help bubble above the button by the appropriate offset
+        const helpBubbleBottomOffset = overlapCheck.hasOverlap
+          ? overlapCheck.bottomOffset + 50
+          : 80;
+
+        const buttonContainer = document.getElementById(
+          "voice-toggle-container",
+        );
+        if (!buttonContainer) return;
+
+        // Create the bubble with enhanced styles
+        buttonContainer.insertAdjacentHTML(
+          "beforeend",
+          `<div id="voicero-auto-help-bubble" style="
+            position: fixed !important;
+            bottom: ${helpBubbleBottomOffset}px !important;
+            right: 30px !important;
+            background-color: white !important;
+            border: 2px solid #000 !important;
+            box-shadow: 4px 4px 0 rgb(0, 0, 0) !important;
+            border-radius: 8px !important;
+            padding: 12px 15px !important;
+            font-size: 16px !important;
+            font-weight: bold !important;
+            z-index: 2147483646 !important;
+            color: #000 !important;
+            font-family: Arial, sans-serif !important;
+            max-width: 280px !important;
+            animation: fadeIn 0.5s ease-out !important;
+            cursor: pointer !important;
+          ">
+            <button id="voicero-auto-help-close" style="
+              position: absolute !important;
+              top: 3px !important;
+              left: 6px !important;
+              cursor: pointer !important;
+              font-size: 16px !important;
+              color: #000 !important;
+              background: none !important;
+              border: none !important;
+              padding: 0 2px !important;
+            ">×</button>
+            <div style="margin-left: 12px !important;">${helpText}</div>
+            <div style="
+              margin-top: 8px !important;
+              text-align: center !important;
+              font-size: 14px !important;
+              background-color: ${this.websiteColor || "#882be6"} !important;
+              color: white !important;
+              padding: 5px 10px !important;
+              border-radius: 5px !important;
+              box-shadow: 2px 2px 0 rgba(0,0,0,0.2) !important;
+              cursor: pointer !important;
+            ">Click to Chat</div>
+            <div style="
+              content: "" !important;
+              position: absolute !important;
+              bottom: -10px !important;
+              right: 20px !important;
+              border-width: 10px 10px 0 !important;
+              border-style: solid !important;
+              border-color: white transparent transparent !important;
+              display: block !important;
+              width: 0 !important;
+            "></div>
+            <div style="
+              content: "" !important;
+              position: absolute !important;
+              bottom: -13px !important;
+              right: 19px !important;
+              border-width: 11px 11px 0 !important;
+              border-style: solid !important;
+              border-color: #000 transparent transparent !important;
+              display: block !important;
+              width: 0 !important;
+              z-index: -1 !important;
+            "></div>
+          </div>`,
+        );
+
+        autoHelpBubble = document.getElementById("voicero-auto-help-bubble");
+      } else {
+        // Update existing bubble text
+        const textContainer = autoHelpBubble.querySelector("div");
+        if (textContainer) {
+          textContainer.textContent = helpText;
+        }
+
+        // Make sure the bubble is visible
+        autoHelpBubble.style.display = "block";
+      }
+
+      // Add click handlers
+      if (autoHelpBubble) {
+        // Close button handler
+        const closeButton = document.getElementById("voicero-auto-help-close");
+        if (closeButton) {
+          closeButton.addEventListener("click", function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            autoHelpBubble.style.display = "none";
+          });
+        }
+
+        // Make the entire bubble clickable to open chat
+        autoHelpBubble.addEventListener("click", function (e) {
+          // Ignore clicks on the close button
+          if (e.target.id === "voicero-auto-help-close") return;
+
+          // Hide the bubble
+          autoHelpBubble.style.display = "none";
+
+          // Click the main button to open chat
+          const mainButton = document.getElementById("chat-website-button");
+          if (mainButton) {
+            mainButton.click();
+          }
+        });
+      }
+
+      // Add pulse animation to the main button to draw attention
+      this.enhanceButtonAnimation();
+    },
+
+    // Enhanced pulse animation for the button when auto help appears
+    enhanceButtonAnimation: function () {
+      const button = document.getElementById("chat-website-button");
+      if (!button) return;
+
+      // Add extra attention-grabbing styles
+      button.style.animation =
+        "voiceroButtonPulseEnhanced 1s infinite alternate";
+
+      // Add the enhanced animation styles if they don't exist
+      if (!document.getElementById("voicero-enhanced-pulse")) {
+        const enhancedStyle = document.createElement("style");
+        enhancedStyle.id = "voicero-enhanced-pulse";
+        enhancedStyle.innerHTML = `
+          @keyframes voiceroButtonPulseEnhanced {
+            0% { transform: scale(1); box-shadow: 0 0 10px 5px rgba(136, 43, 230, 0.7); }
+            100% { transform: scale(1.1); box-shadow: 0 0 20px 10px rgba(136, 43, 230, 0.5); }
+          }
+        `;
+        document.head.appendChild(enhancedStyle);
+      }
+
+      // Reset to normal animation after 5 seconds
+      setTimeout(() => {
+        if (button) {
+          button.style.animation =
+            "voiceroButtonPulse 2s infinite cubic-bezier(0.66, 0, 0.33, 1)";
+        }
+      }, 5000);
     },
   };
 
