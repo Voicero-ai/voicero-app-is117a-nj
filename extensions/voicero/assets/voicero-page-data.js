@@ -3,14 +3,14 @@
  * Shared page data collection functions used across Voicero modules
  */
 
-const VoiceroPageData = {
+var VoiceroPageData = {
   /**
    * Collect page data for better context
    * @returns {Object} Page data including text, buttons, forms, sections, and images
    */
   collectPageData: function () {
     // Initialize pageData without full_text for now
-    const pageData = {
+    var pageData = {
       url: window.location.href,
       buttons: [],
       forms: [],
@@ -19,7 +19,7 @@ const VoiceroPageData = {
     };
 
     // Only include elements that are within the body and not the header
-    const isInHeader = (element) => {
+    var isInHeader = (element) => {
       let parent = element.parentElement;
       while (parent) {
         if (parent.tagName && parent.tagName.toLowerCase() === "header") {
@@ -31,7 +31,7 @@ const VoiceroPageData = {
     };
 
     // Check if element is in footer
-    const isInFooter = (element) => {
+    var isInFooter = (element) => {
       let parent = element.parentElement;
       while (parent) {
         if (
@@ -48,12 +48,12 @@ const VoiceroPageData = {
     };
 
     // Check if element is in a Voicero shadow DOM
-    const isInVoiceroShadowDOM = (element) => {
+    var isInVoiceroShadowDOM = (element) => {
       // Check if element is part of a shadow DOM
       let root = element.getRootNode();
       if (root instanceof ShadowRoot) {
         // Check if the host element has a Voicero-related ID
-        const host = root.host;
+        var host = root.host;
         if (
           host &&
           host.id &&
@@ -68,13 +68,13 @@ const VoiceroPageData = {
     };
 
     // Filter function to exclude unwanted elements
-    const shouldExcludeElement = (element) => {
+    var shouldExcludeElement = (element) => {
       if (!element) return false;
 
       // Check for Voicero-related classes
       if (element.className && typeof element.className === "string") {
-        const classNames = element.className.split(" ");
-        for (const cls of classNames) {
+        var classNames = element.className.split(" ");
+        for (var cls of classNames) {
           if (
             cls.includes("voicero") ||
             cls === "user-message" ||
@@ -102,7 +102,7 @@ const VoiceroPageData = {
       }
 
       // Check if element.id is a string before calling toLowerCase()
-      const id =
+      var id =
         typeof element.id === "string"
           ? element.id.toLowerCase()
           : String(element.id).toLowerCase();
@@ -167,7 +167,7 @@ const VoiceroPageData = {
     let fullText = "";
 
     // Function to recursively extract text from valid elements
-    const extractTextFromElement = (element) => {
+    var extractTextFromElement = (element) => {
       // Skip if this is a Voicero element
       if (shouldExcludeElement(element)) {
         return;
@@ -175,7 +175,7 @@ const VoiceroPageData = {
 
       // If it's a text node, add its text
       if (element.nodeType === Node.TEXT_NODE) {
-        const text = element.textContent.trim();
+        var text = element.textContent.trim();
         if (text) {
           fullText += text + "\n";
         }
@@ -183,7 +183,7 @@ const VoiceroPageData = {
       }
 
       // Skip script, style, and other non-content elements
-      const tagName = element.tagName ? element.tagName.toLowerCase() : "";
+      var tagName = element.tagName ? element.tagName.toLowerCase() : "";
       if (
         tagName === "script" ||
         tagName === "style" ||
@@ -210,7 +210,7 @@ const VoiceroPageData = {
     pageData.full_text = fullText.trim();
 
     // Collect all buttons that meet our criteria
-    const buttonElements = document.querySelectorAll("button");
+    var buttonElements = document.querySelectorAll("button");
     buttonElements.forEach((button) => {
       if (
         !isInHeader(button) &&
@@ -225,21 +225,21 @@ const VoiceroPageData = {
     });
 
     // Collect all forms and their inputs/selects that meet our criteria
-    const formElements = document.querySelectorAll("form");
+    var formElements = document.querySelectorAll("form");
     formElements.forEach((form) => {
       if (
         !isInHeader(form) &&
         !isInFooter(form) &&
         !shouldExcludeElement(form)
       ) {
-        const formData = {
+        var formData = {
           id: form.id || "",
           inputs: [],
           selects: [],
         };
 
         // Get inputs
-        const inputs = form.querySelectorAll("input");
+        var inputs = form.querySelectorAll("input");
         inputs.forEach((input) => {
           formData.inputs.push({
             name: input.name || "",
@@ -249,15 +249,15 @@ const VoiceroPageData = {
         });
 
         // Get selects
-        const selects = form.querySelectorAll("select");
+        var selects = form.querySelectorAll("select");
         selects.forEach((select) => {
-          const selectData = {
+          var selectData = {
             name: select.name || "",
             options: [],
           };
 
           // Get options
-          const options = select.querySelectorAll("option");
+          var options = select.querySelectorAll("option");
           options.forEach((option) => {
             selectData.options.push({
               value: option.value || "",
@@ -273,7 +273,7 @@ const VoiceroPageData = {
     });
 
     // Collect important sections that meet our criteria
-    const sectionElements = document.querySelectorAll(
+    var sectionElements = document.querySelectorAll(
       "div[id], section, article, main, aside",
     );
     sectionElements.forEach((section) => {
@@ -291,7 +291,7 @@ const VoiceroPageData = {
     });
 
     // Collect images that meet our criteria
-    const imageElements = document.querySelectorAll("img");
+    var imageElements = document.querySelectorAll("img");
     imageElements.forEach((img) => {
       if (!isInHeader(img) && !isInFooter(img) && !shouldExcludeElement(img)) {
         pageData.images.push({
@@ -315,16 +315,14 @@ const VoiceroPageData = {
     }
 
     // Get last 5 user questions and last 5 AI responses
-    const userMessages = messages
-      .filter((msg) => msg.role === "user")
-      .slice(-5);
+    var userMessages = messages.filter((msg) => msg.role === "user").slice(-5);
 
-    const aiMessages = messages
+    var aiMessages = messages
       .filter((msg) => msg.role === "assistant")
       .slice(-5);
 
     // Combine all messages in chronological order
-    const lastMessages = [...userMessages, ...aiMessages].sort((a, b) => {
+    var lastMessages = [...userMessages, ...aiMessages].sort((a, b) => {
       // Use createdAt if available, otherwise use order in array
       if (a.createdAt && b.createdAt) {
         return new Date(a.createdAt) - new Date(b.createdAt);

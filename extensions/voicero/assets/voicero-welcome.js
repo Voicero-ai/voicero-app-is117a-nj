@@ -3,7 +3,7 @@
  * Handles welcome messages for text interface
  */
 
-const VoiceroWelcome = {
+var VoiceroWelcome = {
   // Initialize the welcome module
   init: function () {
     console.log("VoiceroWelcome module initialized");
@@ -67,10 +67,10 @@ const VoiceroWelcome = {
     console.log("Showing text welcome message");
 
     // Get website name if available
-    const websiteName = this.getWebsiteName();
+    var websiteName = this.getWebsiteName();
 
     // Create welcome message
-    const welcomeMessage = this.getWelcomeMessage(websiteName, "text");
+    var welcomeMessage = this.getWelcomeMessage(websiteName, "text");
 
     // Add the message to the text interface
     window.VoiceroText.addMessage(welcomeMessage, "ai");
@@ -97,8 +97,8 @@ const VoiceroWelcome = {
     // Fallback: try to get name from document
     if (document.title) {
       // Extract just the site name (before " - " or " | " if present)
-      const title = document.title;
-      const separatorIndex = Math.min(
+      var title = document.title;
+      var separatorIndex = Math.min(
         title.indexOf(" - ") > -1 ? title.indexOf(" - ") : Infinity,
         title.indexOf(" | ") > -1 ? title.indexOf(" | ") : Infinity,
       );
@@ -131,7 +131,7 @@ document.addEventListener("DOMContentLoaded", () => {
   } else {
     // Wait for VoiceroCore to be available
     let attempts = 0;
-    const checkCoreInterval = setInterval(() => {
+    var checkCoreInterval = setInterval(() => {
       attempts++;
       if (window.VoiceroCore) {
         clearInterval(checkCoreInterval);

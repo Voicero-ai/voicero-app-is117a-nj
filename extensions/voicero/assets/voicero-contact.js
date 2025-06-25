@@ -3,7 +3,7 @@
  * Handles contact form functionality within the Voicero text interface
  */
 
-const VoiceroContact = {
+var VoiceroContact = {
   // Initialize the contact module
   init: function () {
     // This will be called when loaded
@@ -36,7 +36,7 @@ const VoiceroContact = {
     }
 
     // Create the contact form HTML
-    const contactFormHTML = `
+    var contactFormHTML = `
       <div class="contact-form-container">
         <h3>How can we help?</h3>
         <p>Please fill out the form below and we'll get back to you soon.</p>
@@ -56,11 +56,11 @@ const VoiceroContact = {
     `;
 
     // Create a message element in the AI chat interface
-    const messageDiv = document.createElement("div");
+    var messageDiv = document.createElement("div");
     messageDiv.className = "ai-message";
 
     // Create message content
-    const contentDiv = document.createElement("div");
+    var contentDiv = document.createElement("div");
     contentDiv.className = "message-content contact-form-message";
     if (interfaceType === "voice") {
       contentDiv.className =
@@ -87,7 +87,7 @@ const VoiceroContact = {
     this.setupFormEventListeners(messageDiv, interfaceType);
 
     // Generate a unique ID for the message for reporting
-    const messageId =
+    var messageId =
       "msg_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
     messageDiv.dataset.messageId = messageId;
 
@@ -130,7 +130,7 @@ const VoiceroContact = {
         );
       } else if (window.VoiceroText.shadowRoot) {
         // Try to find color from send button which should have the website color
-        const sendButton =
+        var sendButton =
           window.VoiceroText.shadowRoot.getElementById("send-message-btn");
         if (sendButton && sendButton.style.backgroundColor) {
           mainColor = sendButton.style.backgroundColor;
@@ -149,7 +149,7 @@ const VoiceroContact = {
     }
 
     // Apply styles to form elements
-    const styles = `
+    var styles = `
       .contact-form-container {
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       }
@@ -237,11 +237,11 @@ const VoiceroContact = {
     // For voice interface, add styles directly to the document head
     if (document.getElementById("voice-messages")) {
       // Check if style already exists
-      const existingStyle = document.getElementById("voicero-contact-styles");
+      var existingStyle = document.getElementById("voicero-contact-styles");
       if (existingStyle) {
         existingStyle.textContent = styles;
       } else {
-        const styleEl = document.createElement("style");
+        var styleEl = document.createElement("style");
         styleEl.id = "voicero-contact-styles";
         styleEl.textContent = styles;
         document.head.appendChild(styleEl);
@@ -250,13 +250,13 @@ const VoiceroContact = {
     // For text interface with shadow DOM
     else if (window.VoiceroText && window.VoiceroText.shadowRoot) {
       // Check if style already exists in shadow DOM
-      const existingStyle = window.VoiceroText.shadowRoot.getElementById(
+      var existingStyle = window.VoiceroText.shadowRoot.getElementById(
         "voicero-contact-styles",
       );
       if (existingStyle) {
         existingStyle.textContent = styles;
       } else {
-        const styleEl = document.createElement("style");
+        var styleEl = document.createElement("style");
         styleEl.id = "voicero-contact-styles";
         styleEl.textContent = styles;
         window.VoiceroText.shadowRoot.appendChild(styleEl);
@@ -265,11 +265,11 @@ const VoiceroContact = {
     // Fallback - add to document if neither condition is met
     else {
       // Check if style already exists
-      const existingStyle = document.getElementById("voicero-contact-styles");
+      var existingStyle = document.getElementById("voicero-contact-styles");
       if (existingStyle) {
         existingStyle.textContent = styles;
       } else {
-        const styleEl = document.createElement("style");
+        var styleEl = document.createElement("style");
         styleEl.id = "voicero-contact-styles";
         styleEl.textContent = styles;
         document.head.appendChild(styleEl);
@@ -280,10 +280,10 @@ const VoiceroContact = {
   // Set up event listeners for the form
   setupFormEventListeners: function (formContainer, interfaceType) {
     // Get form elements
-    const submitButton = formContainer.querySelector("#contact-submit");
-    const cancelButton = formContainer.querySelector("#contact-cancel");
-    const emailInput = formContainer.querySelector("#contact-email");
-    const messageInput = formContainer.querySelector("#contact-message");
+    var submitButton = formContainer.querySelector("#contact-submit");
+    var cancelButton = formContainer.querySelector("#contact-cancel");
+    var emailInput = formContainer.querySelector("#contact-email");
+    var messageInput = formContainer.querySelector("#contact-message");
 
     // Directly set the button color to match current interface
     if (submitButton) {
@@ -385,7 +385,7 @@ const VoiceroContact = {
         formContainer.remove();
 
         // Add a cancellation message based on interface type
-        const cancelMessage =
+        var cancelMessage =
           "No problem! Let me know if you have any other questions.";
 
         if (window.VoiceroText && window.VoiceroText.addMessage) {
@@ -398,8 +398,8 @@ const VoiceroContact = {
   // Show error for form field
   showFormError: function (inputElement, message) {
     // Remove any existing error message
-    const parent = inputElement.parentElement;
-    const existingError = parent.querySelector(".form-error");
+    var parent = inputElement.parentElement;
+    var existingError = parent.querySelector(".form-error");
     if (existingError) {
       existingError.remove();
     }
@@ -408,7 +408,7 @@ const VoiceroContact = {
     inputElement.style.borderColor = "#ff3b30";
 
     // Create error message
-    const errorDiv = document.createElement("div");
+    var errorDiv = document.createElement("div");
     errorDiv.className = "form-error";
     errorDiv.textContent = message;
     errorDiv.style.color = "#ff3b30";
@@ -424,7 +424,7 @@ const VoiceroContact = {
 
   // Validate email format
   validateEmail: function (email) {
-    const re =
+    var re =
       /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
     return re.test(email);
   },
@@ -432,14 +432,14 @@ const VoiceroContact = {
   // Submit the contact form to the WordPress REST API
   submitContactForm: function (email, message, formContainer, interfaceType) {
     // Create submit in progress UI
-    const submitButton = formContainer.querySelector("#contact-submit");
-    const originalText = submitButton.textContent;
+    var submitButton = formContainer.querySelector("#contact-submit");
+    var originalText = submitButton.textContent;
     submitButton.textContent = "Sending...";
     submitButton.disabled = true;
     submitButton.style.opacity = "0.7";
 
     // Create the request data
-    const requestData = {
+    var requestData = {
       email: email,
       message: message,
     };
@@ -461,8 +461,8 @@ const VoiceroContact = {
         window.VoiceroCore.session.threads.length > 0
       ) {
         // Sort threads by lastMessageAt or createdAt to get the most recent
-        const threads = [...window.VoiceroCore.session.threads];
-        const sortedThreads = threads.sort((a, b) => {
+        var threads = [...window.VoiceroCore.session.threads];
+        var sortedThreads = threads.sort((a, b) => {
           if (a.lastMessageAt && b.lastMessageAt) {
             return new Date(b.lastMessageAt) - new Date(a.lastMessageAt);
           }
@@ -470,7 +470,7 @@ const VoiceroContact = {
         });
 
         // Get the most recent thread
-        const thread = sortedThreads[0];
+        var thread = sortedThreads[0];
 
         // Use the id property (not the threadId property)
         if (thread.id) {
@@ -534,7 +534,7 @@ const VoiceroContact = {
         formContainer.remove();
 
         // Show success message based on interface type
-        const successMessage =
+        var successMessage =
           "Thank you for your message! We've received your request and will get back to you soon.";
 
         if (window.VoiceroText && window.VoiceroText.addMessage) {
@@ -548,14 +548,14 @@ const VoiceroContact = {
         submitButton.style.opacity = "1";
 
         // Show error message
-        const formActions = formContainer.querySelector(".form-actions");
-        const existingError = formContainer.querySelector(".form-submit-error");
+        var formActions = formContainer.querySelector(".form-actions");
+        var existingError = formContainer.querySelector(".form-submit-error");
 
         if (existingError) {
           existingError.remove();
         }
 
-        const errorDiv = document.createElement("div");
+        var errorDiv = document.createElement("div");
         errorDiv.className = "form-submit-error";
         errorDiv.textContent =
           "There was a problem sending your message. Please try again.";
@@ -581,7 +581,7 @@ document.addEventListener("DOMContentLoaded", () => {
   } else {
     // Wait for VoiceroText to be available
     let attempts = 0;
-    const checkInterval = setInterval(() => {
+    var checkInterval = setInterval(() => {
       attempts++;
       if (window.VoiceroText) {
         clearInterval(checkInterval);

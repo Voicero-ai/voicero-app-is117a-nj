@@ -3,7 +3,7 @@
  * Shared color manipulation functions used across Voicero modules
  */
 
-const VoiceroColor = {
+var VoiceroColor = {
   /**
    * Get color variants from a hex color
    * @param {string} color - Base color in hex format
@@ -13,7 +13,7 @@ const VoiceroColor = {
     if (!color) color = "#882be6";
 
     // Initialize with the main color
-    const variants = {
+    var variants = {
       main: color,
       light: color,
       dark: color,
@@ -25,26 +25,26 @@ const VoiceroColor = {
     if (color.startsWith("#")) {
       try {
         // Convert hex to RGB for variants
-        const r = parseInt(color.slice(1, 3), 16);
-        const g = parseInt(color.slice(3, 5), 16);
-        const b = parseInt(color.slice(5, 7), 16);
+        var r = parseInt(color.slice(1, 3), 16);
+        var g = parseInt(color.slice(3, 5), 16);
+        var b = parseInt(color.slice(5, 7), 16);
 
         // Create variants by adjusting brightness
-        const lightR = Math.min(255, Math.floor(r * 1.2));
-        const lightG = Math.min(255, Math.floor(g * 1.2));
-        const lightB = Math.min(255, Math.floor(b * 1.2));
+        var lightR = Math.min(255, Math.floor(r * 1.2));
+        var lightG = Math.min(255, Math.floor(g * 1.2));
+        var lightB = Math.min(255, Math.floor(b * 1.2));
 
-        const darkR = Math.floor(r * 0.8);
-        const darkG = Math.floor(g * 0.8);
-        const darkB = Math.floor(b * 0.8);
+        var darkR = Math.floor(r * 0.8);
+        var darkG = Math.floor(g * 0.8);
+        var darkB = Math.floor(b * 0.8);
 
-        const superlightR = Math.min(255, Math.floor(r * 1.5));
-        const superlightG = Math.min(255, Math.floor(g * 1.5));
-        const superlightB = Math.min(255, Math.floor(b * 1.5));
+        var superlightR = Math.min(255, Math.floor(r * 1.5));
+        var superlightG = Math.min(255, Math.floor(g * 1.5));
+        var superlightB = Math.min(255, Math.floor(b * 1.5));
 
-        const superdarkR = Math.floor(r * 0.6);
-        const superdarkG = Math.floor(g * 0.6);
-        const superdarkB = Math.floor(b * 0.6);
+        var superdarkR = Math.floor(r * 0.6);
+        var superdarkG = Math.floor(g * 0.6);
+        var superdarkB = Math.floor(b * 0.6);
 
         // Convert back to hex
         variants.light = `#${lightR.toString(16).padStart(2, "0")}${lightG
@@ -86,9 +86,9 @@ const VoiceroColor = {
     if (!color.startsWith("#")) return color;
 
     try {
-      const r = parseInt(color.slice(1, 3), 16);
-      const g = parseInt(color.slice(3, 5), 16);
-      const b = parseInt(color.slice(5, 7), 16);
+      var r = parseInt(color.slice(1, 3), 16);
+      var g = parseInt(color.slice(3, 5), 16);
+      var b = parseInt(color.slice(5, 7), 16);
 
       // Positive adjustment makes it lighter, negative makes it darker
       let factor = adjustment < 0 ? 1 + adjustment : 1 + adjustment;
@@ -126,13 +126,13 @@ const VoiceroColor = {
     if (!color.startsWith("#")) return color;
 
     try {
-      const r = parseInt(color.slice(1, 3), 16);
-      const g = parseInt(color.slice(3, 5), 16);
-      const b = parseInt(color.slice(5, 7), 16);
+      var r = parseInt(color.slice(1, 3), 16);
+      var g = parseInt(color.slice(3, 5), 16);
+      var b = parseInt(color.slice(5, 7), 16);
 
-      const lightR = Math.min(255, Math.floor(r * 1.6));
-      const lightG = Math.min(255, Math.floor(g * 1.6));
-      const lightB = Math.min(255, Math.floor(b * 1.6));
+      var lightR = Math.min(255, Math.floor(r * 1.6));
+      var lightG = Math.min(255, Math.floor(g * 1.6));
+      var lightB = Math.min(255, Math.floor(b * 1.6));
 
       return `#${lightR.toString(16).padStart(2, "0")}${lightG
         .toString(16)
@@ -152,13 +152,13 @@ const VoiceroColor = {
     if (!color.startsWith("#")) return color;
 
     try {
-      const r = parseInt(color.slice(1, 3), 16);
-      const g = parseInt(color.slice(3, 5), 16);
-      const b = parseInt(color.slice(5, 7), 16);
+      var r = parseInt(color.slice(1, 3), 16);
+      var g = parseInt(color.slice(3, 5), 16);
+      var b = parseInt(color.slice(5, 7), 16);
 
-      const lightR = Math.min(255, Math.floor(r * 1.3));
-      const lightG = Math.min(255, Math.floor(g * 1.3));
-      const lightB = Math.min(255, Math.floor(b * 1.3));
+      var lightR = Math.min(255, Math.floor(r * 1.3));
+      var lightG = Math.min(255, Math.floor(g * 1.3));
+      var lightB = Math.min(255, Math.floor(b * 1.3));
 
       return `#${lightR.toString(16).padStart(2, "0")}${lightG
         .toString(16)
@@ -178,13 +178,13 @@ const VoiceroColor = {
     if (!color.startsWith("#")) return color;
 
     try {
-      const r = parseInt(color.slice(1, 3), 16);
-      const g = parseInt(color.slice(3, 5), 16);
-      const b = parseInt(color.slice(5, 7), 16);
+      var r = parseInt(color.slice(1, 3), 16);
+      var g = parseInt(color.slice(3, 5), 16);
+      var b = parseInt(color.slice(5, 7), 16);
 
-      const darkR = Math.floor(r * 0.7);
-      const darkG = Math.floor(g * 0.7);
-      const darkB = Math.floor(b * 0.7);
+      var darkR = Math.floor(r * 0.7);
+      var darkG = Math.floor(g * 0.7);
+      var darkB = Math.floor(b * 0.7);
 
       return `#${darkR.toString(16).padStart(2, "0")}${darkG
         .toString(16)
@@ -204,13 +204,13 @@ const VoiceroColor = {
     if (!color.startsWith("#")) return color;
 
     try {
-      const r = parseInt(color.slice(1, 3), 16);
-      const g = parseInt(color.slice(3, 5), 16);
-      const b = parseInt(color.slice(5, 7), 16);
+      var r = parseInt(color.slice(1, 3), 16);
+      var g = parseInt(color.slice(3, 5), 16);
+      var b = parseInt(color.slice(5, 7), 16);
 
-      const darkR = Math.floor(r * 0.5);
-      const darkG = Math.floor(g * 0.5);
-      const darkB = Math.floor(b * 0.5);
+      var darkR = Math.floor(r * 0.5);
+      var darkG = Math.floor(g * 0.5);
+      var darkB = Math.floor(b * 0.5);
 
       return `#${darkR.toString(16).padStart(2, "0")}${darkG
         .toString(16)
@@ -235,10 +235,10 @@ const VoiceroColor = {
     hex = hex.replace(/^#/, "");
 
     // Parse hex values
-    const bigint = parseInt(hex, 16);
-    const r = (bigint >> 16) & 255;
-    const g = (bigint >> 8) & 255;
-    const b = bigint & 255;
+    var bigint = parseInt(hex, 16);
+    var r = (bigint >> 16) & 255;
+    var g = (bigint >> 8) & 255;
+    var b = bigint & 255;
 
     return { r, g, b };
   },

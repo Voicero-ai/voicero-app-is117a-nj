@@ -25,7 +25,7 @@
         return this.isLoggedIn;
       }
 
-      const now = Date.now();
+      var now = Date.now();
       if (now - this.lastCheck < this.cacheTime && this.lastCheck > 0) {
         console.log(
           "VoiceroAuthHelper: Using cached login status:",
@@ -38,8 +38,8 @@
 
       try {
         // Method 1: Check for visible login/logout links in the DOM
-        const accountLinks = document.querySelectorAll('a[href*="/account"]');
-        const logoutLinks = document.querySelectorAll('a[href*="/logout"]');
+        var accountLinks = document.querySelectorAll('a[href*="/account"]');
+        var logoutLinks = document.querySelectorAll('a[href*="/logout"]');
 
         // If there are logout links, user is likely logged in
         if (logoutLinks.length > 0) {
@@ -53,7 +53,7 @@
         }
 
         // Check for account links that don't contain "login" or "register"
-        const customerAccountLink = Array.from(accountLinks).find(
+        var customerAccountLink = Array.from(accountLinks).find(
           (link) =>
             !link.href.includes("login") && !link.href.includes("register"),
         );
@@ -69,7 +69,7 @@
         }
 
         // Method 2: Check cookies for customer session indicators
-        const cookies = document.cookie;
+        var cookies = document.cookie;
         if (
           cookies.includes("_shopify_customer_") ||
           cookies.includes("_secure_session_id")
@@ -96,7 +96,7 @@
         }
 
         // Method 4: Check if there are customer-specific elements on the page
-        const customerGreeting = document.querySelector(
+        var customerGreeting = document.querySelector(
           ".customer-greeting, .customer-name, .account-name",
         );
         if (customerGreeting) {

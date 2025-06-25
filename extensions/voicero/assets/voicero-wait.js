@@ -3,7 +3,7 @@
  * Handles waiting animations and indicators
  */
 
-const VoiceroWait = {
+var VoiceroWait = {
   typingTimeout: null,
   typingIndicator: null,
   debug: true, // Enable debug logging
@@ -13,7 +13,7 @@ const VoiceroWait = {
    * @returns {HTMLElement} The typing indicator element
    */
   createTypingIndicator() {
-    const wrapper = document.createElement("div");
+    var wrapper = document.createElement("div");
     wrapper.className = "ai-message typing-wrapper";
     wrapper.style.cssText = `
       display: flex;
@@ -65,7 +65,7 @@ const VoiceroWait = {
     // Add animation keyframes to document if not already added
     if (!document.getElementById("voicero-wait-styles")) {
       if (this.debug) console.log("VoiceroWait: Adding keyframes style");
-      const styleEl = document.createElement("style");
+      var styleEl = document.createElement("style");
       styleEl.id = "voicero-wait-styles";
       styleEl.innerHTML = `
         @keyframes typingBounce {
@@ -98,7 +98,7 @@ const VoiceroWait = {
     this.hideTypingIndicator();
 
     // Create and append the indicator
-    const indicatorWrapper = this.createTypingIndicator();
+    var indicatorWrapper = this.createTypingIndicator();
     messagesContainer.appendChild(indicatorWrapper);
 
     // Scroll and store reference

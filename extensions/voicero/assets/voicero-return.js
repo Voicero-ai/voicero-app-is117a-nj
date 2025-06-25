@@ -3,7 +3,7 @@
  * Handles returns, refunds, exchanges, and cancellations for Shopify orders
  */
 
-const VoiceroReturnHandler = {
+var VoiceroReturnHandler = {
   config: {
     proxyUrl: "/apps/proxy",
     defaultHeaders: {
@@ -44,12 +44,12 @@ const VoiceroReturnHandler = {
     console.log("Processing refund request:", context);
 
     // Handle different parameter formats (support both email and order_email)
-    const context_normalized = { ...context };
+    var context_normalized = { ...context };
     if (!context_normalized.email && context_normalized.order_email) {
       context_normalized.email = context_normalized.order_email;
     }
 
-    const { order_id, order_number, email } = context_normalized || {};
+    var { order_id, order_number, email } = context_normalized || {};
 
     // Check if we have the required information
     if (!order_id && !order_number) {
@@ -67,7 +67,7 @@ const VoiceroReturnHandler = {
     }
 
     // Check if user is logged in
-    const isLoggedIn = this.checkUserLoggedIn();
+    var isLoggedIn = this.checkUserLoggedIn();
     if (!isLoggedIn) {
       this.notifyUser(
         "You need to be logged into your account to request a refund. Please log in first.",
@@ -89,7 +89,7 @@ const VoiceroReturnHandler = {
 
     // Try to process the refund through the proxy
     try {
-      const response = await this.callProxy("refund", {
+      var response = await this.callProxy("refund", {
         order_id: order_id || order_number,
         email,
         refund_type: "full", // Default to full refund
@@ -122,12 +122,12 @@ const VoiceroReturnHandler = {
     console.log("Processing order cancellation request:", context);
 
     // Handle different parameter formats (support both email and order_email)
-    const context_normalized = { ...context };
+    var context_normalized = { ...context };
     if (!context_normalized.email && context_normalized.order_email) {
       context_normalized.email = context_normalized.order_email;
     }
 
-    const { order_id, order_number, email } = context_normalized || {};
+    var { order_id, order_number, email } = context_normalized || {};
 
     // Check if we have the required information
     if (!order_id && !order_number) {
@@ -145,7 +145,7 @@ const VoiceroReturnHandler = {
     }
 
     // Check if user is logged in
-    const isLoggedIn = this.checkUserLoggedIn();
+    var isLoggedIn = this.checkUserLoggedIn();
     if (!isLoggedIn) {
       this.notifyUser(
         "You need to be logged into your account to cancel an order. Please log in first.",
@@ -167,7 +167,7 @@ const VoiceroReturnHandler = {
 
     // Try to process the cancellation through the proxy
     try {
-      const response = await this.callProxy("cancel", {
+      var response = await this.callProxy("cancel", {
         order_id: order_id || order_number,
         email,
         reason: context.reason || "CUSTOMER",
@@ -183,7 +183,7 @@ const VoiceroReturnHandler = {
       } else {
         if (response.suggest_return) {
           // Order is fulfilled, suggest return instead
-          const message = `${response.error || "This order has already been fulfilled and cannot be cancelled."} 
+          var message = `${response.error || "This order has already been fulfilled and cannot be cancelled."} 
           
 Would you like me to help you initiate a return request once you receive your order?`;
 
@@ -233,13 +233,13 @@ Would you like me to help you initiate a return request once you receive your or
     console.log("Processing return request:", context);
 
     // Handle different parameter formats (support both email and order_email)
-    const context_normalized = { ...context };
+    var context_normalized = { ...context };
     if (!context_normalized.email && context_normalized.order_email) {
       context_normalized.email = context_normalized.order_email;
     }
 
-    const { order_id, order_number, email, items } = context_normalized || {};
-    const orderIdentifier = order_id || order_number;
+    var { order_id, order_number, email, items } = context_normalized || {};
+    var orderIdentifier = order_id || order_number;
 
     console.log("🚨 Return request for order:", orderIdentifier);
 
@@ -262,7 +262,7 @@ Would you like me to help you initiate a return request once you receive your or
     console.log(`🔥 Direct processing return for order #${orderIdentifier}`);
 
     // IMPORTANT: Check if we already have a return reason (from AI)
-    const hasReturnReason = context.reason || context.returnReason;
+    var hasReturnReason = context.reason || context.returnReason;
     console.log("Return reason check:", {
       reason: context.reason,
       returnReason: context.returnReason,
@@ -274,8 +274,8 @@ Would you like me to help you initiate a return request once you receive your or
       console.log(
         "Return reason provided, directly processing return without order_details call",
       );
-      const returnReason = context.reason || context.returnReason;
-      const returnReasonNote = context.returnReasonNote || "";
+      var returnReason = context.reason || context.returnReason;
+      var returnReasonNote = context.returnReasonNote || "";
 
       this.notifyUser(
         `Processing your return for order #${orderIdentifier} with reason: ${returnReason}`,
@@ -283,7 +283,7 @@ Would you like me to help you initiate a return request once you receive your or
 
       try {
         // Call the proxy with action 'return' or 'return_order' directly
-        const response = await this.callProxy("return", {
+        var response = await this.callProxy("return", {
           order_id: orderIdentifier,
           email: email,
           reason: returnReason,
@@ -320,7 +320,7 @@ Would you like me to help you initiate a return request once you receive your or
     try {
       // First try to fetch order details to show items
       // IMPORTANT: Pass along any existing reason/returnReason to the order_details call
-      const orderDetailsRequest = {
+      var orderDetailsRequest = {
         order_id: orderIdentifier,
         email: email,
       };
@@ -330,7 +330,7 @@ Would you like me to help you initiate a return request once you receive your or
       if (context.returnReason)
         orderDetailsRequest.returnReason = context.returnReason;
 
-      const orderDetailsResponse = await this.callProxy(
+      var orderDetailsResponse = await this.callProxy(
         "order_details",
         orderDetailsRequest,
       );
@@ -343,7 +343,7 @@ Would you like me to help you initiate a return request once you receive your or
           "🚨 Server indicated we should process return directly based on order_details response",
         );
         // Extract reason from the order_details response
-        const returnReason =
+        var returnReason =
           orderDetailsResponse.reason || orderDetailsResponse.returnReason;
 
         if (returnReason) {
@@ -354,7 +354,7 @@ Would you like me to help you initiate a return request once you receive your or
 
           try {
             // Make a direct return call with the provided reason
-            const response = await this.callProxy("return", {
+            var response = await this.callProxy("return", {
               order_id: orderIdentifier,
               email: email,
               reason: returnReason,
@@ -471,14 +471,14 @@ Would you like me to help you initiate a return request once you receive your or
         );
 
         // Use the real items if we have them, otherwise use dummy items
-        const returnItems = orderItems.map((item) => ({
+        var returnItems = orderItems.map((item) => ({
           lineItemId: item.id,
           quantity: item.quantity || 1,
           reason: context.reason || context.returnReason,
         }));
 
         // Process the return with real items
-        const response = await this.callProxy("return", {
+        var response = await this.callProxy("return", {
           order_id: orderIdentifier,
           email: email,
           reason: context.reason || context.returnReason,
@@ -537,13 +537,13 @@ Would you like me to help you initiate a return request once you receive your or
           console.error("Error saving pending direct return", e);
         }
       } else {
-        const returnReason = context.reason || context.returnReason;
+        var returnReason = context.reason || context.returnReason;
         this.notifyUser(
           `Processing your return for order #${orderIdentifier} with reason: ${returnReason}`,
         );
 
         try {
-          const response = await this.callProxy("return", {
+          var response = await this.callProxy("return", {
             order_id: orderIdentifier,
             email: email,
             reason: returnReason,
@@ -582,12 +582,12 @@ Would you like me to help you initiate a return request once you receive your or
     console.log("Processing exchange request:", context);
 
     // Handle different parameter formats (support both email and order_email)
-    const context_normalized = { ...context };
+    var context_normalized = { ...context };
     if (!context_normalized.email && context_normalized.order_email) {
       context_normalized.email = context_normalized.order_email;
     }
 
-    const { order_id, order_number, email, items } = context_normalized || {};
+    var { order_id, order_number, email, items } = context_normalized || {};
 
     // Check if we have the required information
     if (!order_id && !order_number) {
@@ -605,7 +605,7 @@ Would you like me to help you initiate a return request once you receive your or
     }
 
     // Check if user is logged in
-    const isLoggedIn = this.checkUserLoggedIn();
+    var isLoggedIn = this.checkUserLoggedIn();
     if (!isLoggedIn) {
       this.notifyUser(
         "You need to be logged into your account to request an exchange. Please log in first.",
@@ -620,7 +620,7 @@ Would you like me to help you initiate a return request once you receive your or
       );
 
       // Try to retrieve order details
-      const orderDetails = await this.getOrderDetails(
+      var orderDetails = await this.getOrderDetails(
         order_id || order_number,
         email,
       );
@@ -642,7 +642,7 @@ Would you like me to help you initiate a return request once you receive your or
 
     // Try to process the exchange through the proxy
     try {
-      const response = await this.callProxy("exchange", {
+      var response = await this.callProxy("exchange", {
         order_id: order_id || order_number,
         email,
         items,
@@ -678,10 +678,10 @@ Would you like me to help you initiate a return request once you receive your or
       window.__VoiceroCustomerData &&
       window.__VoiceroCustomerData.recent_orders
     ) {
-      const orders = window.__VoiceroCustomerData.recent_orders;
+      var orders = window.__VoiceroCustomerData.recent_orders;
 
       // Find the order in the customer data
-      const matchingOrder = orders.find(
+      var matchingOrder = orders.find(
         (o) =>
           o.order_number === orderNumber ||
           o.name === orderNumber ||
@@ -695,7 +695,7 @@ Would you like me to help you initiate a return request once you receive your or
 
     // Try to verify via the proxy
     try {
-      const response = await this.callProxy("verify_order", {
+      var response = await this.callProxy("verify_order", {
         order_id: orderNumber,
         email,
       });
@@ -725,11 +725,11 @@ Would you like me to help you initiate a return request once you receive your or
       window.__VoiceroCustomerData.recent_orders
     ) {
       console.log("🔍 DEBUG: Checking recent_orders in __VoiceroCustomerData");
-      const orders = window.__VoiceroCustomerData.recent_orders;
+      var orders = window.__VoiceroCustomerData.recent_orders;
       console.log("🔍 DEBUG: Found recent orders:", orders.length);
 
       // Find the order in the customer data
-      const matchingOrder = orders.find(
+      var matchingOrder = orders.find(
         (o) =>
           o.order_number === orderNumber ||
           o.name === orderNumber ||
@@ -751,7 +751,7 @@ Would you like me to help you initiate a return request once you receive your or
         "🔄 DEBUG: Fetching order details from proxy for order:",
         orderNumber,
       );
-      const response = await this.callProxy("order_details", {
+      var response = await this.callProxy("order_details", {
         order_id: orderNumber,
         email,
       });
@@ -823,8 +823,8 @@ Would you like me to help you initiate a return request once you receive your or
     }
 
     // Method 4: Check for login-specific elements on the page
-    const accountLinks = document.querySelectorAll('a[href*="/account"]');
-    const logoutLinks = document.querySelectorAll('a[href*="/logout"]');
+    var accountLinks = document.querySelectorAll('a[href*="/account"]');
+    var logoutLinks = document.querySelectorAll('a[href*="/logout"]');
 
     if (accountLinks.length > 0 && logoutLinks.length > 0) {
       return true;
@@ -848,9 +848,9 @@ Would you like me to help you initiate a return request once you receive your or
         `Items available for return:\n\n`;
 
       orderDetails.line_items.forEach((item, index) => {
-        const price = parseFloat(item.price || 0).toFixed(2);
-        const quantity = item.quantity || 1;
-        const title = item.title || "Item " + (index + 1);
+        var price = parseFloat(item.price || 0).toFixed(2);
+        var quantity = item.quantity || 1;
+        var title = item.title || "Item " + (index + 1);
 
         message += `${index + 1}. ${title} - ${quantity} × $${price}\n`;
       });
@@ -908,7 +908,7 @@ Would you like me to help you initiate a return request once you receive your or
    */
   callProxy: async function (action, data) {
     // Add the action to the data
-    const payload = {
+    var payload = {
       action,
       ...data,
     };
@@ -919,24 +919,24 @@ Would you like me to help you initiate a return request once you receive your or
     }
     payload.timestamp = new Date().toISOString();
 
-    // Construct the URL for the proxy
-    const url = this._buildUrl();
+    // varruct the URL for the proxy
+    var url = this._buildUrl();
 
     try {
-      const response = await fetch(url, {
+      var response = await fetch(url, {
         method: "POST",
         headers: this.config.defaultHeaders,
         body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
+        var errorText = await response.text();
         throw new Error(
           `Proxy request failed: ${response.status} ${errorText}`,
         );
       }
 
-      const responseData = await response.json();
+      var responseData = await response.json();
       return responseData;
     } catch (error) {
       console.error(`Error calling proxy for ${action}:`, error);
@@ -966,7 +966,7 @@ Would you like me to help you initiate a return request once you receive your or
    */
   _buildUrl: function () {
     // Get the current origin to use as base for relative URLs
-    const base = window.location.origin;
+    var base = window.location.origin;
 
     // Handle both absolute and relative URLs
     let fullUrl;
@@ -987,15 +987,15 @@ Would you like me to help you initiate a return request once you receive your or
    */
   checkPendingReturns: function () {
     try {
-      const pendingReturnJson = localStorage.getItem("pendingReturnOrder");
+      var pendingReturnJson = localStorage.getItem("pendingReturnOrder");
       if (!pendingReturnJson) return null;
 
-      const pendingReturn = JSON.parse(pendingReturnJson);
+      var pendingReturn = JSON.parse(pendingReturnJson);
 
       // Check if the pending return is still relevant (within 30 days)
-      const savedDate = new Date(pendingReturn.timestamp);
-      const now = new Date();
-      const daysDiff = Math.floor((now - savedDate) / (1000 * 60 * 60 * 24));
+      var savedDate = new Date(pendingReturn.timestamp);
+      var now = new Date();
+      var daysDiff = Math.floor((now - savedDate) / (1000 * 60 * 60 * 24));
 
       if (daysDiff > 30) {
         // Too old, clear it
@@ -1014,10 +1014,10 @@ Would you like me to help you initiate a return request once you receive your or
    * Suggest a return for a pending order that was previously unfulfilled
    */
   suggestPendingReturn: function () {
-    const pendingReturn = this.checkPendingReturns();
+    var pendingReturn = this.checkPendingReturns();
     if (!pendingReturn) return false;
 
-    const message = `I noticed you previously tried to cancel order #${pendingReturn.order_number}. 
+    var message = `I noticed you previously tried to cancel order #${pendingReturn.order_number}. 
     
 If you've received this order now and would like to return it, I can help you initiate the return process. Would you like to proceed with a return request?`;
 
@@ -1032,7 +1032,7 @@ window.addEventListener("message", function (event) {
   if (event.source === window) {
     try {
       // Try to parse the data if it's a string
-      const data =
+      var data =
         typeof event.data === "string" ? JSON.parse(event.data) : event.data;
 
       // Look for return_order action pattern
@@ -1040,7 +1040,7 @@ window.addEventListener("message", function (event) {
         console.log("Return order postMessage intercepted:", data);
 
         // Get the return reason from any possible location
-        const returnReason =
+        var returnReason =
           data.returnReason ||
           data.reason ||
           (data.action_context && data.action_context.returnReason) ||
@@ -1072,7 +1072,7 @@ window.addEventListener("message", function (event) {
         console.log("Formatted return order intercepted:", data.formatted);
 
         // Get return reason from any possible location
-        const returnReason =
+        var returnReason =
           data.formatted.reason ||
           data.formatted.returnReason ||
           (data.formatted.action_context &&
@@ -1120,7 +1120,7 @@ if (!window.originalHandleAction && window.handleAction) {
       console.log("Return order action intercepted:", data);
 
       // Normalize the data
-      const returnContext = {
+      var returnContext = {
         order_id: data.order_id,
         email: data.order_email || data.email,
         reason: data.reason || "Customer request",
@@ -1147,14 +1147,12 @@ document.addEventListener("DOMContentLoaded", function () {
     if (window.VoiceroText) {
       window.VoiceroText.addEventListener("message", function (event) {
         if (event.detail && event.detail.role === "user") {
-          const message = event.detail.content.toLowerCase();
+          var message = event.detail.content.toLowerCase();
 
           // Check for pending direct return (emergency fix)
           let pendingDirectReturn = null;
           try {
-            const pendingReturnJSON = localStorage.getItem(
-              "directReturnPending",
-            );
+            var pendingReturnJSON = localStorage.getItem("directReturnPending");
             if (pendingReturnJSON) {
               pendingDirectReturn = JSON.parse(pendingReturnJSON);
               console.log(
@@ -1199,7 +1197,7 @@ document.addEventListener("DOMContentLoaded", function () {
               localStorage.removeItem("directReturnPending");
 
               // Get the stored items if available
-              const items = pendingDirectReturn.items || [];
+              var items = pendingDirectReturn.items || [];
               let itemsList = "";
 
               // Format items list if we have items
@@ -1216,7 +1214,7 @@ document.addEventListener("DOMContentLoaded", function () {
               );
 
               // Create items for return based on stored items or use a default
-              const returnItems =
+              var returnItems =
                 items.length > 0
                   ? items.map((item) => ({
                       lineItemId: item.id,
@@ -1236,8 +1234,7 @@ document.addEventListener("DOMContentLoaded", function () {
             }
           }
 
-          const pendingReturn =
-            window.VoiceroReturnHandler.checkPendingReturns();
+          var pendingReturn = window.VoiceroReturnHandler.checkPendingReturns();
 
           // Check if this might be a response to our return suggestion
           if (
@@ -1262,7 +1259,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // CRITICAL FIX: Connect AI response to return handler
     document.addEventListener("ai_response", function (event) {
-      const response = event.detail;
+      var response = event.detail;
       console.log("AI response received:", response);
 
       // Check if this is a return_order action with context
@@ -1277,7 +1274,7 @@ document.addEventListener("DOMContentLoaded", function () {
         );
 
         // Extract return reason from any possible location
-        const returnReason =
+        var returnReason =
           response.reason ||
           response.returnReason ||
           (response.action_context && response.action_context.reason) ||
@@ -1287,7 +1284,7 @@ document.addEventListener("DOMContentLoaded", function () {
         console.log("Return reason from AI response:", returnReason);
 
         // Map action_context to the format expected by handleReturn
-        const returnContext = {
+        var returnContext = {
           order_id: response.action_context.order_id,
           email:
             response.action_context.order_email ||
@@ -1303,7 +1300,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Also intercept formatted responses that might come in a different event
     document.addEventListener("formatted_response", function (event) {
-      const response = event.detail;
+      var response = event.detail;
       if (
         response &&
         response.action === "return_order" &&
@@ -1312,7 +1309,7 @@ document.addEventListener("DOMContentLoaded", function () {
         console.log("Return order action detected from formatted response");
 
         // Extract return reason from any possible location
-        const returnReason =
+        var returnReason =
           response.reason ||
           response.returnReason ||
           (response.action_context && response.action_context.reason) ||
@@ -1321,7 +1318,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         console.log("Return reason from formatted response:", returnReason);
 
-        const returnContext = {
+        var returnContext = {
           order_id: response.action_context.order_id,
           email:
             response.action_context.order_email ||

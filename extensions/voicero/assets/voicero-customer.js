@@ -50,7 +50,7 @@
 
       // Check for existing welcome back message
       try {
-        const storedMessage = localStorage.getItem("voiceroWelcomeBackMessage");
+        var storedMessage = localStorage.getItem("voiceroWelcomeBackMessage");
         if (storedMessage) {
           console.log(
             "VoiceroUserData: Found stored welcome back message:",
@@ -58,11 +58,11 @@
           );
 
           // Check if message is older than 1 hour - if so, remove it
-          const lastMessageTime = localStorage.getItem(
+          var lastMessageTime = localStorage.getItem(
             "voiceroWelcomeBackMessageTime",
           );
           if (lastMessageTime) {
-            const messageAge = Date.now() - parseInt(lastMessageTime, 10);
+            var messageAge = Date.now() - parseInt(lastMessageTime, 10);
             if (messageAge > 60 * 60 * 1000) {
               // 1 hour in milliseconds
               console.log(
@@ -137,7 +137,7 @@
             // Always send data if we've determined the user is logged in, even if customer object is minimal
             if ((this.customer || this.isLoggedIn) && !this.dataSent) {
               // Create a comprehensive data object with both customer and cart
-              const userData = {
+              var userData = {
                 customer: this.customer || {
                   logged_in: this.isLoggedIn,
                   minimal: true,
@@ -214,7 +214,7 @@
       }
 
       // 4. Try to get customer token from meta tag
-      const metaCustomerToken = document.querySelector(
+      var metaCustomerToken = document.querySelector(
         'meta[name="shopify-customer-token"]',
       );
       if (metaCustomerToken && metaCustomerToken.content) {
@@ -234,9 +234,9 @@
 
       // 6. Try customer session from cookie
       try {
-        const cookies = document.cookie.split(";");
+        var cookies = document.cookie.split(";");
         for (let i = 0; i < cookies.length; i++) {
-          const cookie = cookies[i].trim();
+          var cookie = cookies[i].trim();
           if (cookie.startsWith("_shopify_customer_session=")) {
             console.log("VoiceroUserData: Using customer session cookie");
             return cookie.substring("_shopify_customer_session=".length);
@@ -371,7 +371,7 @@
         }
 
         // 1. Check for customer ID injected by Liquid (most reliable method)
-        const injectedId = window.__VoiceroCustomerId;
+        var injectedId = window.__VoiceroCustomerId;
         if (injectedId) {
           console.log(
             "VoiceroUserData: Found customer ID from Liquid injection:",
@@ -387,7 +387,7 @@
 
           // We can stop here, but if we want more data, we can try to fetch it via API
           try {
-            const moreData = await this.fetchCustomerDetails();
+            var moreData = await this.fetchCustomerDetails();
             if (moreData) {
               this.customer = { ...this.customer, ...moreData };
               console.log(
@@ -418,7 +418,7 @@
         }
 
         // 3. Check cookies for customer session indicators
-        const cookies = document.cookie;
+        var cookies = document.cookie;
         if (
           cookies.includes("_shopify_customer_") ||
           cookies.includes("_secure_session_id")
@@ -436,7 +436,7 @@
         }
 
         // 4. Try to use Customer Account API (requires proper session token)
-        const moreData = await this.fetchCustomerDetails().catch((error) => {
+        var moreData = await this.fetchCustomerDetails().catch((error) => {
           console.log(
             "VoiceroUserData: Could not fetch customer details from API",
             error,
@@ -455,7 +455,7 @@
         }
 
         // 5. Check for login/logout links in the DOM
-        const logoutLinks = document.querySelectorAll('a[href*="/logout"]');
+        var logoutLinks = document.querySelectorAll('a[href*="/logout"]');
         if (logoutLinks.length > 0) {
           console.log(
             "VoiceroUserData: Found logout links, user is likely logged in",
@@ -467,8 +467,8 @@
         }
 
         // 6. Check for account links that don't include login/register
-        const accountLinks = document.querySelectorAll('a[href*="/account"]');
-        const customerAccountLink = Array.from(accountLinks).find(
+        var accountLinks = document.querySelectorAll('a[href*="/account"]');
+        var customerAccountLink = Array.from(accountLinks).find(
           (link) =>
             !link.href.includes("login") && !link.href.includes("register"),
         );
@@ -484,7 +484,7 @@
         }
 
         // 7. Check if there are customer-specific elements on the page
-        const customerGreeting = document.querySelector(
+        var customerGreeting = document.querySelector(
           ".customer-greeting, .customer-name, .account-name",
         );
         if (customerGreeting) {
@@ -513,7 +513,7 @@
         console.log(
           "VoiceroUserData: Attempting to fetch detailed customer data from API",
         );
-        const token = await this.getSessionToken();
+        var token = await this.getSessionToken();
 
         if (!token) {
           console.log(
@@ -522,8 +522,8 @@
           return null;
         }
 
-        const shopDomain = window.location.hostname;
-        const response = await fetch(
+        var shopDomain = window.location.hostname;
+        var response = await fetch(
           `https://${shopDomain}/account/api/2025-04/graphql.json`,
           {
             method: "POST",
@@ -612,7 +612,7 @@
           return null;
         }
 
-        const { data } = await response.json();
+        var { data } = await response.json();
         if (data && data.customer) {
           console.log(
             "VoiceroUserData: Successfully fetched detailed customer data",
@@ -720,7 +720,7 @@
 
       // Fall back to localStorage
       try {
-        const message = localStorage.getItem("voiceroWelcomeBackMessage");
+        var message = localStorage.getItem("voiceroWelcomeBackMessage");
         if (message) {
           console.log(
             "VoiceroUserData: Retrieved welcome back message from localStorage:",
@@ -761,30 +761,30 @@
         this.dataSent = true;
 
         // Get the shop domain from config
-        const shopDomain =
+        var shopDomain =
           window.voiceroConfig && window.voiceroConfig.shop
             ? window.voiceroConfig.shop
             : window.location.hostname;
 
         // Get access headers from config if available
-        const headers =
+        var headers =
           window.voiceroConfig &&
           typeof window.voiceroConfig.getAuthHeaders === "function"
             ? window.voiceroConfig.getAuthHeaders()
             : { Authorization: "Bearer anonymous" };
 
         // Get website ID from config or defaults
-        const websiteId =
+        var websiteId =
           window.voiceroConfig && window.voiceroConfig.websiteId
             ? window.voiceroConfig.websiteId
             : shopDomain; // Use shop domain as fallback website ID
 
         // Extract customer from userData
-        const customer = customerData.customer || {};
+        var customer = customerData.customer || {};
 
         // Transform customer data to match the expected API format
         // The API expects firstName, lastName instead of first_name, last_name
-        const transformedCustomer = {
+        var transformedCustomer = {
           id: customer.id || "",
           firstName: customer.first_name || "",
           lastName: customer.last_name || "",
@@ -896,10 +896,10 @@
         }
 
         // Add cart data
-        const cart = customerData.cart || {};
+        var cart = customerData.cart || {};
 
         // Prepare the payload with shop and customer data
-        const payload = {
+        var payload = {
           shop: shopDomain,
           websiteId: websiteId, // Include website ID in payload
           customer: transformedCustomer,

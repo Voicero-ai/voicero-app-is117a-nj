@@ -1,4 +1,4 @@
-const VoiceroActionHandler = {
+var VoiceroActionHandler = {
   config: {
     apiBase: "/api",
     endpoints: {
@@ -62,7 +62,7 @@ const VoiceroActionHandler = {
 
   loadCredentials: function () {
     try {
-      const saved = localStorage.getItem("voiceroUserCredentials");
+      var saved = localStorage.getItem("voiceroUserCredentials");
       if (saved) {
         this.config.userCredentials = JSON.parse(saved);
       }
@@ -81,9 +81,9 @@ const VoiceroActionHandler = {
   },
 
   pendingHandler: () => {
-    const action = sessionStorage.getItem("pendingAction");
+    var action = sessionStorage.getItem("pendingAction");
     if (action === "logout") {
-      const shopifyLogoutLink = document.querySelector(
+      var shopifyLogoutLink = document.querySelector(
         'a[href*="/account/logout"], form[action*="/account/logout"]',
       );
 
@@ -104,7 +104,7 @@ const VoiceroActionHandler = {
       return;
     }
 
-    const { answer, action, action_context } = response;
+    var { answer, action, action_context } = response;
     console.log("VoiceroActionHandler received:", {
       answer,
       action,
@@ -203,13 +203,13 @@ const VoiceroActionHandler = {
 
     try {
       // Create a mapping for actions that might use different formats
-      const actionMapping = {
+      var actionMapping = {
         get_orders: "handleGet_orders",
         contact: "handleContact",
       };
 
       // Get the handler name - either from the mapping or generate from the action name
-      const handlerName =
+      var handlerName =
         actionMapping[action] || `handle${this.capitalizeFirstLetter(action)}`;
 
       if (typeof this[handlerName] !== "function") {
@@ -269,16 +269,16 @@ const VoiceroActionHandler = {
     form_id,
   }) {
     if (selector) {
-      const element = document.querySelector(selector);
+      var element = document.querySelector(selector);
       if (element) return element;
     }
 
     // If form_id is provided and button_text, look for buttons within that form first
     if (form_id && button_text) {
-      const form = document.getElementById(form_id);
+      var form = document.getElementById(form_id);
       if (form) {
         // Look for buttons, inputs of type submit, and elements with role="button"
-        const formButtons = form.querySelectorAll(
+        var formButtons = form.querySelectorAll(
           'button, input[type="submit"], [role="button"]',
         );
         for (let btn of formButtons) {
@@ -314,7 +314,7 @@ const VoiceroActionHandler = {
     }
 
     if (button_text) {
-      const interactiveElements = document.querySelectorAll(
+      var interactiveElements = document.querySelectorAll(
         'button, a, input[type="submit"], input[type="button"], [role="button"]',
       );
 
@@ -345,7 +345,7 @@ const VoiceroActionHandler = {
     }
 
     if (placeholder) {
-      const inputs = document.querySelectorAll("input, textarea");
+      var inputs = document.querySelectorAll("input, textarea");
       for (let el of inputs) {
         if (el.placeholder?.toLowerCase().includes(placeholder.toLowerCase()))
           return el;
@@ -353,14 +353,14 @@ const VoiceroActionHandler = {
     }
 
     if (exact_text) {
-      const elements = document.querySelectorAll(tagName || "*");
+      var elements = document.querySelectorAll(tagName || "*");
       for (let el of elements) {
         if (el.textContent.trim() === exact_text) return el;
       }
     }
 
     if (role) {
-      const elements = document.querySelectorAll(`[role="${role}"]`);
+      var elements = document.querySelectorAll(`[role="${role}"]`);
       for (let el of elements) {
         if (!exact_text || el.textContent.trim() === exact_text) return el;
       }
@@ -370,7 +370,7 @@ const VoiceroActionHandler = {
   },
 
   findForm: function (formType) {
-    const formSelectors = {
+    var formSelectors = {
       login:
         'form#customer_login, form.customer-login-form, form[action*="account/login"]',
       tracking: 'form.order-lookup, form[action*="orders/lookup"]',
@@ -389,10 +389,10 @@ const VoiceroActionHandler = {
   },
 
   handleScroll: function (target) {
-    const { exact_text, css_selector, offset = 0 } = target || {};
+    var { exact_text, css_selector, offset = 0 } = target || {};
 
     if (exact_text) {
-      const element = this.findElement({ exact_text });
+      var element = this.findElement({ exact_text });
       if (element) {
         element.scrollIntoView({ behavior: "smooth", block: "center" });
         return;
@@ -402,9 +402,9 @@ const VoiceroActionHandler = {
     }
 
     if (css_selector) {
-      const element = document.querySelector(css_selector);
+      var element = document.querySelector(css_selector);
       if (element) {
-        const elementPosition =
+        var elementPosition =
           element.getBoundingClientRect().top + window.pageYOffset;
         window.scrollTo({
           top: elementPosition - offset,
@@ -420,7 +420,7 @@ const VoiceroActionHandler = {
   },
 
   handleClick: function (target) {
-    const element = this.findElement({
+    var element = this.findElement({
       ...target,
       button_text: target.button_text || target.exact_text,
       tagName: 'button, a, input, [role="button"]',
@@ -428,7 +428,7 @@ const VoiceroActionHandler = {
 
     if (element) {
       try {
-        const clickEvent = new MouseEvent("click", {
+        var clickEvent = new MouseEvent("click", {
           view: window,
           bubbles: true,
           cancelable: true,
@@ -445,7 +445,7 @@ const VoiceroActionHandler = {
   },
 
   handleFill_form: function (target) {
-    const { form_id, form_type, input_fields, inputs } = target || {};
+    var { form_id, form_type, input_fields, inputs } = target || {};
 
     // Enhanced logic to handle fields that are directly on the target object
     let fieldsArray = [];
@@ -476,8 +476,8 @@ const VoiceroActionHandler = {
     // Option 3: Check for field properties directly on the target object
     else {
       // Extract field-like properties from target (excluding known non-field properties)
-      const knownProps = ["form_id", "form_type", "auto_submit", "inputs"];
-      const possibleFields = Object.entries(target || {}).filter(
+      var knownProps = ["form_id", "form_type", "auto_submit", "inputs"];
+      var possibleFields = Object.entries(target || {}).filter(
         ([key]) => !knownProps.includes(key),
       );
 
@@ -500,21 +500,21 @@ const VoiceroActionHandler = {
         : null;
 
     if (!form && fieldsArray.length > 0) {
-      const firstField = fieldsArray[0];
-      const potentialInput = document.querySelector(
+      var firstField = fieldsArray[0];
+      var potentialInput = document.querySelector(
         `[name="${firstField.name}"], [placeholder*="${firstField.placeholder}"], [id="${firstField.id}"]`,
       );
       if (potentialInput) form = potentialInput.closest("form");
     }
 
     fieldsArray.forEach((field) => {
-      const { name, value, placeholder, id } = field;
+      var { name, value, placeholder, id } = field;
       if (!name && !placeholder && !id) {
         // console.warn("Invalid field configuration - no identifier:", field);
         return;
       }
 
-      const selector = [
+      var selector = [
         name && `[name="${name}"]`,
         placeholder && `[placeholder*="${placeholder}"]`,
         id && `#${id}`,
@@ -523,7 +523,7 @@ const VoiceroActionHandler = {
         .join(", ");
 
       // Enhanced selector to include textarea elements for comments
-      const element = form
+      var element = form
         ? form.querySelector(
             selector + ", textarea" + (name ? `[name="${name}"]` : ""),
           )
@@ -534,7 +534,7 @@ const VoiceroActionHandler = {
       if (!element) {
         // Try a more relaxed selector for comment fields
         if (name && (name.includes("comment") || name.includes("Comment"))) {
-          const commentElement = form
+          var commentElement = form
             ? form.querySelector("textarea")
             : document.querySelector("textarea");
 
@@ -573,7 +573,7 @@ const VoiceroActionHandler = {
   },
 
   handleHighlight_text: function (target) {
-    const {
+    var {
       selector,
       exact_text,
       color = "#f9f900",
@@ -603,7 +603,7 @@ const VoiceroActionHandler = {
 
     // 2. Handle selector-based highlighting
     if (selector) {
-      const elements = document.querySelectorAll(selector);
+      var elements = document.querySelectorAll(selector);
       elements.forEach((el) => {
         el.style.backgroundColor = color;
         if (!firstHighlightedElement) firstHighlightedElement = el;
@@ -611,19 +611,19 @@ const VoiceroActionHandler = {
     }
     // 3. Handle exact text highlighting (case-insensitive)
     else if (exact_text) {
-      const regex = new RegExp(this.escapeRegExp(exact_text), "gi");
+      var regex = new RegExp(this.escapeRegExp(exact_text), "gi");
       // Select all elements that might contain text nodes
-      const elements = document.querySelectorAll(
+      var elements = document.querySelectorAll(
         "p, span, div, li, td, h1, h2, h3, h4, h5, h6",
       );
 
       // Function to process text nodes
-      const highlightTextNodes = (node) => {
+      var highlightTextNodes = (node) => {
         if (node.nodeType === Node.TEXT_NODE && node.nodeValue.trim()) {
-          const text = node.nodeValue;
+          var text = node.nodeValue;
           let match;
           let lastIndex = 0;
-          const fragment = document.createDocumentFragment();
+          var fragment = document.createDocumentFragment();
 
           while ((match = regex.exec(text)) !== null) {
             // Add text before the match
@@ -634,7 +634,7 @@ const VoiceroActionHandler = {
             }
 
             // Add highlighted match
-            const span = document.createElement("span");
+            var span = document.createElement("span");
             span.style.backgroundColor = color;
             span.appendChild(document.createTextNode(match[0]));
             fragment.appendChild(span);
@@ -686,7 +686,7 @@ const VoiceroActionHandler = {
 
     // 4. Scroll to first highlighted element if requested
     if (scroll && firstHighlightedElement) {
-      const elementPosition =
+      var elementPosition =
         firstHighlightedElement.getBoundingClientRect().top +
         window.pageYOffset;
       window.scrollTo({
@@ -698,30 +698,30 @@ const VoiceroActionHandler = {
 
   handleLogin: async function (target) {
     // Extract username and password from the new target structure
-    const inputFields = (target?.input_fields || []).reduce((acc, field) => {
+    var inputFields = (target?.input_fields || []).reduce((acc, field) => {
       acc[field.name] = field.value;
       return acc;
     }, {});
 
-    const { username, password } = inputFields;
-    const remember = true;
+    var { username, password } = inputFields;
+    var remember = true;
     if (!username || !password) {
       // console.warn("Username and password required for login");
       return;
     }
 
     // Try Shopify customer login form
-    const loginForm = document.querySelector(
+    var loginForm = document.querySelector(
       'form#customer_login, form.customer-login-form, form[action*="account/login"]',
     );
     if (loginForm) {
-      const usernameField = loginForm.querySelector(
+      var usernameField = loginForm.querySelector(
         'input[name="customer[email]"], input[type="email"][name*="email"]',
       );
-      const passwordField = loginForm.querySelector(
+      var passwordField = loginForm.querySelector(
         'input[name="customer[password]"], input[type="password"]',
       );
-      const rememberField = loginForm.querySelector(
+      var rememberField = loginForm.querySelector(
         'input[name="customer[remember]"]',
       );
 
@@ -743,8 +743,8 @@ const VoiceroActionHandler = {
     // Fallback to Shopify customer login endpoint
     try {
       // Standard Shopify customer login endpoint
-      const apiUrl = "/account/login";
-      const response = await fetch(apiUrl, {
+      var apiUrl = "/account/login";
+      var response = await fetch(apiUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
@@ -768,7 +768,7 @@ const VoiceroActionHandler = {
   handleLogout: function () {
     this.clearCredentials();
 
-    const logoutLink = document.querySelector(
+    var logoutLink = document.querySelector(
       'a[href*="/account/logout"], form[action*="/account/logout"]',
     );
     if (logoutLink) {
@@ -821,16 +821,16 @@ const VoiceroActionHandler = {
     }
 
     if (newsletterForm) {
-      const emailField = newsletterForm.querySelector(
+      var emailField = newsletterForm.querySelector(
         'input[type="email"], input[name="contact[email]"], [aria-label*="email"], [placeholder*="email"]',
       );
-      const firstNameField = newsletterForm.querySelector(
+      var firstNameField = newsletterForm.querySelector(
         'input[name="contact[first_name]"], [aria-label*="first name"], [placeholder*="first name"]',
       );
-      const lastNameField = newsletterForm.querySelector(
+      var lastNameField = newsletterForm.querySelector(
         'input[name="contact[last_name]"], [aria-label*="last name"], [placeholder*="last name"]',
       );
-      const phoneField = newsletterForm.querySelector(
+      var phoneField = newsletterForm.querySelector(
         'input[type="tel"], input[name="contact[phone]"], [aria-label*="phone"], [placeholder*="phone"]',
       );
 
@@ -855,7 +855,7 @@ const VoiceroActionHandler = {
       // Submit if autoSubmit is true (default)
       if (autoSubmit) {
         setTimeout(() => {
-          const submitEvent = new Event("submit", {
+          var submitEvent = new Event("submit", {
             bubbles: true,
             cancelable: true,
           });
@@ -870,17 +870,17 @@ const VoiceroActionHandler = {
     }
 
     // API fallback
-    const newsletterUrl = this.getApiUrl("newsletter");
+    var newsletterUrl = this.getApiUrl("newsletter");
     if (!newsletterUrl) return;
 
     try {
-      const response = await fetch(newsletterUrl, {
+      var response = await fetch(newsletterUrl, {
         method: "POST",
         headers: this.config.defaultHeaders,
         body: JSON.stringify({ email, firstname, lastname, phone }),
       });
 
-      const data = await response.json();
+      var data = await response.json();
       if (window.VoiceroText?.addMessage) {
         if (data.success) {
           window.VoiceroText.addMessage(
@@ -911,9 +911,9 @@ const VoiceroActionHandler = {
   },
 
   handleAccount_manage: async function (target) {
-    const fields = target || {};
+    var fields = target || {};
     // Add address fields to the list of editable fields
-    const editable = [
+    var editable = [
       "first_name",
       "last_name",
       "email",
@@ -922,18 +922,18 @@ const VoiceroActionHandler = {
       "default_address",
     ];
     // pick only supported fields
-    const updates = {};
+    var updates = {};
     editable.forEach((k) => {
       if (fields[k] !== undefined) {
         // convert snake to camel
-        const camel = k.replace(/_([a-z])/g, (_, m) => m.toUpperCase());
+        var camel = k.replace(/_([a-z])/g, (_, m) => m.toUpperCase());
         updates[camel] = fields[k];
       }
     });
 
     // Special case for password reset action
     if (fields.action_type === "reset") {
-      const resetMessage =
+      var resetMessage =
         "To reset your password, you'll need to log out first and then use the 'Forgot password' option on the login page.";
       this.notify(resetMessage);
       return;
@@ -962,7 +962,7 @@ To make changes, please specify what you'd like to update.
     }
 
     // Check if logged in using VoiceroUserData or customer data injection
-    const isLoggedIn =
+    var isLoggedIn =
       (window.VoiceroUserData && window.VoiceroUserData.isLoggedIn) ||
       (window.__VoiceroCustomerData && window.__VoiceroCustomerData.id);
 
@@ -986,14 +986,14 @@ To make changes, please specify what you'd like to update.
     }
 
     // Do basic client-side validation for common issues
-    const validationErrors = this.validateAccountFields(updates);
+    var validationErrors = this.validateAccountFields(updates);
     if (validationErrors.length > 0) {
       this.notify("⚠️ " + validationErrors.join("\n\n⚠️ "));
       return;
     }
 
     // Prepare data to send to the proxy endpoint
-    const updateData = {
+    var updateData = {
       action: "updateCustomer",
       customer: {
         ...updates,
@@ -1020,8 +1020,7 @@ To make changes, please specify what you'd like to update.
             window.VoiceroUserData.fetchCustomerData();
           }
         } else {
-          const errorMessage =
-            response.error || "Unknown error updating profile";
+          var errorMessage = response.error || "Unknown error updating profile";
 
           // Format validation errors more nicely if they exist
           if (
@@ -1045,12 +1044,12 @@ To make changes, please specify what you'd like to update.
 
   // Add a client-side validation function to catch common issues before sending to server
   validateAccountFields: function (updates) {
-    const errors = [];
+    var errors = [];
 
     // Validate phone number if provided
     if (updates.phone) {
       // Check for a reasonably formatted phone number
-      const digitsOnly = updates.phone.replace(/\D/g, "");
+      var digitsOnly = updates.phone.replace(/\D/g, "");
 
       if (digitsOnly.length === 0) {
         errors.push(
@@ -1084,10 +1083,10 @@ To make changes, please specify what you'd like to update.
 
     // Validate address if provided (checking for completeness)
     if (updates.address || updates.defaultAddress) {
-      const addressToValidate = updates.defaultAddress || updates.address;
+      var addressToValidate = updates.defaultAddress || updates.address;
 
       // Check if the address has all required fields
-      const requiredFields = {
+      var requiredFields = {
         address1: "Street address",
         city: "City",
         zip: "ZIP/Postal code",
@@ -1098,7 +1097,7 @@ To make changes, please specify what you'd like to update.
       if (addressToValidate && typeof addressToValidate === "object") {
         let missingFields = [];
 
-        for (const [field, label] of Object.entries(requiredFields)) {
+        for (var [field, label] of Object.entries(requiredFields)) {
           if (
             !addressToValidate[field] ||
             !String(addressToValidate[field]).trim()
@@ -1136,7 +1135,7 @@ To make changes, please specify what you'd like to update.
       (data?.customerUpdate?.customerUserErrors &&
         data.customerUpdate.customerUserErrors.length > 0)
     ) {
-      const msgs = [
+      var msgs = [
         ...(errors?.map((e) => e.message) || []),
         ...(data?.customerUpdate?.customerUserErrors?.map((e) => e.message) ||
           []),
@@ -1158,7 +1157,7 @@ To make changes, please specify what you'd like to update.
   // helper to grab the storefront token from the cookie
   getCustomerAccessToken: function () {
     // Method 1: Try the standard customerAccessToken cookie
-    const customerAccessTokenMatch = document.cookie.match(
+    var customerAccessTokenMatch = document.cookie.match(
       /customerAccessToken=([^;]+)/,
     );
     if (customerAccessTokenMatch && customerAccessTokenMatch[1]) {
@@ -1166,7 +1165,7 @@ To make changes, please specify what you'd like to update.
     }
 
     // Method 2: Look for Shopify's customer token cookie (various formats)
-    const shopifyTokenMatch = document.cookie.match(
+    var shopifyTokenMatch = document.cookie.match(
       /_shopify_customer_token=([^;]+)/,
     );
     if (shopifyTokenMatch && shopifyTokenMatch[1]) {
@@ -1174,7 +1173,7 @@ To make changes, please specify what you'd like to update.
     }
 
     // Method 3: Check the Shopify session cookie
-    const sessionMatch = document.cookie.match(
+    var sessionMatch = document.cookie.match(
       /_shopify_customer_session=([^;]+)/,
     );
     if (sessionMatch && sessionMatch[1]) {
@@ -1205,7 +1204,7 @@ To make changes, please specify what you'd like to update.
 
     // Method 6: Check in localStorage (some themes store it there)
     try {
-      const storedToken = localStorage.getItem("customerAccessToken");
+      var storedToken = localStorage.getItem("customerAccessToken");
       if (storedToken) {
         return storedToken;
       }
@@ -1239,7 +1238,7 @@ To make changes, please specify what you'd like to update.
   },
 
   handleSubscriptionAction: async function (target, action) {
-    const { subscription_id, product_id, plan_id, variant_id } = target || {};
+    var { subscription_id, product_id, plan_id, variant_id } = target || {};
 
     if (!subscription_id && !product_id && !plan_id && !variant_id) {
       // console.warn("No subscription, product or plan ID provided");
@@ -1247,12 +1246,12 @@ To make changes, please specify what you'd like to update.
     }
 
     // Look for subscription-related buttons
-    const buttonSelector =
+    var buttonSelector =
       action === "start"
         ? `button[data-product-id="${product_id}"], button[data-variant-id="${variant_id}"], button.subscribe-button`
         : `button[data-subscription-id="${subscription_id}"], button.cancel-subscription`;
 
-    const button = document.querySelector(buttonSelector);
+    var button = document.querySelector(buttonSelector);
     if (button) {
       button.click();
       return;
@@ -1262,7 +1261,7 @@ To make changes, please specify what you'd like to update.
     if (action === "start" && (product_id || variant_id)) {
       // Redirect to product page with selling plan selection
       if (product_id) {
-        const productUrl = `/products/${product_id}`;
+        var productUrl = `/products/${product_id}`;
         window.location.href = productUrl;
         return;
       }
@@ -1271,9 +1270,9 @@ To make changes, please specify what you'd like to update.
       if (variant_id) {
         try {
           // Most Shopify subscription apps use selling_plan_id for subscription options
-          const selling_plan_id = plan_id;
+          var selling_plan_id = plan_id;
 
-          const formData = {
+          var formData = {
             items: [
               {
                 id: variant_id,
@@ -1283,7 +1282,7 @@ To make changes, please specify what you'd like to update.
             ],
           };
 
-          const response = await fetch("/cart/add.js", {
+          var response = await fetch("/cart/add.js", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -1300,7 +1299,7 @@ To make changes, please specify what you'd like to update.
             return;
           }
 
-          const errorData = await response.json();
+          var errorData = await response.json();
           throw new Error(
             errorData.description || "Failed to add subscription",
           );
@@ -1326,7 +1325,7 @@ To make changes, please specify what you'd like to update.
   },
 
   handlePurchase: async function (target) {
-    const {
+    var {
       product_id,
       product_name,
       button_text = "Add to cart",
@@ -1345,7 +1344,7 @@ To make changes, please specify what you'd like to update.
     // 1. Try direct add to cart with variant_id if provided
     if (variant_id) {
       try {
-        const response = await this.addToCart(variant_id, quantity);
+        var response = await this.addToCart(variant_id, quantity);
         return;
       } catch (error) {
         // Fall back to other methods if this fails
@@ -1355,14 +1354,14 @@ To make changes, please specify what you'd like to update.
 
     // 2. Try to find product on the current page (likely on a product page)
     // Look for variant selectors, add to cart forms, etc.
-    const variantSelectors = document.querySelectorAll(
+    var variantSelectors = document.querySelectorAll(
       'select[name="id"], input[name="id"][type="hidden"], [data-variant-id]',
     );
 
     let currentVariantId = null;
 
     // Try to get variant ID from selectors on the page
-    for (const selector of variantSelectors) {
+    for (var selector of variantSelectors) {
       if (selector.tagName === "SELECT") {
         currentVariantId = selector.value;
       } else if (selector.hasAttribute("value")) {
@@ -1377,7 +1376,7 @@ To make changes, please specify what you'd like to update.
     // If we found a variant ID on the page, use it
     if (currentVariantId) {
       try {
-        const response = await this.addToCart(currentVariantId, quantity);
+        var response = await this.addToCart(currentVariantId, quantity);
         return;
       } catch (error) {
         // console.error("Failed to add to cart with page variant_id", error);
@@ -1387,12 +1386,12 @@ To make changes, please specify what you'd like to update.
     // 3. Try to get the product data from the Shopify API
     if (product_id) {
       try {
-        const response = await fetch(`/products/${product_id}.js`);
+        var response = await fetch(`/products/${product_id}.js`);
         if (response.ok) {
-          const productData = await response.json();
+          var productData = await response.json();
           // Get the first available variant or the default variant
           if (productData.variants && productData.variants.length > 0) {
-            const defaultVariant =
+            var defaultVariant =
               productData.variants.find(
                 (v) =>
                   v.id === productData.selected_or_first_available_variant.id,
@@ -1408,7 +1407,7 @@ To make changes, please specify what you'd like to update.
     }
 
     // 4. Try to find "Add to cart" button as a last resort
-    const addToCartButton = this.findElement({
+    var addToCartButton = this.findElement({
       button_text: button_text || "Add to cart",
       tagName: 'button, input[type="submit"], [role="button"]',
     });
@@ -1449,7 +1448,7 @@ To make changes, please specify what you'd like to update.
   addToCart: async function (variantId, quantity = 1) {
     if (!variantId) return false;
 
-    const formData = {
+    var formData = {
       items: [
         {
           id: variantId,
@@ -1458,7 +1457,7 @@ To make changes, please specify what you'd like to update.
       ],
     };
 
-    const response = await fetch("/cart/add.js", {
+    var response = await fetch("/cart/add.js", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -1467,15 +1466,15 @@ To make changes, please specify what you'd like to update.
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
+      var errorData = await response.json();
       throw new Error(errorData.description || "Failed to add item to cart");
     }
 
-    const data = await response.json();
+    var data = await response.json();
 
     // Display success message
     if (window.VoiceroText?.addMessage) {
-      const itemName = data.items?.[0]?.product_title || "item";
+      var itemName = data.items?.[0]?.product_title || "item";
       window.VoiceroText.addMessage(
         `✅ Added ${quantity} ${itemName} to cart! ` +
           `<a href="/cart" style="color: #00ff88;">View Cart</a>`,
@@ -1491,12 +1490,12 @@ To make changes, please specify what you'd like to update.
   },
 
   handleTrack_order: async function (target) {
-    const { order_id, email, order_number } = target || {};
-    const orderNumberToFind = order_number || order_id;
+    var { order_id, email, order_number } = target || {};
+    var orderNumberToFind = order_number || order_id;
 
     // Check if email is missing
     if (!email) {
-      const emailRequiredMessage =
+      var emailRequiredMessage =
         "To track your order, please provide your email address for verification.";
 
       // Display the message
@@ -1520,7 +1519,7 @@ To make changes, please specify what you'd like to update.
         window.__VoiceroCustomerData.email &&
         email.toLowerCase() !== window.__VoiceroCustomerData.email.toLowerCase()
       ) {
-        const emailMismatchMessage =
+        var emailMismatchMessage =
           "The email you provided doesn't match the email associated with your account. Please use the email address that was used to place the order.";
 
         // Display the message
@@ -1534,10 +1533,10 @@ To make changes, please specify what you'd like to update.
         return;
       }
 
-      const orders = window.__VoiceroCustomerData.recent_orders;
+      var orders = window.__VoiceroCustomerData.recent_orders;
 
       // Find the order with the matching order number
-      const order = orders.find(
+      var order = orders.find(
         (o) =>
           o.order_number === orderNumberToFind ||
           o.name === orderNumberToFind ||
@@ -1546,8 +1545,8 @@ To make changes, please specify what you'd like to update.
 
       if (order) {
         // Build a formatted message with detailed order information
-        const date = new Date(order.created_at).toLocaleDateString();
-        const status =
+        var date = new Date(order.created_at).toLocaleDateString();
+        var status =
           order.fulfillment_status === "fulfilled"
             ? "✅ Fulfilled"
             : order.financial_status === "paid"
@@ -1593,7 +1592,7 @@ To make changes, please specify what you'd like to update.
         return;
       } else {
         // No matching order found - provide feedback
-        const notFoundMessage = `I couldn't find order #${orderNumberToFind} in your order history. Please check the order number and try again, or view all your orders in your [account page](/account).`;
+        var notFoundMessage = `I couldn't find order #${orderNumberToFind} in your order history. Please check the order number and try again, or view all your orders in your [account page](/account).`;
 
         // Display the not found message
         if (window.VoiceroText?.addMessage) {
@@ -1608,7 +1607,7 @@ To make changes, please specify what you'd like to update.
     }
 
     // If we couldn't find the order or user isn't logged in
-    const loginMessage = `To track order #${orderNumberToFind}, please make sure you're logged in to your account first or provide a valid email address.`;
+    var loginMessage = `To track order #${orderNumberToFind}, please make sure you're logged in to your account first or provide a valid email address.`;
 
     // Display the login message
     if (window.VoiceroText?.addMessage) {
@@ -1621,7 +1620,7 @@ To make changes, please specify what you'd like to update.
 
   handleProcess_return: async function (target) {
     // Enhanced return processing with better field detection for Shopify
-    const { order_id, email, reason, items = [] } = target || {};
+    var { order_id, email, reason, items = [] } = target || {};
     if (!order_id || !email) {
       // Try to use saved order info if available
       if (this.config.userCredentials?.lastOrder) {
@@ -1632,17 +1631,17 @@ To make changes, please specify what you'd like to update.
       }
     }
 
-    const returnForm =
+    var returnForm =
       this.findForm("return") ||
       document.querySelector('form[action*="return_request"]');
     if (returnForm) {
-      const orderIdField = returnForm.querySelector(
+      var orderIdField = returnForm.querySelector(
         'input[name="return[order_id]"], input[name="order_id"]',
       );
-      const emailField = returnForm.querySelector(
+      var emailField = returnForm.querySelector(
         'input[type="email"], input[name="return[email]"], input[name="email"]',
       );
-      const reasonField = returnForm.querySelector(
+      var reasonField = returnForm.querySelector(
         'select[name="return[reason]"], textarea[name="return[reason]"], select[name="reason"], textarea[name="reason"]',
       );
 
@@ -1652,7 +1651,7 @@ To make changes, please specify what you'd like to update.
         if (reasonField) reasonField.value = reason;
 
         items.forEach((item) => {
-          const itemCheckbox = returnForm.querySelector(
+          var itemCheckbox = returnForm.querySelector(
             `input[name="return[items][]"][value="${item.id}"], 
                          input[name="return_items[]"][value="${item.id}"]`,
           );
@@ -1709,12 +1708,12 @@ To make changes, please specify what you'd like to update.
     );
 
     // Check if there's already a contact form on the page
-    const existingForm = document.querySelector('form[action*="contact"]');
+    var existingForm = document.querySelector('form[action*="contact"]');
     if (existingForm) {
       // Scroll to the existing form
       existingForm.scrollIntoView({ behavior: "smooth", block: "center" });
       // Highlight the form
-      const originalStyle = existingForm.style.cssText;
+      var originalStyle = existingForm.style.cssText;
       existingForm.style.cssText =
         "border: 2px solid #882be6 !important; padding: 10px !important; box-shadow: 0 0 15px rgba(136, 43, 230, 0.5) !important;";
 
@@ -1732,7 +1731,7 @@ To make changes, please specify what you'd like to update.
     );
 
     // Try to navigate to the contact page if it likely exists
-    const contactLinks = Array.from(document.querySelectorAll("a")).filter(
+    var contactLinks = Array.from(document.querySelectorAll("a")).filter(
       (a) =>
         a.href &&
         (a.href.includes("/contact") ||
@@ -1750,7 +1749,7 @@ To make changes, please specify what you'd like to update.
   },
 
   handleReturn_order: function (target) {
-    const message = `
+    var message = `
       <div class="voicero-message-card">
         <h3>Start a Return</h3>
         <p>To begin the return process, you'll need to view your order details first.</p>
@@ -1782,23 +1781,23 @@ To make changes, please specify what you'd like to update.
   },
 
   handleScheduler: async function (target) {
-    const { action, date, time, event } = target || {};
+    var { action, date, time, event } = target || {};
     if (!action) {
       // console.warn("No action specified for scheduler");
       return;
     }
 
-    const schedulerUrl = this.getApiUrl("scheduler");
+    var schedulerUrl = this.getApiUrl("scheduler");
     if (!schedulerUrl) return;
 
     try {
-      const response = await fetch(schedulerUrl, {
+      var response = await fetch(schedulerUrl, {
         method: "POST",
         headers: this.config.defaultHeaders,
         body: JSON.stringify({ action, date, time, event }),
       });
 
-      const data = await response.json();
+      var data = await response.json();
       if (data.success && window.VoiceroText?.addMessage) {
         window.VoiceroText.addMessage(`Scheduler: ${data.message}`);
       } else if (!data.success) {
@@ -1811,18 +1810,18 @@ To make changes, please specify what you'd like to update.
 
   handleGet_orders: function (target) {
     // Check for email in the target object if provided
-    const { email } = target || {};
+    var { email } = target || {};
 
     // Check if we have customer data available from the Liquid template
     if (
       window.__VoiceroCustomerData &&
       window.__VoiceroCustomerData.recent_orders
     ) {
-      const orders = window.__VoiceroCustomerData.recent_orders;
+      var orders = window.__VoiceroCustomerData.recent_orders;
 
       if (orders.length === 0) {
         // If no orders found
-        const noOrdersMessage =
+        var noOrdersMessage =
           "I don't see any orders associated with your account. If you've placed an order recently, it might not be showing up yet.";
 
         if (window.VoiceroText?.addMessage) {
@@ -1843,8 +1842,8 @@ To make changes, please specify what you'd like to update.
       let message = "📦 **Here are your recent orders:**\n\n";
 
       orders.forEach((order, index) => {
-        const date = new Date(order.created_at).toLocaleDateString();
-        const status =
+        var date = new Date(order.created_at).toLocaleDateString();
+        var status =
           order.fulfillment_status === "fulfilled"
             ? "✅ Fulfilled"
             : order.financial_status === "paid"
@@ -1895,7 +1894,7 @@ To make changes, please specify what you'd like to update.
       console.log(`Attempting to fetch orders for email: ${email}`);
 
       // Show a loading message
-      const loadingMessage = `Looking up orders associated with ${email}...`;
+      var loadingMessage = `Looking up orders associated with ${email}...`;
       if (window.VoiceroText?.addMessage) {
         window.VoiceroText.addMessage(loadingMessage, "ai");
       }
@@ -1915,26 +1914,24 @@ To make changes, please specify what you'd like to update.
               response.orders.edges.length > 0
             ) {
               // Filter orders to only include those with the matching email
-              const filteredOrderEdges = response.orders.edges.filter(
-                (edge) => {
-                  const order = edge.node;
-                  return (
-                    order.customer &&
-                    order.customer.email &&
-                    order.customer.email.toLowerCase() === email.toLowerCase()
-                  );
-                },
-              );
+              var filteredOrderEdges = response.orders.edges.filter((edge) => {
+                var order = edge.node;
+                return (
+                  order.customer &&
+                  order.customer.email &&
+                  order.customer.email.toLowerCase() === email.toLowerCase()
+                );
+              });
 
               // If we have any orders after filtering
               if (filteredOrderEdges.length > 0) {
                 // Format the orders in a readable message
-                const orderCount = filteredOrderEdges.length;
+                var orderCount = filteredOrderEdges.length;
                 let message = `📦 **Found ${orderCount} ${orderCount === 1 ? "order" : "orders"} associated with ${email}:**\n\n`;
 
                 filteredOrderEdges.forEach((edge, index) => {
-                  const order = edge.node;
-                  const date = new Date(order.createdAt).toLocaleDateString();
+                  var order = edge.node;
+                  var date = new Date(order.createdAt).toLocaleDateString();
 
                   message += `**Order ${order.name}** (${date})`;
 
@@ -1948,7 +1945,7 @@ To make changes, please specify what you'd like to update.
 
                   // Add display status if available
                   if (order.displayFulfillmentStatus) {
-                    const status =
+                    var status =
                       order.displayFulfillmentStatus === "FULFILLED"
                         ? "✅ Fulfilled"
                         : "⏳ " + order.displayFulfillmentStatus;
@@ -1973,7 +1970,7 @@ To make changes, please specify what you'd like to update.
                 this.saveMessageToSession(message, "assistant");
               } else {
                 // No orders found with this email after filtering
-                const noOrdersMessage = `I couldn't find any orders associated with ${email}. If you've placed an order recently using this email, it might not be showing up in our system yet.`;
+                var noOrdersMessage = `I couldn't find any orders associated with ${email}. If you've placed an order recently using this email, it might not be showing up in our system yet.`;
 
                 if (window.VoiceroText?.addMessage) {
                   window.VoiceroText.addMessage(noOrdersMessage, "ai");
@@ -1987,7 +1984,7 @@ To make changes, please specify what you'd like to update.
               }
             } else {
               // No orders found
-              const noOrdersMessage = `I couldn't find any orders associated with ${email}. If you've placed an order recently using this email, it might not be showing up in our system yet.`;
+              var noOrdersMessage = `I couldn't find any orders associated with ${email}. If you've placed an order recently using this email, it might not be showing up in our system yet.`;
 
               if (window.VoiceroText?.addMessage) {
                 window.VoiceroText.addMessage(noOrdersMessage, "ai");
@@ -2004,7 +2001,7 @@ To make changes, please specify what you'd like to update.
             console.error("Error fetching orders by email:", error);
 
             // Show error message
-            const errorMessage = `Sorry, I encountered an error while trying to fetch your orders. Please try again later or contact customer support for assistance.`;
+            var errorMessage = `Sorry, I encountered an error while trying to fetch your orders. Please try again later or contact customer support for assistance.`;
 
             if (window.VoiceroText?.addMessage) {
               window.VoiceroText.addMessage(errorMessage, "ai");
@@ -2018,7 +2015,7 @@ To make changes, please specify what you'd like to update.
           });
       } else {
         // ShopifyProxyClient not available
-        const unavailableMessage = `I'm sorry, but I'm unable to look up your orders at the moment. The order lookup service is not available.`;
+        var unavailableMessage = `I'm sorry, but I'm unable to look up your orders at the moment. The order lookup service is not available.`;
 
         if (window.VoiceroText?.addMessage) {
           window.VoiceroText.addMessage(unavailableMessage, "ai");
@@ -2032,7 +2029,7 @@ To make changes, please specify what you'd like to update.
       }
     } else {
       // If customer data is not available and no email provided, ask for email
-      const emailRequestMessage =
+      var emailRequestMessage =
         "To view your orders, I'll need your email address that was used to place the order. Can you please provide it?";
 
       if (window.VoiceroText?.addMessage) {
@@ -2068,7 +2065,7 @@ To make changes, please specify what you'd like to update.
         finalUrl = window.location.origin + url;
       }
 
-      const urlObj = new URL(finalUrl);
+      var urlObj = new URL(finalUrl);
 
       if (!["http:", "https:"].includes(urlObj.protocol)) {
         // console.warn("Unsupported URL protocol:", urlObj.protocol);
@@ -2081,7 +2078,7 @@ To make changes, please specify what you'd like to update.
 
       if (url.startsWith("/") && !url.startsWith("//")) {
         try {
-          const fallbackUrl = window.location.origin + url;
+          var fallbackUrl = window.location.origin + url;
           new URL(fallbackUrl); // Validate again
           window.location.href = fallbackUrl;
           return;
@@ -2094,19 +2091,19 @@ To make changes, please specify what you'd like to update.
 
   removeAllButtons: function () {
     // Try to remove the toggle container completely
-    const toggleContainer = document.getElementById("voice-toggle-container");
+    var toggleContainer = document.getElementById("voice-toggle-container");
     if (toggleContainer && toggleContainer.parentNode) {
       toggleContainer.parentNode.removeChild(toggleContainer);
     }
 
     // Also look for any stray buttons
-    const mainButton = document.getElementById("chat-website-button");
+    var mainButton = document.getElementById("chat-website-button");
     if (mainButton && mainButton.parentNode) {
       mainButton.parentNode.removeChild(mainButton);
     }
 
     // Remove all chooser interfaces
-    const chooser = document.getElementById("interaction-chooser");
+    var chooser = document.getElementById("interaction-chooser");
     if (chooser && chooser.parentNode) {
       chooser.parentNode.removeChild(chooser);
     }
@@ -2120,15 +2117,15 @@ To make changes, please specify what you'd like to update.
     }
 
     // Find the most recent thread (first one in the array)
-    const session = window.VoiceroCore.session;
+    var session = window.VoiceroCore.session;
     if (!session.threads || !session.threads.length) {
       return;
     }
 
-    const currentThread = session.threads[0];
+    var currentThread = session.threads[0];
 
     // Create a new message object
-    const newMessage = {
+    var newMessage = {
       id: this.generateUUID(),
       threadId: currentThread.id,
       role: role || "assistant",
@@ -2187,7 +2184,7 @@ To make changes, please specify what you'd like to update.
       if (window.VoiceroCore.getApiBaseUrl && window.VoiceroCore.sessionId) {
         // Manual API call to update the message
         try {
-          const apiBaseUrl = window.VoiceroCore.getApiBaseUrl();
+          var apiBaseUrl = window.VoiceroCore.getApiBaseUrl();
 
           // Only proceed if we have a valid API URL
           if (apiBaseUrl) {
@@ -2219,8 +2216,8 @@ To make changes, please specify what you'd like to update.
     return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(
       /[xy]/g,
       function (c) {
-        const r = (Math.random() * 16) | 0;
-        const v = c === "x" ? r : (r & 0x3) | 0x8;
+        var r = (Math.random() * 16) | 0;
+        var v = c === "x" ? r : (r & 0x3) | 0x8;
         return v.toString(16);
       },
     );

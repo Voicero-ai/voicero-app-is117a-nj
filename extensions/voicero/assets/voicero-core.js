@@ -5,7 +5,7 @@
 // Ensure compatibility with WordPress jQuery
 (function (window, document) {
   // Create a minimal jQuery-like fallback when jQuery is not available
-  const $ =
+  var $ =
     window.jQuery ||
     function (selector) {
       // Return a simple object that implements a ready method
@@ -20,7 +20,7 @@
       };
     };
 
-  const VoiceroCore = {
+  var VoiceroCore = {
     apiBaseUrls: ["https://www.voicero.ai"],
     apiBaseUrl: null, // Store the working API URL
     apiConnected: false, // Track connection status
@@ -48,7 +48,7 @@
     // Set up URL change tracking
     setupUrlChangeTracking: function () {
       // Track initial URL as soon as session is available
-      const checkSessionAndTrackUrl = () => {
+      var checkSessionAndTrackUrl = () => {
         if (this.sessionId) {
           this.trackUrlMovement(window.location.href);
         } else {
@@ -63,14 +63,14 @@
       // Listen for URL changes in SPAs using history API
       if (window.history && window.history.pushState) {
         // Store original methods
-        const originalPushState = window.history.pushState;
-        const originalReplaceState = window.history.replaceState;
+        var originalPushState = window.history.pushState;
+        var originalReplaceState = window.history.replaceState;
 
         // Override pushState
         window.history.pushState = function () {
           originalPushState.apply(this, arguments);
           // Trigger a custom event
-          const urlChangeEvent = new Event("urlChange");
+          var urlChangeEvent = new Event("urlChange");
           window.dispatchEvent(urlChangeEvent);
         };
 
@@ -78,7 +78,7 @@
         window.history.replaceState = function () {
           originalReplaceState.apply(this, arguments);
           // Trigger a custom event
-          const urlChangeEvent = new Event("urlChange");
+          var urlChangeEvent = new Event("urlChange");
           window.dispatchEvent(urlChangeEvent);
         };
 
@@ -126,7 +126,7 @@
           if (mutation.type === "childList" && mutation.addedNodes.length > 0) {
             // Check if added nodes might be positioned in bottom right
             for (let i = 0; i < mutation.addedNodes.length; i++) {
-              const node = mutation.addedNodes[i];
+              var node = mutation.addedNodes[i];
               if (node.nodeType === 1) {
                 // Element node
                 // Look for potential back-to-top buttons or similar elements
@@ -263,7 +263,7 @@
       console.log("VoiceroCore: Checking for elements in bottom right corner");
 
       // Define elements we're looking for (by class or ID)
-      const potentialOverlaps = [
+      var potentialOverlaps = [
         "back-to-top",
         "scroll-to-top",
         "scroll-top",
@@ -277,19 +277,19 @@
       let foundElement = null;
       let bottomOffset = 20; // Default bottom offset
 
-      for (const selector of potentialOverlaps) {
+      for (var selector of potentialOverlaps) {
         // Look by class, ID, or element name
-        const elements = document.querySelectorAll(
+        var elements = document.querySelectorAll(
           `.${selector}, #${selector}, ${selector}, [data-id="${selector}"]`,
         );
 
         if (elements.length > 0) {
-          for (const el of elements) {
-            const rect = el.getBoundingClientRect();
-            const style = window.getComputedStyle(el);
+          for (var el of elements) {
+            var rect = el.getBoundingClientRect();
+            var style = window.getComputedStyle(el);
 
             // Check if the element is positioned near the bottom right
-            const isBottomRight =
+            var isBottomRight =
               rect.bottom > window.innerHeight - 150 &&
               rect.right > window.innerWidth - 150 &&
               style.display !== "none" &&
@@ -338,10 +338,10 @@
       this.updateThemeColor(this.websiteColor);
 
       // Check for elements that might overlap with our button
-      const overlapCheck = this.checkForBottomRightElements();
+      var overlapCheck = this.checkForBottomRightElements();
 
       // Add CSS Animations for fade-in effect only (button styling is now in updateThemeColor)
-      const styleEl = document.createElement("style");
+      var styleEl = document.createElement("style");
       styleEl.innerHTML = `
       @keyframes fadeIn {
         from {
@@ -416,7 +416,7 @@
       document.head.appendChild(styleEl);
 
       // Use the website color from API or default
-      const themeColor = this.websiteColor || "#882be6";
+      var themeColor = this.websiteColor || "#882be6";
 
       // Check if the container exists, otherwise append to body
       let container = document.getElementById("voicero-app-container");
@@ -441,13 +441,11 @@
       if (container) {
         // Create the button container inside the main container
         container.innerHTML = `<div id="voice-toggle-container"></div>`;
-        const buttonContainer = document.getElementById(
-          "voice-toggle-container",
-        );
+        var buttonContainer = document.getElementById("voice-toggle-container");
 
         if (buttonContainer) {
           // Calculate bottom offset based on overlap check
-          const bottomOffset = overlapCheck.hasOverlap
+          var bottomOffset = overlapCheck.hasOverlap
             ? overlapCheck.bottomOffset
             : 20;
 
@@ -474,7 +472,7 @@
         `;
 
           // Always use message icon since we only have text interface now
-          const iconSvg = `<svg viewBox="0 0 24 24" width="24" height="24">
+          var iconSvg = `<svg viewBox="0 0 24 24" width="24" height="24">
             <path fill="currentColor" d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
           </svg>`;
 
@@ -487,7 +485,7 @@
 
           // Add help bubble
           // Get clickMessage from multiple possible sources in order of priority
-          const clickMessage =
+          var clickMessage =
             this.session && this.session.clickMessage
               ? this.session.clickMessage
               : this.clickMessage
@@ -502,7 +500,7 @@
           );
 
           // Position the help bubble above the button by the appropriate offset
-          const helpBubbleBottomOffset = overlapCheck.hasOverlap
+          var helpBubbleBottomOffset = overlapCheck.hasOverlap
             ? overlapCheck.bottomOffset + 50
             : 80;
 
@@ -518,7 +516,7 @@
           this.applyButtonAnimation();
 
           // ALWAYS force visibility on all devices
-          const chatButtonEl = document.getElementById("chat-website-button");
+          var chatButtonEl = document.getElementById("chat-website-button");
           if (chatButtonEl) {
             chatButtonEl.style.cssText = `
               background-color: ${themeColor};
@@ -543,7 +541,7 @@
           }
 
           // Calculate chooser position - needs to be at least 60px above the button
-          const chooserBottomOffset = overlapCheck.hasOverlap
+          var chooserBottomOffset = overlapCheck.hasOverlap
             ? overlapCheck.bottomOffset + 60
             : 80;
 
@@ -579,12 +577,12 @@
           );
 
           // Add click handler for the main button to toggle the chooser
-          const mainButton = document.getElementById("chat-website-button");
-          const chooser = document.getElementById("interaction-chooser");
+          var mainButton = document.getElementById("chat-website-button");
+          var chooser = document.getElementById("interaction-chooser");
 
           // Add click handler for help bubble close button
-          const helpBubble = document.getElementById("voicero-help-bubble");
-          const helpClose = document.getElementById("voicero-help-close");
+          var helpBubble = document.getElementById("voicero-help-bubble");
+          var helpClose = document.getElementById("voicero-help-close");
 
           if (helpClose && helpBubble) {
             helpClose.addEventListener("click", function (e) {
@@ -610,10 +608,10 @@
             }
 
             // Check if any chat interface is open, don't show if one is
-            const textInterface = document.getElementById(
+            var textInterface = document.getElementById(
               "voicero-text-chat-container",
             );
-            const voiceInterface = document.getElementById(
+            var voiceInterface = document.getElementById(
               "voice-chat-interface",
             );
             if (
@@ -625,8 +623,8 @@
               return;
             }
 
-            const helpBubble = document.getElementById("voicero-help-bubble");
-            const mainButton = document.getElementById("chat-website-button");
+            var helpBubble = document.getElementById("voicero-help-bubble");
+            var mainButton = document.getElementById("chat-website-button");
 
             // Only proceed if help bubble exists and main button is visible
             if (
@@ -636,7 +634,7 @@
               window.getComputedStyle(mainButton).visibility !== "hidden"
             ) {
               // Get the message content from multiple possible sources
-              const updatedClickMessage =
+              var updatedClickMessage =
                 window.VoiceroCore.session &&
                 window.VoiceroCore.session.clickMessage
                   ? window.VoiceroCore.session.clickMessage
@@ -650,7 +648,7 @@
               helpBubble.innerHTML = `<button id="voicero-help-close">×</button>${updatedClickMessage}`;
 
               // Add click handler for the close button
-              const helpClose = helpBubble.querySelector("#voicero-help-close");
+              var helpClose = helpBubble.querySelector("#voicero-help-close");
               if (helpClose) {
                 helpClose.addEventListener("click", function (e) {
                   e.preventDefault();
@@ -686,7 +684,7 @@
               e.stopPropagation();
 
               // Hide help bubble when button is clicked
-              const helpBubble = document.getElementById("voicero-help-bubble");
+              var helpBubble = document.getElementById("voicero-help-bubble");
               if (helpBubble) {
                 helpBubble.style.display = "none";
                 window.VoiceroCore.appState.hasShownHelpBubble = true;
@@ -701,7 +699,7 @@
               }
 
               // Check if text interface is already open
-              const textInterface = document.getElementById(
+              var textInterface = document.getElementById(
                 "voicero-text-chat-container",
               );
 
@@ -727,7 +725,7 @@
 
                 // Create text interface if needed
                 if (!textInterface) {
-                  const container = document.getElementById(
+                  var container = document.getElementById(
                     "voicero-app-container",
                   );
                   if (container) {
@@ -785,8 +783,8 @@
           }
 
           // Add click handlers for voice and text buttons
-          const voiceButton = document.getElementById("voice-chooser-button");
-          const textButton = document.getElementById("text-chooser-button");
+          var voiceButton = document.getElementById("voice-chooser-button");
+          var textButton = document.getElementById("text-chooser-button");
 
           if (voiceButton) {
             // Remove the inline onclick attribute
@@ -1020,7 +1018,7 @@
         console.log("VoiceroCore: Trying API URL:", baseUrl);
 
         // Get auth headers from config if available
-        const headers = {
+        var headers = {
           Accept: "application/json",
           ...(window.voiceroConfig?.getAuthHeaders
             ? window.voiceroConfig.getAuthHeaders()
@@ -1157,10 +1155,10 @@
             this.createButton();
 
             // Check for existing session
-            const savedSession = localStorage.getItem("voicero_session");
+            var savedSession = localStorage.getItem("voicero_session");
             if (savedSession) {
               try {
-                const parsedSession = JSON.parse(savedSession);
+                var parsedSession = JSON.parse(savedSession);
                 this.session = parsedSession;
                 this.sessionId = parsedSession.id;
 
@@ -1351,7 +1349,7 @@
       this.buttonVisibilityTimeouts = [];
 
       // Hide toggle container with comprehensive styles
-      const toggleContainer = document.getElementById("voice-toggle-container");
+      var toggleContainer = document.getElementById("voice-toggle-container");
       if (toggleContainer) {
         toggleContainer.style.cssText = `
           display: none !important;
@@ -1367,7 +1365,7 @@
       }
 
       // Hide main button with comprehensive styles
-      const mainButton = document.getElementById("chat-website-button");
+      var mainButton = document.getElementById("chat-website-button");
       if (mainButton) {
         mainButton.style.cssText = `
           display: none !important;
@@ -1393,11 +1391,11 @@
       console.log("VoiceroCore: Starting session initialization");
 
       // Check if we have a saved session
-      const savedSession = localStorage.getItem("voicero_session");
+      var savedSession = localStorage.getItem("voicero_session");
       if (savedSession) {
         try {
           console.log("VoiceroCore: Loading saved session");
-          const parsedSession = JSON.parse(savedSession);
+          var parsedSession = JSON.parse(savedSession);
           this.session = parsedSession;
           this.sessionId = parsedSession.sessionId;
           this.websiteId = parsedSession.websiteId;
@@ -1447,7 +1445,7 @@
       }
 
       // Process each pending update
-      for (const update of this.pendingWindowStateUpdates) {
+      for (var update of this.pendingWindowStateUpdates) {
         this.updateWindowState(update);
       }
 
@@ -1463,8 +1461,8 @@
       }
 
       // Ask our REST proxy for this specific sessionId
-      const currentUrl = encodeURIComponent(window.location.href);
-      const proxyUrl = `https://www.voicero.ai/api/session?sessionId=${sessionId}&pageUrl=${currentUrl}`;
+      var currentUrl = encodeURIComponent(window.location.href);
+      var proxyUrl = `https://www.voicero.ai/api/session?sessionId=${sessionId}&pageUrl=${currentUrl}`;
 
       fetch(proxyUrl, {
         method: "GET",
@@ -1500,7 +1498,7 @@
           }
 
           // Ensure VoiceroCore.thread always matches session.threadId
-          const active = this.session.threads.find(
+          var active = this.session.threads.find(
             (t) => t.threadId === this.session.threadId,
           );
           // If session.threadId hasn't been set yet, fall back to the first one
@@ -1557,7 +1555,7 @@
       if (!this.session) return;
 
       // Create a flag to track if we need to hide the button
-      const shouldHideButton =
+      var shouldHideButton =
         this.session.textOpen === true || this.session.voiceOpen === true;
 
       // Hide the button first if needed, before any interface operations
@@ -1597,10 +1595,8 @@
       }
 
       // One-time function to ensure button stays hidden
-      const ensureButtonHidden = () => {
-        const toggleContainer = document.getElementById(
-          "voice-toggle-container",
-        );
+      var ensureButtonHidden = () => {
+        var toggleContainer = document.getElementById("voice-toggle-container");
         if (toggleContainer) {
           toggleContainer.style.cssText = `
             display: none !important;
@@ -1611,7 +1607,7 @@
           `;
         }
 
-        const mainButton = document.getElementById("chat-website-button");
+        var mainButton = document.getElementById("chat-website-button");
         if (mainButton) {
           mainButton.style.cssText = `
             display: none !important;
@@ -1707,8 +1703,8 @@
       // If a session operation is explicitly marked as in progress
       if (this.isSessionOperationInProgress) {
         // Check if it's been too long (might be stuck)
-        const currentTime = Date.now();
-        const timeSinceLastOperation =
+        var currentTime = Date.now();
+        var timeSinceLastOperation =
           currentTime - this.lastSessionOperationTime;
 
         if (timeSinceLastOperation > this.sessionOperationTimeout) {
@@ -1748,16 +1744,16 @@
       this.lastSessionOperationTime = Date.now();
       console.log("VoiceroCore: Session initialization started");
 
-      const proxyUrl = "https://www.voicero.ai/api/session";
+      var proxyUrl = "https://www.voicero.ai/api/session";
 
       // Check if Shopify customer ID is available
-      const shopifyCustomerId = window.__VoiceroCustomerId || null;
+      var shopifyCustomerId = window.__VoiceroCustomerId || null;
 
       // Get current page URL
-      const currentPageUrl = window.location.href;
+      var currentPageUrl = window.location.href;
 
       // Create request body with websiteId, pageUrl and shopifyCustomerId if available
-      const requestBody = JSON.stringify({
+      var requestBody = JSON.stringify({
         websiteId: this.websiteId,
         pageUrl: currentPageUrl,
         ...(shopifyCustomerId && { shopifyCustomerId }),
@@ -1828,9 +1824,9 @@
                 );
 
                 // Verify the storage
-                const storedSessionId =
+                var storedSessionId =
                   localStorage.getItem("voicero_session_id");
-                const storedSession = localStorage.getItem("voicero_session");
+                var storedSession = localStorage.getItem("voicero_session");
                 console.log(
                   "VoiceroCore: Verified stored session ID:",
                   storedSessionId,
@@ -1887,12 +1883,12 @@
     // Fallback method to try creating a session using jQuery AJAX
     _createSessionFallback: function () {
       // Get Shopify customer ID if available
-      const shopifyCustomerId = window.__VoiceroCustomerId || null;
+      var shopifyCustomerId = window.__VoiceroCustomerId || null;
 
       // Only run if jQuery is available
       if (typeof window.jQuery === "undefined") {
         // Use fetch as a fallback if jQuery isn't available
-        const currentPageUrl = window.location.href;
+        var currentPageUrl = window.location.href;
         fetch("https://www.voicero.ai/api/session", {
           method: "POST",
           headers: {
@@ -1928,7 +1924,7 @@
       }
 
       // Use jQuery if available
-      const currentPageUrl = window.location.href;
+      var currentPageUrl = window.location.href;
       window.jQuery.ajax({
         url: "https://www.voicero.ai/api/session",
         type: "POST",
@@ -1979,7 +1975,7 @@
 
       console.log("VoiceroCore: Tracking URL movement:", url);
 
-      const apiUrl = `https://www.voicero.ai/api/session/url-movement`;
+      var apiUrl = `https://www.voicero.ai/api/session/url-movement`;
 
       fetch(apiUrl, {
         method: "POST",
@@ -2038,7 +2034,7 @@
         console.error("VoiceroCore: VoiceroChooser module not available");
 
         // Fallback if module not available - try to show it directly
-        const chooser = document.getElementById("interaction-chooser");
+        var chooser = document.getElementById("interaction-chooser");
         if (chooser) {
           chooser.style.display = "flex";
           chooser.style.visibility = "visible";
@@ -2068,7 +2064,7 @@
       }
 
       // Also check if any interfaces are currently visible in the DOM
-      const textInterface = document.getElementById(
+      var textInterface = document.getElementById(
         "voicero-text-chat-container",
       );
       if (
@@ -2079,7 +2075,7 @@
         return;
       }
 
-      const voiceInterface = document.getElementById("voice-chat-interface");
+      var voiceInterface = document.getElementById("voice-chat-interface");
       if (
         voiceInterface &&
         window.getComputedStyle(voiceInterface).display === "block"
@@ -2089,7 +2085,7 @@
       }
 
       // Make sure the container is visible
-      const container = document.getElementById("voicero-app-container");
+      var container = document.getElementById("voicero-app-container");
       if (container) {
         container.style.display = "block";
         container.style.visibility = "visible";
@@ -2097,10 +2093,10 @@
       }
 
       // Check for elements that might overlap with our button
-      const overlapCheck = this.checkForBottomRightElements();
+      var overlapCheck = this.checkForBottomRightElements();
 
       // Calculate bottom offset based on overlap check
-      const bottomOffset = overlapCheck.hasOverlap
+      var bottomOffset = overlapCheck.hasOverlap
         ? overlapCheck.bottomOffset
         : 20;
 
@@ -2111,7 +2107,7 @@
       }
 
       // Make sure button container is visible
-      const buttonContainer = document.getElementById("voice-toggle-container");
+      var buttonContainer = document.getElementById("voice-toggle-container");
       if (buttonContainer) {
         buttonContainer.style.display = "block";
         buttonContainer.style.visibility = "visible";
@@ -2135,9 +2131,9 @@
       }
 
       // Make sure the main button is visible
-      const mainButton = document.getElementById("chat-website-button");
+      var mainButton = document.getElementById("chat-website-button");
       if (mainButton) {
-        const themeColor = this.websiteColor || "#882be6";
+        var themeColor = this.websiteColor || "#882be6";
         mainButton.style.cssText = `
           background-color: ${themeColor};
           display: flex !important;
@@ -2235,7 +2231,7 @@
       }
 
       // Store original suppressChooser value
-      const hadSuppressChooser = windowState.suppressChooser === true;
+      var hadSuppressChooser = windowState.suppressChooser === true;
 
       // Check if session initialization is in progress
       if (this.isInitializingSession) {
@@ -2345,8 +2341,8 @@
       }
 
       // Store the values we need for the API call to avoid timing issues
-      const sessionIdForApi = this.sessionId;
-      const windowStateForApi = { ...windowState };
+      var sessionIdForApi = this.sessionId;
+      var windowStateForApi = { ...windowState };
 
       // Use setTimeout to ensure the API call happens after navigation
       setTimeout(() => {
@@ -2360,10 +2356,10 @@
         }
 
         // Make API call to persist the changes
-        const proxyUrl = "https://www.voicero.ai/api/session/windows";
+        var proxyUrl = "https://www.voicero.ai/api/session/windows";
 
         // Format the request body to match what the Next.js API expects
-        const requestBody = {
+        var requestBody = {
           sessionId: sessionIdForApi,
           windowState: windowStateForApi,
         };
@@ -2439,19 +2435,19 @@
       if (color.startsWith("#")) {
         try {
           // Convert hex to RGB for the lighter variant
-          const r = parseInt(color.slice(1, 3), 16);
-          const g = parseInt(color.slice(3, 5), 16);
-          const b = parseInt(color.slice(5, 7), 16);
+          var r = parseInt(color.slice(1, 3), 16);
+          var g = parseInt(color.slice(3, 5), 16);
+          var b = parseInt(color.slice(5, 7), 16);
 
           // Create a lighter variant by adjusting brightness
-          const lighterR = Math.min(255, Math.floor(r * 1.2));
-          const lighterG = Math.min(255, Math.floor(g * 1.2));
-          const lighterB = Math.min(255, Math.floor(b * 1.2));
+          var lighterR = Math.min(255, Math.floor(r * 1.2));
+          var lighterG = Math.min(255, Math.floor(g * 1.2));
+          var lighterB = Math.min(255, Math.floor(b * 1.2));
 
           // Create a darker variant for hover
-          const darkerR = Math.floor(r * 0.8);
-          const darkerG = Math.floor(g * 0.8);
-          const darkerB = Math.floor(b * 0.8);
+          var darkerR = Math.floor(r * 0.8);
+          var darkerG = Math.floor(g * 0.8);
+          var darkerB = Math.floor(b * 0.8);
 
           // Convert back to hex
           lighterVariant = `#${lighterR.toString(16).padStart(2, "0")}${lighterG
@@ -2462,7 +2458,7 @@
             .padStart(2, "0")}${darkerB.toString(16).padStart(2, "0")}`;
 
           // Create a more robust enhanced pulsing style
-          const pulseStyle = document.createElement("style");
+          var pulseStyle = document.createElement("style");
           pulseStyle.innerHTML = `
             /* Button Pulse Animation */
             @keyframes pulse {
@@ -2526,7 +2522,7 @@
           `;
 
           // Remove any existing pulse style and add the new one
-          const existingPulseStyle = document.getElementById(
+          var existingPulseStyle = document.getElementById(
             "voicero-pulse-style",
           );
           if (existingPulseStyle) {
@@ -2625,12 +2621,12 @@
       }
 
       // If the main button does not exist, create it with absolute guaranteed visibility
-      const chatButton = document.getElementById("chat-website-button");
+      var chatButton = document.getElementById("chat-website-button");
       if (!chatButton && buttonContainer) {
-        const themeColor = this.websiteColor || "#882be6";
+        var themeColor = this.websiteColor || "#882be6";
 
         // Get the iconBot value from session if available
-        const iconBot =
+        var iconBot =
           this.session && this.session.iconBot
             ? this.session.iconBot
             : "message";
@@ -2669,7 +2665,7 @@
       this.attachButtonClickHandler();
 
       // Final insurance: force both elements to be visible with inline styles
-      const mainButton = document.getElementById("chat-website-button");
+      var mainButton = document.getElementById("chat-website-button");
       if (mainButton) {
         mainButton.setAttribute(
           "style",
@@ -2682,11 +2678,11 @@
 
     // Attach bulletproof click handler to button
     attachButtonClickHandler: function () {
-      const mainButton = document.getElementById("chat-website-button");
+      var mainButton = document.getElementById("chat-website-button");
       if (!mainButton) return;
 
       // Remove existing listeners to prevent duplicates
-      const newButton = mainButton.cloneNode(true);
+      var newButton = mainButton.cloneNode(true);
       if (mainButton.parentNode) {
         mainButton.parentNode.replaceChild(newButton, mainButton);
       }
@@ -2707,8 +2703,8 @@
         // Create chooser if it doesn't exist
         let chooser = document.getElementById("interaction-chooser");
         if (!chooser) {
-          const themeColor = this.websiteColor || "#882be6";
-          const buttonContainer = document.getElementById(
+          var themeColor = this.websiteColor || "#882be6";
+          var buttonContainer = document.getElementById(
             "voice-toggle-container",
           );
 
@@ -2799,7 +2795,7 @@
             chooser = document.getElementById("interaction-chooser");
 
             // Add click handlers to the new options
-            const voiceButton = document.getElementById("voice-chooser-button");
+            var voiceButton = document.getElementById("voice-chooser-button");
             if (voiceButton) {
               voiceButton.addEventListener("click", () => {
                 // Check if session operations are in progress
@@ -2855,7 +2851,7 @@
               });
             }
 
-            const textButton = document.getElementById("text-chooser-button");
+            var textButton = document.getElementById("text-chooser-button");
             if (textButton) {
               textButton.addEventListener("click", () => {
                 // Check if session operations are in progress
@@ -2916,7 +2912,7 @@
         );
 
         // Check if text interface is already open
-        const textInterface = document.getElementById(
+        var textInterface = document.getElementById(
           "voicero-text-chat-container",
         );
 
@@ -2939,7 +2935,7 @@
 
           // Create text interface if needed
           if (!textInterface) {
-            const container = document.getElementById("voicero-app-container");
+            var container = document.getElementById("voicero-app-container");
             if (container) {
               container.insertAdjacentHTML(
                 "beforeend",
@@ -2991,19 +2987,19 @@
     // Force remove all buttons from the DOM
     removeAllButtons: function () {
       // Try to remove the toggle container completely
-      const toggleContainer = document.getElementById("voice-toggle-container");
+      var toggleContainer = document.getElementById("voice-toggle-container");
       if (toggleContainer && toggleContainer.parentNode) {
         toggleContainer.parentNode.removeChild(toggleContainer);
       }
 
       // Also look for any stray buttons
-      const mainButton = document.getElementById("chat-website-button");
+      var mainButton = document.getElementById("chat-website-button");
       if (mainButton && mainButton.parentNode) {
         mainButton.parentNode.removeChild(mainButton);
       }
 
       // Remove all chooser interfaces
-      const chooser = document.getElementById("interaction-chooser");
+      var chooser = document.getElementById("interaction-chooser");
       if (chooser && chooser.parentNode) {
         chooser.parentNode.removeChild(chooser);
       }
@@ -3049,10 +3045,10 @@
       hex = hex.replace(/^#/, "");
 
       // Parse hex values
-      const bigint = parseInt(hex, 16);
-      const r = (bigint >> 16) & 255;
-      const g = (bigint >> 8) & 255;
-      const b = bigint & 255;
+      var bigint = parseInt(hex, 16);
+      var r = (bigint >> 16) & 255;
+      var g = (bigint >> 8) & 255;
+      var b = bigint & 255;
 
       return { r, g, b };
     },
@@ -3060,10 +3056,10 @@
     // Add button animation directly
     applyButtonAnimation: function () {
       // Create a standalone animation style that doesn't depend on other functions
-      const animStyle = document.createElement("style");
+      var animStyle = document.createElement("style");
 
       // Get the theme color
-      const color = this.websiteColor || "#882be6";
+      var color = this.websiteColor || "#882be6";
 
       // Parse RGB components for animation
       let r = 136,
@@ -3138,7 +3134,7 @@
       animStyle.id = "voicero-button-animation";
 
       // Remove existing animation if present
-      const existingAnim = document.getElementById("voicero-button-animation");
+      var existingAnim = document.getElementById("voicero-button-animation");
       if (existingAnim) {
         existingAnim.remove();
       }
@@ -3148,7 +3144,7 @@
 
       // Also apply animation directly to button for redundancy
       setTimeout(() => {
-        const button = document.getElementById("chat-website-button");
+        var button = document.getElementById("chat-website-button");
         if (button) {
           button.style.animation =
             "voiceroButtonPulse 2s infinite cubic-bezier(0.66, 0, 0.33, 1)";
@@ -3175,7 +3171,7 @@
         window.VoiceroChooser.hideChooser();
       } else {
         // Fallback if VoiceroChooser is not available
-        const chooser = document.getElementById("interaction-chooser");
+        var chooser = document.getElementById("interaction-chooser");
         if (chooser) {
           chooser.style.display = "none";
           chooser.style.visibility = "hidden";
@@ -3210,14 +3206,14 @@
       }
 
       // ALWAYS hide any open interfaces
-      const textInterface = document.getElementById(
+      var textInterface = document.getElementById(
         "voicero-text-chat-container",
       );
       if (textInterface) {
         textInterface.style.display = "none";
       }
 
-      const voiceInterface = document.getElementById("voice-chat-interface");
+      var voiceInterface = document.getElementById("voice-chat-interface");
       if (voiceInterface) {
         voiceInterface.style.display = "none";
       }
@@ -3230,7 +3226,7 @@
         window.VoiceroChooser.showChooser();
       } else {
         // Fallback if VoiceroChooser is not available
-        const chooser = document.getElementById("interaction-chooser");
+        var chooser = document.getElementById("interaction-chooser");
         if (chooser) {
           chooser.style.display = "flex";
           chooser.style.visibility = "visible";
@@ -3245,11 +3241,11 @@
     // Update the main button icon - always use message icon
     updateButtonIcon: function () {
       // Get button element
-      const button = document.getElementById("chat-website-button");
+      var button = document.getElementById("chat-website-button");
       if (!button) return;
 
       // Always use the message icon since we only have text interface now
-      const iconSvg = `<svg viewBox="0 0 24 24" width="24" height="24">
+      var iconSvg = `<svg viewBox="0 0 24 24" width="24" height="24">
         <path fill="currentColor" d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
       </svg>`;
 
@@ -3268,7 +3264,7 @@
       console.log("VoiceroCore: Loading VoiceroText module");
 
       // Check if the text script is already in the document
-      const existingScript = document.querySelector(
+      var existingScript = document.querySelector(
         'script[src*="voicero-text.js"]',
       );
       if (existingScript) {
@@ -3277,15 +3273,15 @@
       }
 
       // Create and append the script element to load VoiceroText
-      const script = document.createElement("script");
+      var script = document.createElement("script");
       // Try to get the current script's path to determine the correct path for voicero-text.js
-      const currentScript =
+      var currentScript =
         document.currentScript ||
         document.querySelector('script[src*="voicero-core.js"]');
 
       if (currentScript && currentScript.src) {
         // Use the same directory as the current script
-        const scriptPath = currentScript.src.substring(
+        var scriptPath = currentScript.src.substring(
           0,
           currentScript.src.lastIndexOf("/"),
         );
@@ -3299,7 +3295,7 @@
       script.async = true;
 
       // Store reference to VoiceroCore for use in callback
-      const self = this;
+      var self = this;
 
       script.onload = () => {
         console.log("VoiceroCore: VoiceroText module loaded successfully");
@@ -3361,7 +3357,7 @@
       // Set new timer for 60 seconds
       this.autoHelpTimer = setTimeout(() => {
         this.showAutoHelp();
-      }, 10000); // 60 seconds
+      }, 60000); // 60 seconds
     },
 
     // Reset automatic help timer (called on URL changes)
@@ -3384,10 +3380,10 @@
       }
 
       // Check if any chat interface is open, don't show if one is
-      const textInterface = document.getElementById(
+      var textInterface = document.getElementById(
         "voicero-text-chat-container",
       );
-      const voiceInterface = document.getElementById("voice-chat-interface");
+      var voiceInterface = document.getElementById("voice-chat-interface");
 
       if (
         (textInterface &&
@@ -3401,11 +3397,11 @@
       console.log("VoiceroCore: Fetching auto help message from API");
 
       // Get the current page URL and title
-      const url = window.location.href;
-      const title = document.title;
+      var url = window.location.href;
+      var title = document.title;
 
       // Prepare data for API call - include all required fields
-      const apiData = {
+      var apiData = {
         url: url,
         title: title,
         sessionId: this.sessionId || "",
@@ -3508,7 +3504,7 @@
 
     // Display the auto help bubble with provided text
     displayAutoHelpBubble: function (helpText) {
-      const mainButton = document.getElementById("chat-website-button");
+      var mainButton = document.getElementById("chat-website-button");
       if (!mainButton) return;
 
       // Mark as shown
@@ -3520,16 +3516,14 @@
 
       if (!autoHelpBubble) {
         // Check for elements that might overlap with our button
-        const overlapCheck = this.checkForBottomRightElements();
+        var overlapCheck = this.checkForBottomRightElements();
 
         // Position the help bubble above the button by the appropriate offset
-        const helpBubbleBottomOffset = overlapCheck.hasOverlap
+        var helpBubbleBottomOffset = overlapCheck.hasOverlap
           ? overlapCheck.bottomOffset + 50
           : 80;
 
-        const buttonContainer = document.getElementById(
-          "voice-toggle-container",
-        );
+        var buttonContainer = document.getElementById("voice-toggle-container");
         if (!buttonContainer) return;
 
         // Create the bubble with enhanced styles
@@ -3605,7 +3599,7 @@
         autoHelpBubble = document.getElementById("voicero-auto-help-bubble");
       } else {
         // Update existing bubble text
-        const textContainer = autoHelpBubble.querySelector("div");
+        var textContainer = autoHelpBubble.querySelector("div");
         if (textContainer) {
           textContainer.textContent = helpText;
         }
@@ -3617,7 +3611,7 @@
       // Add click handlers
       if (autoHelpBubble) {
         // Close button handler
-        const closeButton = document.getElementById("voicero-auto-help-close");
+        var closeButton = document.getElementById("voicero-auto-help-close");
         if (closeButton) {
           closeButton.addEventListener("click", function (e) {
             e.preventDefault();
@@ -3635,7 +3629,7 @@
           autoHelpBubble.style.display = "none";
 
           // Click the main button to open chat
-          const mainButton = document.getElementById("chat-website-button");
+          var mainButton = document.getElementById("chat-website-button");
           if (mainButton) {
             mainButton.click();
           }
@@ -3648,7 +3642,7 @@
 
     // Enhanced pulse animation for the button when auto help appears
     enhanceButtonAnimation: function () {
-      const button = document.getElementById("chat-website-button");
+      var button = document.getElementById("chat-website-button");
       if (!button) return;
 
       // Add extra attention-grabbing styles
@@ -3657,7 +3651,7 @@
 
       // Add the enhanced animation styles if they don't exist
       if (!document.getElementById("voicero-enhanced-pulse")) {
-        const enhancedStyle = document.createElement("style");
+        var enhancedStyle = document.createElement("style");
         enhancedStyle.id = "voicero-enhanced-pulse";
         enhancedStyle.innerHTML = `
           @keyframes voiceroButtonPulseEnhanced {

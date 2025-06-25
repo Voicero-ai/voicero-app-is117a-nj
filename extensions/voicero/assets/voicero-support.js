@@ -3,7 +3,7 @@
  * Adds reporting functionality to AI message bubbles
  */
 
-const VoiceroSupport = {
+var VoiceroSupport = {
   initialized: false,
   debugMode: false, // Set to true to enable verbose logging
 
@@ -56,9 +56,9 @@ const VoiceroSupport = {
       console.log("VoiceroSupport: Setting up text chat observer");
 
     // Function to find and observe the chat messages container
-    const setupObserver = () => {
+    var setupObserver = () => {
       // Find the text chat container
-      const textChatContainer = document.getElementById(
+      var textChatContainer = document.getElementById(
         "voicero-text-chat-container",
       );
       if (!textChatContainer || !textChatContainer.shadowRoot) {
@@ -70,7 +70,7 @@ const VoiceroSupport = {
       }
 
       // Get the messages container from shadow DOM
-      const messagesContainer =
+      var messagesContainer =
         textChatContainer.shadowRoot.getElementById("chat-messages");
       if (!messagesContainer) {
         if (this.debugMode)
@@ -86,7 +86,7 @@ const VoiceroSupport = {
         );
 
       // Create mutation observer
-      const observer = new MutationObserver((mutations) => {
+      var observer = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
           if (mutation.type === "childList" && mutation.addedNodes.length > 0) {
             // Process each new node
@@ -116,17 +116,17 @@ const VoiceroSupport = {
     };
 
     // Try to set up the observer immediately
-    const initialSetupSuccess = setupObserver();
+    var initialSetupSuccess = setupObserver();
 
     // If initial setup fails, retry with exponential backoff - but limit console noise
     if (!initialSetupSuccess) {
       let retryCount = 0;
-      const maxRetries = 10;
+      var maxRetries = 10;
 
-      const retrySetup = () => {
+      var retrySetup = () => {
         if (retryCount < maxRetries) {
           retryCount++;
-          const backoffTime = Math.min(1000 * Math.pow(1.5, retryCount), 10000); // Exponential backoff with 10s max
+          var backoffTime = Math.min(1000 * Math.pow(1.5, retryCount), 10000); // Exponential backoff with 10s max
 
           if (this.debugMode)
             console.log(
@@ -167,7 +167,7 @@ const VoiceroSupport = {
 
     try {
       // Process text chat messages
-      const textChatContainer = document.getElementById(
+      var textChatContainer = document.getElementById(
         "voicero-text-chat-container",
       );
 
@@ -178,7 +178,7 @@ const VoiceroSupport = {
           );
 
         // Try to get all AI messages from shadow DOM
-        const aiMessages = textChatContainer.shadowRoot.querySelectorAll(
+        var aiMessages = textChatContainer.shadowRoot.querySelectorAll(
           ".ai-message:not(.placeholder):not(.typing-wrapper)",
         );
 
@@ -241,7 +241,7 @@ const VoiceroSupport = {
       let messageContent = "";
 
       if (chatType === "text") {
-        const contentEl = messageElement.querySelector(".message-content");
+        var contentEl = messageElement.querySelector(".message-content");
         if (contentEl) {
           // For text format, get text content with normalized whitespace
           messageContent = contentEl.textContent || contentEl.innerText || "";
@@ -252,9 +252,7 @@ const VoiceroSupport = {
         }
       } else {
         // voice
-        const contentEl = messageElement.querySelector(
-          ".voice-message-content",
-        );
+        var contentEl = messageElement.querySelector(".voice-message-content");
         if (contentEl) {
           messageContent = contentEl.textContent || contentEl.innerText || "";
         } else {
@@ -266,12 +264,12 @@ const VoiceroSupport = {
       // Save this as a data attribute to find the correct message later
       if (messageContent) {
         // Trim the content and store only the first 100 chars to avoid huge data attributes
-        const trimmedContent = messageContent.trim().substring(0, 100);
+        var trimmedContent = messageContent.trim().substring(0, 100);
         messageElement.dataset.messageContent = trimmedContent;
       }
 
       // Create the report button
-      const reportButton = document.createElement("div");
+      var reportButton = document.createElement("div");
       reportButton.className = "voicero-report-button";
       reportButton.innerHTML = "Report an AI problem";
       reportButton.style.cssText = `
@@ -390,7 +388,7 @@ const VoiceroSupport = {
       // If still not found, try to find a thread with an active message
       if (!activeThread) {
         // Look in all threads
-        for (const thread of window.VoiceroCore.session.threads) {
+        for (var thread of window.VoiceroCore.session.threads) {
           if (thread.messages && thread.messages.length > 0) {
             activeThread = thread;
             break;
@@ -407,11 +405,11 @@ const VoiceroSupport = {
         if (activeThread.messages && activeThread.messages.length > 0) {
           if (messageContent) {
             // Try to find the message by matching content
-            const assistantMessages = activeThread.messages.filter(
+            var assistantMessages = activeThread.messages.filter(
               (msg) => msg.role === "assistant",
             );
 
-            for (const msg of assistantMessages) {
+            for (var msg of assistantMessages) {
               if (msg.content && msg.content.includes(messageContent)) {
                 actualMessageId = msg.id;
                 break;
@@ -422,7 +420,7 @@ const VoiceroSupport = {
           // If we couldn't find by content, use the most recent message
           if (!actualMessageId) {
             // Get the last assistant message as fallback
-            const assistantMessages = activeThread.messages.filter(
+            var assistantMessages = activeThread.messages.filter(
               (msg) => msg.role === "assistant",
             );
 
@@ -444,7 +442,7 @@ const VoiceroSupport = {
           window.VoiceroCore.session &&
           window.VoiceroCore.session.threads
         ) {
-          const textThread = window.VoiceroCore.session.threads.find(
+          var textThread = window.VoiceroCore.session.threads.find(
             (thread) => thread.threadId === window.VoiceroText.currentThreadId,
           );
           if (textThread) {
@@ -455,11 +453,11 @@ const VoiceroSupport = {
               textThread.messages.length > 0 &&
               messageContent
             ) {
-              const assistantMessages = textThread.messages.filter(
+              var assistantMessages = textThread.messages.filter(
                 (msg) => msg.role === "assistant",
               );
 
-              for (const msg of assistantMessages) {
+              for (var msg of assistantMessages) {
                 if (msg.content && msg.content.includes(messageContent)) {
                   actualMessageId = msg.id;
                   break;
@@ -486,7 +484,7 @@ const VoiceroSupport = {
           window.VoiceroCore.session &&
           window.VoiceroCore.session.threads
         ) {
-          const voiceThread = window.VoiceroCore.session.threads.find(
+          var voiceThread = window.VoiceroCore.session.threads.find(
             (thread) => thread.threadId === window.VoiceroVoice.currentThreadId,
           );
           if (voiceThread) {
@@ -497,11 +495,11 @@ const VoiceroSupport = {
               voiceThread.messages.length > 0 &&
               messageContent
             ) {
-              const assistantMessages = voiceThread.messages.filter(
+              var assistantMessages = voiceThread.messages.filter(
                 (msg) => msg.role === "assistant",
               );
 
-              for (const msg of assistantMessages) {
+              for (var msg of assistantMessages) {
                 if (msg.content && msg.content.includes(messageContent)) {
                   actualMessageId = msg.id;
                   break;
@@ -584,7 +582,7 @@ const VoiceroSupport = {
    */
   showReportStatus: function (message, type) {
     // Create a notification element
-    const notification = document.createElement("div");
+    var notification = document.createElement("div");
     notification.className = "voicero-report-notification";
 
     // Set styles based on type

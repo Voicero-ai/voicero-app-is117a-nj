@@ -143,13 +143,13 @@
 
       // CRITICAL: Ensure shadow host and text container are hidden on init
       // This prevents the interface from showing up when it shouldn't
-      const shadowHost = document.getElementById("voicero-shadow-host");
+      var shadowHost = document.getElementById("voicero-shadow-host");
       if (shadowHost) {
         shadowHost.style.display = "none";
       }
 
       // Also ensure the text chat container is hidden
-      const textContainer = document.getElementById(
+      var textContainer = document.getElementById(
         "voicero-text-chat-container",
       );
       if (textContainer) {
@@ -167,16 +167,16 @@
       }
 
       // Get the main color - USE WEBSITE COLOR DIRECTLY INSTEAD OF VARIANTS
-      const mainColor = this.websiteColor || "#882be6"; // Use website color directly
+      var mainColor = this.websiteColor || "#882be6"; // Use website color directly
 
       // Update send button color
-      const sendButton = this.shadowRoot.getElementById("send-message-btn");
+      var sendButton = this.shadowRoot.getElementById("send-message-btn");
       if (sendButton) {
         sendButton.style.backgroundColor = mainColor;
       }
 
       // Update user message bubbles
-      const userMessages = this.shadowRoot.querySelectorAll(
+      var userMessages = this.shadowRoot.querySelectorAll(
         ".user-message .message-content",
       );
       userMessages.forEach((msg) => {
@@ -184,7 +184,7 @@
       });
 
       // Update read status color
-      const readStatuses = this.shadowRoot.querySelectorAll(".read-status");
+      var readStatuses = this.shadowRoot.querySelectorAll(".read-status");
       readStatuses.forEach((status) => {
         if (status.textContent === "Read") {
           status.style.color = mainColor;
@@ -192,14 +192,14 @@
       });
 
       // Update suggestions
-      const suggestions = this.shadowRoot.querySelectorAll(".suggestion");
+      var suggestions = this.shadowRoot.querySelectorAll(".suggestion");
       suggestions.forEach((suggestion) => {
         suggestion.style.backgroundColor = mainColor;
       });
 
       // Add code to update CSS variables in the shadow DOM:
       // CRITICAL: Add CSS variables directly to shadow DOM
-      const styleEl = document.createElement("style");
+      var styleEl = document.createElement("style");
       styleEl.textContent = `
         :host {
           --voicero-theme-color: ${mainColor} !important;
@@ -226,7 +226,7 @@
       `;
 
       // Remove existing custom variables if any
-      const existingVars = this.shadowRoot.getElementById("voicero-css-vars");
+      var existingVars = this.shadowRoot.getElementById("voicero-css-vars");
       if (existingVars) {
         existingVars.remove();
       }
@@ -301,7 +301,7 @@
       }
 
       // Check if thread has messages
-      const hasMessages = this.messages && this.messages.length > 0;
+      var hasMessages = this.messages && this.messages.length > 0;
 
       // Determine if we should show welcome message
       let shouldShowWelcome = false;
@@ -339,7 +339,7 @@
       }
 
       // Close voice interface if it's open
-      const voiceInterface = document.getElementById("voice-chat-interface");
+      var voiceInterface = document.getElementById("voice-chat-interface");
       if (voiceInterface && voiceInterface.style.display === "block") {
         if (window.VoiceroVoice && window.VoiceroVoice.closeVoiceChat) {
           window.VoiceroVoice.closeVoiceChat();
@@ -349,7 +349,7 @@
       }
 
       // Hide the toggle container when opening the chat interface
-      const toggleContainer = document.getElementById("voice-toggle-container");
+      var toggleContainer = document.getElementById("voice-toggle-container");
       if (toggleContainer) {
         toggleContainer.style.display = "none";
         toggleContainer.style.visibility = "hidden";
@@ -357,7 +357,7 @@
       }
 
       // Also hide the main button explicitly
-      const mainButton = document.getElementById("chat-website-button");
+      var mainButton = document.getElementById("chat-website-button");
       if (mainButton) {
         mainButton.style.display = "none";
         mainButton.style.visibility = "hidden";
@@ -390,7 +390,7 @@
       this.applyDynamicColors();
 
       // Show the shadow host (which contains the chat interface)
-      const shadowHost = document.getElementById("voicero-text-chat-container");
+      var shadowHost = document.getElementById("voicero-text-chat-container");
       if (shadowHost) {
         // CRITICAL FIX: Reset ALL style properties that might be preventing display
         shadowHost.style.cssText = "";
@@ -417,7 +417,7 @@
 
       // Make sure the header has high z-index
       if (this.shadowRoot) {
-        const headerContainer = this.shadowRoot.getElementById(
+        var headerContainer = this.shadowRoot.getElementById(
           "chat-controls-header",
         );
         if (headerContainer) {
@@ -427,8 +427,7 @@
         }
 
         // Also ensure messages container has square corners
-        const messagesContainer =
-          this.shadowRoot.getElementById("chat-messages");
+        var messagesContainer = this.shadowRoot.getElementById("chat-messages");
         if (messagesContainer) {
           messagesContainer.style.borderRadius = "0"; // Ensure square corners
         }
@@ -525,8 +524,7 @@
         window.VoiceroUserData &&
         typeof window.VoiceroUserData.getWelcomeBackMessage === "function"
       ) {
-        const welcomeBackMessage =
-          window.VoiceroUserData.getWelcomeBackMessage();
+        var welcomeBackMessage = window.VoiceroUserData.getWelcomeBackMessage();
 
         if (welcomeBackMessage) {
           console.log(
@@ -601,8 +599,8 @@
         window.VoiceroCore.session.threads.length > 0
       ) {
         // Find the most recent thread by sorting the threads by lastMessageAt or createdAt
-        const threads = [...window.VoiceroCore.session.threads];
-        const sortedThreads = threads.sort((a, b) => {
+        var threads = [...window.VoiceroCore.session.threads];
+        var sortedThreads = threads.sort((a, b) => {
           // First try to sort by lastMessageAt if available
           if (a.lastMessageAt && b.lastMessageAt) {
             return new Date(b.lastMessageAt) - new Date(a.lastMessageAt);
@@ -612,7 +610,7 @@
         });
 
         // Use the most recent thread (first after sorting)
-        const currentThread = sortedThreads[0];
+        var currentThread = sortedThreads[0];
 
         if (
           currentThread &&
@@ -620,19 +618,19 @@
           currentThread.messages.length > 0
         ) {
           // Sort messages by createdAt (oldest first)
-          const sortedMessages = [...currentThread.messages].sort((a, b) => {
+          var sortedMessages = [...currentThread.messages].sort((a, b) => {
             return new Date(a.createdAt) - new Date(b.createdAt);
           });
 
           // Clear existing messages if any
-          const messagesContainer = this.shadowRoot
+          var messagesContainer = this.shadowRoot
             ? this.shadowRoot.getElementById("chat-messages")
             : document.getElementById("chat-messages");
 
           if (messagesContainer) {
             // Keep the container but remove children (except initial suggestions)
-            const children = Array.from(messagesContainer.children);
-            for (const child of children) {
+            var children = Array.from(messagesContainer.children);
+            for (var child of children) {
               if (child.id !== "initial-suggestions") {
                 messagesContainer.removeChild(child);
               }
@@ -658,7 +656,7 @@
 
                 try {
                   // Try to parse as JSON
-                  const parsedContent = JSON.parse(content);
+                  var parsedContent = JSON.parse(content);
                   if (parsedContent.answer) {
                     aiMessage = parsedContent.answer;
                   }
@@ -733,7 +731,7 @@
       this.hasShownWelcome = true;
 
       // Prevent showing welcome message if an AI message already exists
-      const messagesContainer = this.shadowRoot
+      var messagesContainer = this.shadowRoot
         ? this.shadowRoot.getElementById("chat-messages")
         : document.getElementById("chat-messages");
 
@@ -754,8 +752,8 @@
         // Try to get from document title as fallback
         if (document.title) {
           // Extract site name (before " - " or " | " if present)
-          const title = document.title;
-          const separatorIndex = Math.min(
+          var title = document.title;
+          var separatorIndex = Math.min(
             title.indexOf(" - ") > -1 ? title.indexOf(" - ") : Infinity,
             title.indexOf(" | ") > -1 ? title.indexOf(" | ") : Infinity,
           );
@@ -769,7 +767,7 @@
       }
 
       // Create welcome message with website name and bot name if available
-      const botName =
+      var botName =
         window.VoiceroCore &&
         window.VoiceroCore.session &&
         window.VoiceroCore.session.botName
@@ -879,7 +877,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
           "\n\nHere are some questions you might want to ask:\n";
 
         customPopUpQuestions.forEach((item, index) => {
-          const questionText = item.question || item;
+          var questionText = item.question || item;
           if (questionText && typeof questionText === "string") {
             welcomeMessage += `\n- <span class="welcome-question" style="text-decoration: underline; color: ${this.websiteColor || "#882be6"}; cursor: pointer;" data-question="${questionText.replace(/"/g, "&quot;")}">${questionText}</span>`;
           }
@@ -887,7 +885,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
       }
 
       // Add the welcome message to the interface
-      const welcomeMessageElement = this.addMessage(welcomeMessage, "ai");
+      var welcomeMessageElement = this.addMessage(welcomeMessage, "ai");
 
       // Add click handlers to the welcome questions
       setTimeout(() => {
@@ -904,7 +902,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
               while (target !== welcomeMessageElement) {
                 if (target.classList.contains("welcome-question")) {
                   e.preventDefault();
-                  const questionText = target.getAttribute("data-question");
+                  var questionText = target.getAttribute("data-question");
                   if (questionText) {
                     this.sendChatMessage(questionText);
                   }
@@ -930,11 +928,11 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
     processExistingAIMessages: function () {
       if (!this.shadowRoot) return;
 
-      const messagesContainer = this.shadowRoot.getElementById("chat-messages");
+      var messagesContainer = this.shadowRoot.getElementById("chat-messages");
       if (!messagesContainer) return;
 
       // Find all AI messages
-      const aiMessages = messagesContainer.querySelectorAll(
+      var aiMessages = messagesContainer.querySelectorAll(
         ".ai-message:not(.placeholder):not(.typing-wrapper)",
       );
 
@@ -958,9 +956,9 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
           }
         } else {
           // Fallback: Add a basic report button
-          const contentEl = message.querySelector(".message-content");
+          var contentEl = message.querySelector(".message-content");
           if (contentEl && !contentEl.querySelector(".voicero-report-button")) {
-            const reportButton = document.createElement("div");
+            var reportButton = document.createElement("div");
             reportButton.className = "voicero-report-button";
             reportButton.innerHTML = "Report an AI problem";
             reportButton.style.cssText = `
@@ -982,7 +980,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
     // Helper to extract answer from JSON string
     extractAnswerFromJson: function (jsonString) {
       try {
-        const parsed = JSON.parse(jsonString);
+        var parsed = JSON.parse(jsonString);
         return parsed.answer || jsonString;
       } catch (e) {
         return jsonString;
@@ -992,11 +990,11 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
     // Add a message to the chat
     addMessage: function (text, role, skipAddToMessages = false) {
       // Create message element
-      const message = document.createElement("div");
+      var message = document.createElement("div");
       message.className = role === "user" ? "user-message" : "ai-message";
 
       // Create message content
-      const messageContent = document.createElement("div");
+      var messageContent = document.createElement("div");
       messageContent.className = "message-content";
 
       // Set the content (handle HTML if needed)
@@ -1025,7 +1023,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
           while (target !== message) {
             if (target.classList.contains("welcome-question")) {
               e.preventDefault();
-              const questionText = target.getAttribute("data-question");
+              var questionText = target.getAttribute("data-question");
               if (questionText) {
                 this.sendChatMessage(questionText);
               }
@@ -1038,7 +1036,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
       }
 
       // Find messages container
-      const messagesContainer = this.shadowRoot
+      var messagesContainer = this.shadowRoot
         ? this.shadowRoot.getElementById("chat-messages")
         : document.getElementById("chat-messages");
 
@@ -1052,7 +1050,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
       // Store message locally for context (unless skipAddToMessages is true)
       if (!skipAddToMessages) {
         // Add with metadata similar to what comes from the server
-        const messageObj = {
+        var messageObj = {
           role: role,
           content: text,
           createdAt: new Date().toISOString(), // Add timestamp
@@ -1239,38 +1237,38 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
         return;
       }
 
-      const popupQuestions = customPopUpQuestions;
+      var popupQuestions = customPopUpQuestions;
 
       // Store reference to this for event handlers
-      const self = this;
+      var self = this;
 
       // Debug function to log DOM structure of suggestions
-      const debugSuggestions = function (container, context) {
+      var debugSuggestions = function (container, context) {
         if (!container) {
           return;
         }
-        const initialSuggestions = container.querySelector(
+        var initialSuggestions = container.querySelector(
           "#initial-suggestions",
         );
         if (!initialSuggestions) {
           return;
         }
 
-        const suggestionContainer =
+        var suggestionContainer =
           initialSuggestions.querySelector("div:nth-child(2)");
         if (!suggestionContainer) {
           return;
         }
-        const suggestions = suggestionContainer.querySelectorAll(".suggestion");
+        var suggestions = suggestionContainer.querySelectorAll(".suggestion");
         suggestions.forEach(function (s, i) {});
       };
 
       // Find initial suggestions container in both shadow DOM and regular DOM
-      const updateSuggestions = function (container) {
+      var updateSuggestions = function (container) {
         if (!container) {
           return;
         }
-        const suggestionsContainer = container.querySelector(
+        var suggestionsContainer = container.querySelector(
           "#initial-suggestions",
         );
         if (!suggestionsContainer) {
@@ -1279,7 +1277,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
           return;
         }
         // Get the div that contains the suggestions
-        const suggestionsDiv =
+        var suggestionsDiv =
           suggestionsContainer.querySelector("div:nth-child(2)");
         if (!suggestionsDiv) {
           return;
@@ -1289,10 +1287,10 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
 
         // Add new suggestions from API
         popupQuestions.forEach(function (item, index) {
-          const questionText = item.question || "Ask me a question";
+          var questionText = item.question || "Ask me a question";
 
           // Get the main color for styling
-          const mainColor = self.colorVariants
+          var mainColor = self.colorVariants
             ? self.colorVariants.main
             : "#882be6";
 
@@ -1317,10 +1315,10 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
         });
 
         // Re-attach event listeners to the new suggestions
-        const suggestions = suggestionsDiv.querySelectorAll(".suggestion");
+        var suggestions = suggestionsDiv.querySelectorAll(".suggestion");
         suggestions.forEach(function (suggestion) {
           suggestion.addEventListener("click", function () {
-            const text = this.textContent.trim();
+            var text = this.textContent.trim();
             // Use self to reference the VoiceroText object
             if (self.sendChatMessage) {
               self.sendChatMessage(text);
@@ -1353,11 +1351,9 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
     createChatInterface: function () {
       try {
         // First check if elements already exist
-        const existingInterface = document.getElementById(
-          "text-chat-interface",
-        );
+        var existingInterface = document.getElementById("text-chat-interface");
         if (existingInterface) {
-          const messagesContainer = document.getElementById("chat-messages");
+          var messagesContainer = document.getElementById("chat-messages");
           if (messagesContainer) {
             return;
           } else {
@@ -1372,14 +1368,14 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
         }
 
         // Get colors for styling
-        const mainColor = this.colorVariants.main;
-        const lightColor = this.colorVariants.light;
-        const darkColor = this.colorVariants.dark;
-        const superlightColor = this.colorVariants.superlight;
-        const superdarkColor = this.colorVariants.superdark;
+        var mainColor = this.colorVariants.main;
+        var lightColor = this.colorVariants.light;
+        var darkColor = this.colorVariants.dark;
+        var superlightColor = this.colorVariants.superlight;
+        var superdarkColor = this.colorVariants.superdark;
 
         // Add CSS styles
-        const styleEl = document.createElement("style");
+        var styleEl = document.createElement("style");
         styleEl.innerHTML = `
           @keyframes gradientMove {
             0% { background-position: 0% 50%; }
@@ -1624,7 +1620,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
         document.head.appendChild(styleEl);
 
         // Create interface container
-        const interfaceContainer = document.createElement("div");
+        var interfaceContainer = document.createElement("div");
         interfaceContainer.id = "text-chat-interface";
 
         // Apply styles directly to match voice chat interface
@@ -2179,7 +2175,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
         `;
 
         // Show initial suggestions
-        const initialSuggestions = this.shadowRoot.getElementById(
+        var initialSuggestions = this.shadowRoot.getElementById(
           "initial-suggestions",
         );
         if (initialSuggestions) {
@@ -2207,16 +2203,16 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
 
     // Set up button event handlers
     setupButtonHandlers: function () {
-      const shadowRoot = document.getElementById(
+      var shadowRoot = document.getElementById(
         "voicero-text-chat-container",
       ).shadowRoot;
       if (!shadowRoot) return;
 
       // Get all control buttons
-      const minimizeBtn = shadowRoot.getElementById("minimize-chat");
-      const maximizeBtn = shadowRoot.getElementById("maximize-chat");
-      const closeBtn = shadowRoot.getElementById("close-text-chat");
-      const clearBtn = shadowRoot.getElementById("clear-text-chat");
+      var minimizeBtn = shadowRoot.getElementById("minimize-chat");
+      var maximizeBtn = shadowRoot.getElementById("maximize-chat");
+      var closeBtn = shadowRoot.getElementById("close-text-chat");
+      var clearBtn = shadowRoot.getElementById("clear-text-chat");
 
       // Remove onclick attributes and add event listeners
       if (minimizeBtn) {
@@ -2248,7 +2244,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
 
         // We don't need to set the background color here anymore as it's already set in the HTML
         // Just ensure the button has display:flex for the icon alignment
-        const maximizeButton = maximizeBtn.querySelector("button");
+        var maximizeButton = maximizeBtn.querySelector("button");
         if (maximizeButton) {
           // Reapply the main styling to ensure it's consistent
           maximizeButton.style.position = "relative";
@@ -2343,11 +2339,11 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
       }
 
       // Also update the UI if the chat is currently open
-      const messagesContainer = this.shadowRoot
+      var messagesContainer = this.shadowRoot
         ? this.shadowRoot.getElementById("chat-messages")
         : document.getElementById("chat-messages");
       if (messagesContainer) {
-        const existingMessages = messagesContainer.querySelectorAll(
+        var existingMessages = messagesContainer.querySelectorAll(
           ".user-message, .ai-message",
         );
         existingMessages.forEach((el) => el.remove());
@@ -2356,7 +2352,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
         messagesContainer.style.paddingTop = "35px";
 
         // Show initial suggestions again
-        const initialSuggestions = messagesContainer.querySelector(
+        var initialSuggestions = messagesContainer.querySelector(
           "#initial-suggestions",
         );
         if (initialSuggestions) {
@@ -2385,7 +2381,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
       this.setLoadingIndicator(true);
 
       // Format the request body according to the API's expected structure
-      const requestBody = {
+      var requestBody = {
         message: messageText,
         type: "text",
       };
@@ -2402,8 +2398,8 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
         window.VoiceroCore.session.threads.length > 0
       ) {
         // Find the most recent thread by sorting the threads
-        const threads = [...window.VoiceroCore.session.threads];
-        const sortedThreads = threads.sort((a, b) => {
+        var threads = [...window.VoiceroCore.session.threads];
+        var sortedThreads = threads.sort((a, b) => {
           // First try to sort by lastMessageAt if available
           if (a.lastMessageAt && b.lastMessageAt) {
             return new Date(b.lastMessageAt) - new Date(a.lastMessageAt);
@@ -2444,36 +2440,36 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
         window.VoiceroCore.session.threads.length > 0
       ) {
         // Find the most recent thread with the same approach
-        const threads = [...window.VoiceroCore.session.threads];
-        const sortedThreads = threads.sort((a, b) => {
+        var threads = [...window.VoiceroCore.session.threads];
+        var sortedThreads = threads.sort((a, b) => {
           if (a.lastMessageAt && b.lastMessageAt) {
             return new Date(b.lastMessageAt) - new Date(a.lastMessageAt);
           }
           return new Date(b.createdAt) - new Date(a.createdAt);
         });
 
-        const recentThread = sortedThreads[0];
+        var recentThread = sortedThreads[0];
 
         // Check if this thread has messages
         if (recentThread.messages && recentThread.messages.length > 0) {
-          const threadMessages = recentThread.messages;
+          var threadMessages = recentThread.messages;
 
           // Sort messages by creation time to ensure proper order
-          const sortedMessages = [...threadMessages].sort((a, b) => {
+          var sortedMessages = [...threadMessages].sort((a, b) => {
             return new Date(a.createdAt) - new Date(b.createdAt);
           });
 
           // Get last 5 user questions and last 5 AI responses in chronological order
-          const userMessages = sortedMessages
+          var userMessages = sortedMessages
             .filter((msg) => msg.role === "user")
             .slice(-5);
 
-          const aiMessages = sortedMessages
+          var aiMessages = sortedMessages
             .filter((msg) => msg.role === "assistant")
             .slice(-5);
 
           // Combine all messages in chronological order
-          const lastMessages = [...userMessages, ...aiMessages].sort(
+          var lastMessages = [...userMessages, ...aiMessages].sort(
             (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
           );
 
@@ -2503,16 +2499,16 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
       // Fallback to local messages array if session data isn't available
       else if (this.messages && this.messages.length > 0) {
         // Get last 5 user questions and last 5 AI responses
-        const userMessages = this.messages
+        var userMessages = this.messages
           .filter((msg) => msg.role === "user")
           .slice(-5);
 
-        const aiMessages = this.messages
+        var aiMessages = this.messages
           .filter((msg) => msg.role === "assistant")
           .slice(-5);
 
         // Combine all messages in chronological order
-        const lastMessages = [...userMessages, ...aiMessages].sort((a, b) => {
+        var lastMessages = [...userMessages, ...aiMessages].sort((a, b) => {
           // Use createdAt if available, otherwise use order in array
           if (a.createdAt && b.createdAt) {
             return new Date(a.createdAt) - new Date(b.createdAt);
@@ -2593,13 +2589,13 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
     // Set loading indicator state
     setLoadingIndicator: function (isLoading) {
       // Find loading bar in shadow DOM or regular DOM
-      const getLoadingBar = () => {
+      var getLoadingBar = () => {
         if (this.shadowRoot) {
           return this.shadowRoot.getElementById("loading-bar");
         }
         return document.getElementById("loading-bar");
       };
-      const loadingBar = getLoadingBar();
+      var loadingBar = getLoadingBar();
       if (!loadingBar) {
         return;
       }
@@ -2620,7 +2616,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
       // If no text provided, get from input field
       if (!text) {
         if (this.shadowRoot) {
-          const chatInput = this.shadowRoot.getElementById("chat-input");
+          var chatInput = this.shadowRoot.getElementById("chat-input");
           if (chatInput) {
             text = chatInput.value.trim();
             chatInput.value = "";
@@ -2637,9 +2633,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
 
       // Hide suggestions if visible
       if (this.shadowRoot) {
-        const suggestions = this.shadowRoot.getElementById(
-          "initial-suggestions",
-        );
+        var suggestions = this.shadowRoot.getElementById("initial-suggestions");
         if (suggestions) {
           suggestions.style.display = "none";
         }
@@ -2672,7 +2666,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
           // First ensure the animation styles are in the Shadow DOM
           this.ensureTypingAnimationInShadowDOM();
 
-          const messagesContainer =
+          var messagesContainer =
             this.shadowRoot.getElementById("chat-messages");
           if (messagesContainer) {
             this.typingIndicator =
@@ -2687,7 +2681,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
       }
 
       // Function to remove typing indicator and animations
-      const removeTypingIndicator = () => {
+      var removeTypingIndicator = () => {
         if (window.VoiceroWait) {
           // Use VoiceroWait to hide the indicator
           window.VoiceroWait.hideTypingIndicator();
@@ -2703,7 +2697,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
             this.typingIndicator = null;
           }
 
-          const typingElements = document.querySelectorAll(".typing-wrapper");
+          var typingElements = document.querySelectorAll(".typing-wrapper");
           typingElements.forEach((el) => el.remove());
 
           // Remove rainbow animation manually
@@ -2744,7 +2738,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
             // Check if the response is a string that needs to be parsed
             if (typeof data.response === "string") {
               try {
-                const parsedResponse = JSON.parse(data.response);
+                var parsedResponse = JSON.parse(data.response);
                 message =
                   parsedResponse.answer || "Sorry, I don't have a response.";
                 action = parsedResponse.action || null;
@@ -2831,7 +2825,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
                 window.VoiceroCore.session.threads
               ) {
                 // Find the matching thread in the threads array
-                const matchingThread = window.VoiceroCore.session.threads.find(
+                var matchingThread = window.VoiceroCore.session.threads.find(
                   (thread) => thread.threadId === data.threadId,
                 );
 
@@ -2907,9 +2901,9 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
     sendMessageLogic: function () {
       // Forward to sendChatMessage to handle the logic
       if (this.shadowRoot) {
-        const chatInput = this.shadowRoot.getElementById("chat-input");
+        var chatInput = this.shadowRoot.getElementById("chat-input");
         if (chatInput) {
-          const text = chatInput.value.trim();
+          var text = chatInput.value.trim();
           chatInput.value = "";
           if (text.length > 0) {
             this.sendChatMessage(text);
@@ -2928,7 +2922,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
       // If no text provided, get from input field
       if (!text) {
         if (this.shadowRoot) {
-          const chatInput = this.shadowRoot.getElementById("chat-input");
+          var chatInput = this.shadowRoot.getElementById("chat-input");
           if (chatInput) {
             text = chatInput.value.trim();
             chatInput.value = "";
@@ -2948,9 +2942,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
 
       // Hide suggestions if visible
       if (this.shadowRoot) {
-        const suggestions = this.shadowRoot.getElementById(
-          "initial-suggestions",
-        );
+        var suggestions = this.shadowRoot.getElementById("initial-suggestions");
         if (suggestions) {
           suggestions.style.display = "none";
         }
@@ -2988,16 +2980,16 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
       this.lastSessionOperationTime = Date.now();
 
       // Store reference to this for callbacks
-      const self = this;
+      var self = this;
 
       // First create reliable references to the elements we need
-      const textInterface = document.getElementById("text-chat-interface");
-      const shadowHost = document.getElementById("voicero-text-chat-container");
+      var textInterface = document.getElementById("text-chat-interface");
+      var shadowHost = document.getElementById("voicero-text-chat-container");
 
       // Update window state first - this is critical
       if (window.VoiceroCore && window.VoiceroCore.updateWindowState) {
         // First update to close text chat
-        const updateResult = window.VoiceroCore.updateWindowState({
+        var updateResult = window.VoiceroCore.updateWindowState({
           textOpen: false,
           textOpenWindowUp: false,
           coreOpen: true, // Always false when opening chat
@@ -3096,7 +3088,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
 
     // Minimize the chat interface
     minimizeChat: function () {
-      const now = Date.now();
+      var now = Date.now();
       if (
         !this._isChatVisible ||
         now - this._lastChatToggle < this.CHAT_TOGGLE_DEBOUNCE_MS
@@ -3124,11 +3116,11 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
       this._isChatVisible = false;
 
       // Store reference to this for callbacks
-      const self = this;
+      var self = this;
 
       // Update window state first (text open but window down)
       if (window.VoiceroCore && window.VoiceroCore.updateWindowState) {
-        const updateResult = window.VoiceroCore.updateWindowState({
+        var updateResult = window.VoiceroCore.updateWindowState({
           textOpen: true,
           textOpenWindowUp: false, // Set to false when minimized
           coreOpen: false,
@@ -3152,15 +3144,15 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
       }
 
       // Get the necessary elements from shadow root
-      const shadowRoot = document.getElementById(
+      var shadowRoot = document.getElementById(
         "voicero-text-chat-container",
       )?.shadowRoot;
       if (!shadowRoot) return;
 
-      const messagesContainer = shadowRoot.getElementById("chat-messages");
-      const headerContainer = shadowRoot.getElementById("chat-controls-header");
-      const inputWrapper = shadowRoot.getElementById("chat-input-wrapper");
-      const maximizeBtn = shadowRoot.getElementById("maximize-chat");
+      var messagesContainer = shadowRoot.getElementById("chat-messages");
+      var headerContainer = shadowRoot.getElementById("chat-controls-header");
+      var inputWrapper = shadowRoot.getElementById("chat-input-wrapper");
+      var maximizeBtn = shadowRoot.getElementById("maximize-chat");
 
       // Make the maximize button visible first
       if (maximizeBtn) {
@@ -3173,7 +3165,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
         maximizeBtn.style.zIndex = "9999999";
 
         // Ensure the button's style is applied correctly
-        const maximizeButton = maximizeBtn.querySelector("button");
+        var maximizeButton = maximizeBtn.querySelector("button");
         if (maximizeButton) {
           // Reapply the main styling to ensure it's consistent
           maximizeButton.style.position = "relative";
@@ -3199,7 +3191,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
 
       if (messagesContainer) {
         // Hide all message content
-        const allMessages = messagesContainer.querySelectorAll(
+        var allMessages = messagesContainer.querySelectorAll(
           ".user-message, .ai-message, #initial-suggestions",
         );
         allMessages.forEach((msg) => {
@@ -3218,7 +3210,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
         messagesContainer.style.borderRadius = "0"; // Remove any border radius
 
         // Also hide padding container inside
-        const paddingContainer = messagesContainer.querySelector(
+        var paddingContainer = messagesContainer.querySelector(
           "div[style*='padding-top']",
         );
         if (paddingContainer) {
@@ -3246,7 +3238,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
 
     // Maximize the chat interface
     maximizeChat: function () {
-      const now = Date.now();
+      var now = Date.now();
       if (
         this._isChatVisible ||
         now - this._lastChatToggle < this.CHAT_TOGGLE_DEBOUNCE_MS
@@ -3274,11 +3266,11 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
       this._isChatVisible = true;
 
       // Store reference to this for callbacks
-      const self = this;
+      var self = this;
 
       // Update window state first (text open with window up)
       if (window.VoiceroCore && window.VoiceroCore.updateWindowState) {
-        const updateResult = window.VoiceroCore.updateWindowState({
+        var updateResult = window.VoiceroCore.updateWindowState({
           textOpen: true,
           textOpenWindowUp: true, // Set to true when maximized
           coreOpen: false,
@@ -3302,15 +3294,15 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
       }
 
       // Get the necessary elements from shadow root
-      const shadowRoot = document.getElementById(
+      var shadowRoot = document.getElementById(
         "voicero-text-chat-container",
       )?.shadowRoot;
       if (!shadowRoot) return;
 
-      const messagesContainer = shadowRoot.getElementById("chat-messages");
-      const headerContainer = shadowRoot.getElementById("chat-controls-header");
-      const inputWrapper = shadowRoot.getElementById("chat-input-wrapper");
-      const maximizeBtn = shadowRoot.getElementById("maximize-chat");
+      var messagesContainer = shadowRoot.getElementById("chat-messages");
+      var headerContainer = shadowRoot.getElementById("chat-controls-header");
+      var inputWrapper = shadowRoot.getElementById("chat-input-wrapper");
+      var maximizeBtn = shadowRoot.getElementById("maximize-chat");
 
       // Hide maximize button first
       if (maximizeBtn) {
@@ -3332,7 +3324,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
         messagesContainer.style.borderRadius = "0"; // Square corners for maximized view
 
         // Show padding container
-        const paddingContainer = messagesContainer.querySelector(
+        var paddingContainer = messagesContainer.querySelector(
           "div[style*='padding-top']",
         );
         if (paddingContainer) {
@@ -3342,7 +3334,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
         }
 
         // Show all message content
-        const allMessages = messagesContainer.querySelectorAll(
+        var allMessages = messagesContainer.querySelectorAll(
           ".user-message, .ai-message",
         );
         allMessages.forEach((msg) => {
@@ -3385,16 +3377,16 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
       }
 
       // Create message element
-      const messageDiv = document.createElement("div");
+      var messageDiv = document.createElement("div");
       messageDiv.className = role === "user" ? "user-message" : "ai-message";
 
       // Generate a unique ID for this message
-      const messageId =
+      var messageId =
         "msg_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
       messageDiv.dataset.messageId = messageId;
 
       // Create message content
-      const contentDiv = document.createElement("div");
+      var contentDiv = document.createElement("div");
       contentDiv.className = "message-content";
       contentDiv.innerHTML = text;
 
@@ -3409,11 +3401,11 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
 
         if (text.includes("voice-prompt")) {
           // Extract the actual text content
-          const tempDiv = document.createElement("div");
+          var tempDiv = document.createElement("div");
           tempDiv.innerHTML = text;
-          const promptContent = tempDiv.querySelector(".voice-prompt");
+          var promptContent = tempDiv.querySelector(".voice-prompt");
           if (promptContent) {
-            const promptText = promptContent.textContent.trim();
+            var promptText = promptContent.textContent.trim();
             contentDiv.innerHTML = promptText;
           }
         }
@@ -3422,7 +3414,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
         contentDiv.style.backgroundColor = this.websiteColor || "#882be6";
 
         // Add delivery status for user messages (iPhone-style)
-        const statusDiv = document.createElement("div");
+        var statusDiv = document.createElement("div");
         statusDiv.className = "read-status";
         statusDiv.textContent = "Delivered";
         messageDiv.appendChild(statusDiv);
@@ -3433,11 +3425,10 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
 
       // Add to messages container in both shadow DOM and regular DOM
       if (this.shadowRoot) {
-        const messagesContainer =
-          this.shadowRoot.getElementById("chat-messages");
+        var messagesContainer = this.shadowRoot.getElementById("chat-messages");
         if (messagesContainer) {
           // Find the initial suggestions div
-          const initialSuggestions = messagesContainer.querySelector(
+          var initialSuggestions = messagesContainer.querySelector(
             "#initial-suggestions",
           );
 
@@ -3451,7 +3442,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
 
           // Update all previous user message statuses to "Read" after AI responds
           if (role === "ai") {
-            const userStatusDivs =
+            var userStatusDivs =
               messagesContainer.querySelectorAll(".read-status");
             userStatusDivs.forEach((div) => {
               div.textContent = "Read";
@@ -3508,7 +3499,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
             setTimeout(() => {
               // If VoiceroSupport is not available, create a basic report button ourselves
               if (!messageDiv.querySelector(".voicero-report-button")) {
-                const reportButton = document.createElement("div");
+                var reportButton = document.createElement("div");
                 reportButton.className = "voicero-report-button";
                 reportButton.innerHTML = "Report an AI problem";
                 reportButton.style.cssText = `
@@ -3523,7 +3514,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
                 `;
 
                 // Find the content container or use direct message
-                const contentContainer =
+                var contentContainer =
                   messageDiv.querySelector(".message-content");
                 if (contentContainer) {
                   contentContainer.appendChild(reportButton);
@@ -3552,8 +3543,8 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
       if (!this.shadowRoot) return;
 
       // Get input field and send button
-      const chatInput = this.shadowRoot.getElementById("chat-input");
-      const sendButton = this.shadowRoot.getElementById("send-message-btn");
+      var chatInput = this.shadowRoot.getElementById("chat-input");
+      var sendButton = this.shadowRoot.getElementById("send-message-btn");
 
       if (chatInput && sendButton) {
         // Clear existing event listeners if any
@@ -3600,7 +3591,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
       if (!color) color = this.websiteColor || "#882be6";
 
       // Initialize with the main color
-      const variants = {
+      var variants = {
         main: color,
         light: color,
         dark: color,
@@ -3612,26 +3603,26 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
       if (color.startsWith("#")) {
         try {
           // Convert hex to RGB for variants
-          const r = parseInt(color.slice(1, 3), 16);
-          const g = parseInt(color.slice(3, 5), 16);
-          const b = parseInt(color.slice(5, 7), 16);
+          var r = parseInt(color.slice(1, 3), 16);
+          var g = parseInt(color.slice(3, 5), 16);
+          var b = parseInt(color.slice(5, 7), 16);
 
           // Create variants by adjusting brightness
-          const lightR = Math.min(255, Math.floor(r * 1.2));
-          const lightG = Math.min(255, Math.floor(g * 1.2));
-          const lightB = Math.min(255, Math.floor(b * 1.2));
+          var lightR = Math.min(255, Math.floor(r * 1.2));
+          var lightG = Math.min(255, Math.floor(g * 1.2));
+          var lightB = Math.min(255, Math.floor(b * 1.2));
 
-          const darkR = Math.floor(r * 0.8);
-          const darkG = Math.floor(g * 0.8);
-          const darkB = Math.floor(b * 0.8);
+          var darkR = Math.floor(r * 0.8);
+          var darkG = Math.floor(g * 0.8);
+          var darkB = Math.floor(b * 0.8);
 
-          const superlightR = Math.min(255, Math.floor(r * 1.5));
-          const superlightG = Math.min(255, Math.floor(g * 1.5));
-          const superlightB = Math.min(255, Math.floor(b * 1.5));
+          var superlightR = Math.min(255, Math.floor(r * 1.5));
+          var superlightG = Math.min(255, Math.floor(g * 1.5));
+          var superlightB = Math.min(255, Math.floor(b * 1.5));
 
-          const superdarkR = Math.floor(r * 0.6);
-          const superdarkG = Math.floor(g * 0.6);
-          const superdarkB = Math.floor(b * 0.6);
+          var superdarkR = Math.floor(r * 0.6);
+          var superdarkG = Math.floor(g * 0.6);
+          var superdarkB = Math.floor(b * 0.6);
 
           // Convert back to hex
           variants.light = `#${lightR.toString(16).padStart(2, "0")}${lightG
@@ -3737,7 +3728,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
       if (!text) return "";
 
       // Check if text already contains HTML elements (like our welcome-question spans)
-      const containsHtml = /<[a-z][\s\S]*>/i.test(text);
+      var containsHtml = /<[a-z][\s\S]*>/i.test(text);
 
       if (containsHtml) {
         // If it already has HTML, just return it (our spans are already formatted)
@@ -3745,8 +3736,8 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
       }
 
       // Process URLs
-      const urlRegex = /(https?:\/\/[^\s]+)/g;
-      const processedText = text.replace(
+      var urlRegex = /(https?:\/\/[^\s]+)/g;
+      var processedText = text.replace(
         urlRegex,
         '<a href="$1" target="_blank" class="chat-link">$1</a>',
       );
@@ -3790,8 +3781,8 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
       // If a session operation is explicitly marked as in progress
       if (this.isSessionOperationInProgress) {
         // Check if it's been too long (might be stuck)
-        const currentTime = Date.now();
-        const timeSinceLastOperation =
+        var currentTime = Date.now();
+        var timeSinceLastOperation =
           currentTime - this.lastSessionOperationTime;
 
         if (timeSinceLastOperation > this.sessionOperationTimeout) {
@@ -3817,11 +3808,11 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
     updateChatContainerBorderRadius: function (isMinimized) {
       if (!this.shadowRoot) return;
 
-      const inputWrapper = this.shadowRoot.getElementById("chat-input-wrapper");
+      var inputWrapper = this.shadowRoot.getElementById("chat-input-wrapper");
       if (!inputWrapper) return;
 
       // Get the inner container
-      const innerWrapper = inputWrapper.querySelector("div");
+      var innerWrapper = inputWrapper.querySelector("div");
       if (!innerWrapper) return;
 
       if (isMinimized) {
@@ -3834,14 +3825,13 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
         innerWrapper.style.borderRadius = "0 0 10px 10px";
 
         // Make sure messages container has square corners in maximized mode
-        const messagesContainer =
-          this.shadowRoot.getElementById("chat-messages");
+        var messagesContainer = this.shadowRoot.getElementById("chat-messages");
         if (messagesContainer) {
           messagesContainer.style.borderRadius = "0 0 0 0"; // Square corners on top
         }
 
         // Ensure header has rounded corners at top
-        const headerContainer = this.shadowRoot.getElementById(
+        var headerContainer = this.shadowRoot.getElementById(
           "chat-controls-header",
         );
         if (headerContainer) {
@@ -3860,7 +3850,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
         console.log("Adding typing animation keyframes to Shadow DOM");
 
         // Create style element for Shadow DOM
-        const styleEl = document.createElement("style");
+        var styleEl = document.createElement("style");
         styleEl.id = "voicero-typing-styles";
         styleEl.textContent = `
           @keyframes typingBounce {

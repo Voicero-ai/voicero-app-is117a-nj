@@ -15,7 +15,7 @@ window.VoiceroOrdersData = {
   ordersSent: false, // Track if orders have been sent to API
 };
 
-const ShopifyProxyClient = {
+var ShopifyProxyClient = {
   config: {
     proxyUrl: "/apps/proxy",
     defaultHeaders: {
@@ -54,7 +54,7 @@ const ShopifyProxyClient = {
    * @returns {Promise} - The fetch promise
    */
   get: function (params = {}, options = {}) {
-    const url = this._buildUrl(params);
+    var url = this._buildUrl(params);
 
     return this._fetch(url, {
       method: "GET",
@@ -70,7 +70,7 @@ const ShopifyProxyClient = {
    * @returns {Promise} - The fetch promise
    */
   post: function (data = {}, params = {}, options = {}) {
-    const url = this._buildUrl(params);
+    var url = this._buildUrl(params);
 
     return this._fetch(url, {
       method: "POST",
@@ -161,26 +161,26 @@ const ShopifyProxyClient = {
     console.log("Sending orders data to external API...");
 
     // Get the shop domain from config
-    const shopDomain =
+    var shopDomain =
       window.voiceroConfig && window.voiceroConfig.shop
         ? window.voiceroConfig.shop
         : window.location.hostname;
 
     // Get website ID from config or defaults
-    const websiteId =
+    var websiteId =
       window.voiceroConfig && window.voiceroConfig.websiteId
         ? window.voiceroConfig.websiteId
         : shopDomain; // Use shop domain as fallback website ID
 
     // Get access headers from config if available
-    const headers =
+    var headers =
       window.voiceroConfig &&
       typeof window.voiceroConfig.getAuthHeaders === "function"
         ? window.voiceroConfig.getAuthHeaders()
         : { Authorization: "Bearer anonymous" };
 
     // Prepare the payload with shop and orders data
-    const payload = {
+    var payload = {
       shop: shopDomain,
       websiteId: websiteId,
       orders: orders,
@@ -229,7 +229,7 @@ const ShopifyProxyClient = {
    * @param {Object} orders - The orders data
    */
   renderOrdersToDOM: function (orders) {
-    const container = document.getElementById("orders-container");
+    var container = document.getElementById("orders-container");
     if (!container) return;
 
     container.innerHTML = "";
@@ -239,11 +239,11 @@ const ShopifyProxyClient = {
       return;
     }
 
-    const header = document.createElement("h2");
+    var header = document.createElement("h2");
     header.textContent = `Found ${orders.edges.length} orders from the last 30 days`;
     container.appendChild(header);
 
-    const table = document.createElement("table");
+    var table = document.createElement("table");
     table.className = "orders-table";
     table.innerHTML = `
       <thead>
@@ -259,23 +259,23 @@ const ShopifyProxyClient = {
       </tbody>
     `;
 
-    const tbody = table.querySelector("tbody");
+    var tbody = table.querySelector("tbody");
 
     orders.edges.forEach((edge) => {
-      const order = edge.node;
-      const row = document.createElement("tr");
+      var order = edge.node;
+      var row = document.createElement("tr");
 
       // Format date
-      const date = new Date(order.createdAt);
-      const formattedDate = date.toLocaleDateString();
+      var date = new Date(order.createdAt);
+      var formattedDate = date.toLocaleDateString();
 
       // Format customer name
-      const customer = order.customer
+      var customer = order.customer
         ? `${order.customer.firstName || ""} ${order.customer.lastName || ""}`.trim()
         : "Anonymous";
 
       // Format price
-      const price = order.totalPriceSet?.shopMoney
+      var price = order.totalPriceSet?.shopMoney
         ? `${order.totalPriceSet.shopMoney.currencyCode} ${order.totalPriceSet.shopMoney.amount}`
         : "N/A";
 
@@ -301,7 +301,7 @@ const ShopifyProxyClient = {
    */
   _buildUrl: function (params = {}) {
     // Get the current origin to use as base for relative URLs
-    const base = window.location.origin;
+    var base = window.location.origin;
     console.log(`Using base URL: ${base}`);
 
     // Handle both absolute and relative URLs
@@ -314,8 +314,8 @@ const ShopifyProxyClient = {
       fullUrl = `${base}${this.config.proxyUrl}`;
     }
 
-    console.log(`Constructed full URL: ${fullUrl}`);
-    const url = new URL(fullUrl);
+    console.log(`varructed full URL: ${fullUrl}`);
+    var url = new URL(fullUrl);
 
     Object.entries(params).forEach(([key, value]) => {
       url.searchParams.append(key, value);
@@ -332,7 +332,7 @@ const ShopifyProxyClient = {
    * @private
    */
   _fetch: function (url, options = {}) {
-    const fetchOptions = {
+    var fetchOptions = {
       ...options,
       headers: {
         ...this.config.defaultHeaders,
@@ -356,7 +356,7 @@ const ShopifyProxyClient = {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
 
-        const contentType = response.headers.get("content-type");
+        var contentType = response.headers.get("content-type");
         console.log(`Content-Type: ${contentType}`);
 
         if (contentType && contentType.includes("application/json")) {
@@ -403,7 +403,7 @@ function ensureOrdersContainer() {
       "margin: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px;";
 
     // Add some basic styling for the orders table
-    const style = document.createElement("style");
+    var style = document.createElement("style");
     style.textContent = `
       .orders-table {
         width: 100%;
@@ -427,7 +427,7 @@ function ensureOrdersContainer() {
     document.head.appendChild(style);
 
     // Try to append to a content area or body
-    const content =
+    var content =
       document.querySelector(".content") ||
       document.querySelector("main") ||
       document.body;
