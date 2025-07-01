@@ -240,6 +240,18 @@
     handleContactPage: function (websiteData) {
       console.log("VoiceroSecond: Handling detected contact page");
 
+      // Check if the text interface should be opened based on VoiceroCore settings
+      if (
+        window.VoiceroCore &&
+        window.VoiceroCore.session &&
+        window.VoiceroCore.session.textOpen === false
+      ) {
+        console.log(
+          "VoiceroSecond: Text interface is disabled in session, not opening for contact page",
+        );
+        return;
+      }
+
       // SIMPLE DIRECT CODE: Immediately remove any core buttons
       var coreButton = document.getElementById("chat-website-button");
       if (coreButton) {
@@ -316,10 +328,27 @@
             // Create a flag to prevent other components from adding automated messages
             window.voiceroIsContactPage = true;
 
+            // Set default page type if not already set
+            if (!window.voiceroPageType) {
+              window.voiceroPageType = "contact";
+            }
+
             // Get the shadowHost reference first
             var shadowHost = document.getElementById(
               "voicero-text-chat-container",
             );
+
+            // Final check to ensure text chat should be open
+            if (
+              window.VoiceroCore &&
+              window.VoiceroCore.session &&
+              window.VoiceroCore.session.textOpen === false
+            ) {
+              console.log(
+                "VoiceroSecond: Text interface is disabled in session, not adding greeting message",
+              );
+              return;
+            }
 
             // Clear any existing messages from other components
             if (window.VoiceroText && window.VoiceroText.messages) {
@@ -341,8 +370,23 @@
                 }
               }
 
-              // Now add our simple greeting
-              window.VoiceroText.addMessage("How can I help you?", "ai");
+              // Now add our interesting greeting based on page type
+              if (window.voiceroPageType === "shipping") {
+                window.VoiceroText.addMessage(
+                  "Welcome to our shipping information! Need help understanding delivery times, shipping costs, or have other shipping questions? I'm here to provide quick answers about getting your items delivered safely and on time.",
+                  "ai",
+                );
+              } else if (window.voiceroPageType === "return") {
+                window.VoiceroText.addMessage(
+                  "Welcome to our returns center! Whether you need help with an exchange, refund, or understanding our return policy, I'm here to make the process smooth and hassle-free. How can I assist with your return today?",
+                  "ai",
+                );
+              } else {
+                window.VoiceroText.addMessage(
+                  "Hello! I'm your personal shopping assistant, ready to answer any questions you might have about our products, services, or anything else. How can I help make your experience better today?",
+                  "ai",
+                );
+              }
 
               // Also patch the SecondLook message processing
               if (window.VoiceroSecond && window.VoiceroSecond.sendDataToApi) {
@@ -359,6 +403,18 @@
                     return; // Skip the API call for forms analysis
                   }
 
+                  // Check if text interface is disabled in session
+                  if (
+                    window.VoiceroCore &&
+                    window.VoiceroCore.session &&
+                    window.VoiceroCore.session.textOpen === false
+                  ) {
+                    console.log(
+                      "VoiceroSecond: Text interface is disabled in session, skipping automated analysis",
+                    );
+                    return;
+                  }
+
                   // Otherwise call the original function
                   return originalSendDataToApi.call(
                     window.VoiceroSecond,
@@ -369,9 +425,37 @@
             } else {
               // If VoiceroText is not ready yet, try again in a moment
               setTimeout(() => {
+                // Check if text interface should be open
+                if (
+                  window.VoiceroCore &&
+                  window.VoiceroCore.session &&
+                  window.VoiceroCore.session.textOpen === false
+                ) {
+                  console.log(
+                    "VoiceroSecond: Text interface is disabled in session, not adding delayed greeting message",
+                  );
+                  return;
+                }
+
                 if (window.VoiceroText && window.VoiceroText.messages) {
                   window.VoiceroText.messages = [];
-                  window.VoiceroText.addMessage("How can I help you?", "ai");
+                  // Add interesting message based on page type
+                  if (window.voiceroPageType === "shipping") {
+                    window.VoiceroText.addMessage(
+                      "Welcome to our shipping information! Need help understanding delivery times, shipping costs, or have other shipping questions? I'm here to provide quick answers about getting your items delivered safely and on time.",
+                      "ai",
+                    );
+                  } else if (window.voiceroPageType === "return") {
+                    window.VoiceroText.addMessage(
+                      "Welcome to our returns center! Whether you need help with an exchange, refund, or understanding our return policy, I'm here to make the process smooth and hassle-free. How can I assist with your return today?",
+                      "ai",
+                    );
+                  } else {
+                    window.VoiceroText.addMessage(
+                      "Hello! I'm your personal shopping assistant, ready to answer any questions you might have about our products, services, or anything else. How can I help make your experience better today?",
+                      "ai",
+                    );
+                  }
                 }
               }, 500);
             }
@@ -1060,11 +1144,12 @@
     // Check if current page is a contact page
     isContactPage: function () {
       try {
-        // First check URL patterns - if URL explicitly contains contact indicators, it's definitely a contact page
+        // First check URL patterns - if URL explicitly contains contact, shipping, or return indicators, it's definitely a contact page
         var url = window.location.href.toLowerCase();
 
-        // Direct contact URL indicators - if these are found, it's ALWAYS a contact page
-        var definiteContactPatterns = [
+        // Direct URL indicators for special pages - if these are found, we'll always show the chat interface
+        var definiteSpecialPagePatterns = [
+          // Contact patterns
           "/contact",
           "/contact-us",
           "/get-in-touch",
@@ -1074,13 +1159,42 @@
           "contact.php",
           "contactus",
           "contact_us",
+          // Shipping patterns
+          "/shipping",
+          "/shipping-info",
+          "/shipping-policy",
+          "/pages/shipping",
+          "shipping.html",
+          "shipping.php",
+          // Return patterns
+          "/return",
+          "/returns",
+          "/return-policy",
+          "/returns-policy",
+          "/pages/return",
+          "/pages/returns",
+          "return.html",
+          "returns.html",
+          "return.php",
+          "returns.php",
         ];
 
         // Check for definite URL patterns first
-        for (var pattern of definiteContactPatterns) {
+        for (var pattern of definiteSpecialPagePatterns) {
           if (url.includes(pattern)) {
+            // Store what type of page we found (contact, shipping, return)
+            if (pattern.includes("contact")) {
+              window.voiceroPageType = "contact";
+            } else if (pattern.includes("shipping")) {
+              window.voiceroPageType = "shipping";
+            } else if (pattern.includes("return")) {
+              window.voiceroPageType = "return";
+            } else {
+              window.voiceroPageType = "contact"; // Default to contact if unknown
+            }
+
             console.log(
-              `VoiceroSecond: Found definite contact URL pattern: ${pattern}`,
+              `VoiceroSecond: Found definite URL pattern: ${pattern}, page type: ${window.voiceroPageType}`,
             );
             return true; // Immediately return true without any further checks
           }
@@ -1365,6 +1479,18 @@
         return;
       }
 
+      // Check if the text interface is open - don't add messages if it's closed
+      if (
+        window.VoiceroCore &&
+        window.VoiceroCore.session &&
+        window.VoiceroCore.session.textOpen === false
+      ) {
+        console.log(
+          "VoiceroSecond: Text interface is closed, skipping message generation",
+        );
+        return;
+      }
+
       // Get session ID from VoiceroCore if available
       var sessionId =
         window.VoiceroCore && window.VoiceroCore.sessionId
@@ -1474,6 +1600,19 @@
           } else if (typeof data === "string") {
             // Handle case where the response might be a direct string
             aiMessage = data;
+          }
+
+          // Check again if text chat is open before adding any messages
+          // This ensures we don't add messages if the user closed the chat while the API call was in progress
+          if (
+            window.VoiceroCore &&
+            window.VoiceroCore.session &&
+            window.VoiceroCore.session.textOpen === false
+          ) {
+            console.log(
+              "VoiceroSecond: Text interface closed during API call, not adding message",
+            );
+            return;
           }
 
           // If we have an AI message, add it to the interfaces and thread

@@ -501,8 +501,8 @@
 
           // Position the help bubble above the button by the appropriate offset
           var helpBubbleBottomOffset = overlapCheck.hasOverlap
-            ? overlapCheck.bottomOffset + 50
-            : 80;
+            ? overlapCheck.bottomOffset + 60
+            : 90;
 
           buttonContainer.insertAdjacentHTML(
             "beforeend",
@@ -3502,7 +3502,7 @@
         });
     },
 
-    // Display the auto help bubble with provided text
+    // Display the auto help as a modal in the center of the screen with provided text
     displayAutoHelpBubble: function (helpText) {
       var mainButton = document.getElementById("chat-website-button");
       if (!mainButton) return;
@@ -3511,122 +3511,132 @@
       this.hasShownAutoHelp = true;
       this.appState.hasShownAutoHelp = true;
 
-      // Create auto help bubble if it doesn't exist
-      let autoHelpBubble = document.getElementById("voicero-auto-help-bubble");
-
-      if (!autoHelpBubble) {
-        // Check for elements that might overlap with our button
-        var overlapCheck = this.checkForBottomRightElements();
-
-        // Position the help bubble above the button by the appropriate offset
-        var helpBubbleBottomOffset = overlapCheck.hasOverlap
-          ? overlapCheck.bottomOffset + 50
-          : 80;
-
-        var buttonContainer = document.getElementById("voice-toggle-container");
-        if (!buttonContainer) return;
-
-        // Create the bubble with enhanced styles
-        buttonContainer.insertAdjacentHTML(
-          "beforeend",
-          `<div id="voicero-auto-help-bubble" style="
-            position: fixed !important;
-            bottom: ${helpBubbleBottomOffset}px !important;
-            right: 30px !important;
-            background-color: white !important;
-            border: 2px solid #000 !important;
-            box-shadow: 4px 4px 0 rgb(0, 0, 0) !important;
-            border-radius: 8px !important;
-            padding: 12px 15px !important;
-            font-size: 16px !important;
-            font-weight: bold !important;
-            z-index: 2147483646 !important;
-            color: #000 !important;
-            font-family: Arial, sans-serif !important;
-            max-width: 280px !important;
-            animation: fadeIn 0.5s ease-out !important;
-            cursor: pointer !important;
-          ">
-            <button id="voicero-auto-help-close" style="
-              position: absolute !important;
-              top: 3px !important;
-              left: 6px !important;
-              cursor: pointer !important;
-              font-size: 16px !important;
-              color: #000 !important;
-              background: none !important;
-              border: none !important;
-              padding: 0 2px !important;
-            ">×</button>
-            <div style="margin-left: 12px !important;">${helpText}</div>
-            <div style="
-              margin-top: 8px !important;
-              text-align: center !important;
-              font-size: 14px !important;
-              background-color: ${this.websiteColor || "#882be6"} !important;
-              color: white !important;
-              padding: 5px 10px !important;
-              border-radius: 5px !important;
-              box-shadow: 2px 2px 0 rgba(0,0,0,0.2) !important;
-              cursor: pointer !important;
-            ">Click to Chat</div>
-            <div style="
-              content: "" !important;
-              position: absolute !important;
-              bottom: -10px !important;
-              right: 20px !important;
-              border-width: 10px 10px 0 !important;
-              border-style: solid !important;
-              border-color: white transparent transparent !important;
-              display: block !important;
-              width: 0 !important;
-            "></div>
-            <div style="
-              content: "" !important;
-              position: absolute !important;
-              bottom: -13px !important;
-              right: 19px !important;
-              border-width: 11px 11px 0 !important;
-              border-style: solid !important;
-              border-color: #000 transparent transparent !important;
-              display: block !important;
-              width: 0 !important;
-              z-index: -1 !important;
-            "></div>
-          </div>`,
-        );
-
-        autoHelpBubble = document.getElementById("voicero-auto-help-bubble");
-      } else {
-        // Update existing bubble text
-        var textContainer = autoHelpBubble.querySelector("div");
-        if (textContainer) {
-          textContainer.textContent = helpText;
-        }
-
-        // Make sure the bubble is visible
-        autoHelpBubble.style.display = "block";
+      // Remove any existing modal
+      let existingModal = document.getElementById("voicero-auto-help-modal");
+      if (existingModal) {
+        existingModal.parentNode.removeChild(existingModal);
       }
 
-      // Add click handlers
-      if (autoHelpBubble) {
-        // Close button handler
-        var closeButton = document.getElementById("voicero-auto-help-close");
-        if (closeButton) {
-          closeButton.addEventListener("click", function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-            autoHelpBubble.style.display = "none";
-          });
+      // Create overlay and modal container
+      var modalOverlay = document.createElement("div");
+      modalOverlay.id = "voicero-auto-help-modal";
+
+      // Add modal styles
+      modalOverlay.style.cssText = `
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        background-color: rgba(0, 0, 0, 0.5) !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        z-index: 2147483646 !important;
+        animation: fadeIn 0.3s ease-out !important;
+      `;
+
+      // Create the modal content
+      var modalHTML = `
+        <div class="voicero-modal-content" style="
+          background-color: white !important;
+          border: 2px solid #000 !important;
+          box-shadow: 8px 8px 0 rgb(0, 0, 0) !important;
+          border-radius: 12px !important;
+          padding: 20px 25px !important;
+          max-width: 450px !important;
+          width: 80% !important;
+          position: relative !important;
+          font-family: Arial, sans-serif !important;
+          animation: scaleIn 0.3s ease-out !important;
+        ">
+          <button id="voicero-auto-help-close" style="
+            position: absolute !important;
+            top: 10px !important;
+            right: 15px !important;
+            cursor: pointer !important;
+            font-size: 20px !important;
+            font-weight: bold !important;
+            color: #000 !important;
+            background: none !important;
+            border: none !important;
+            padding: 0 5px !important;
+            line-height: 1 !important;
+          ">×</button>
+          
+          <h3 style="
+            margin-top: 0 !important;
+            color: ${this.websiteColor || "#882be6"} !important;
+            font-size: 18px !important;
+            margin-bottom: 15px !important;
+          ">Need Help?</h3>
+          
+          <div style="
+            font-size: 16px !important;
+            line-height: 1.5 !important;
+            color: #333 !important;
+            margin-bottom: 20px !important;
+          ">${helpText}</div>
+          
+          <div style="display: flex !important; justify-content: center !important;">
+            <button id="voicero-auto-help-chat-btn" style="
+              background-color: ${this.websiteColor || "#882be6"} !important;
+              color: white !important;
+              padding: 10px 20px !important;
+              border-radius: 6px !important;
+              font-size: 16px !important;
+              font-weight: bold !important;
+              border: none !important;
+              box-shadow: 3px 3px 0 rgba(0,0,0,0.3) !important;
+              cursor: pointer !important;
+              transition: all 0.2s ease !important;
+            ">Start Chat</button>
+          </div>
+        </div>
+      `;
+
+      // Add animation styles
+      var animStyle = document.createElement("style");
+      animStyle.innerHTML = `
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
         }
+        
+        @keyframes scaleIn {
+          from { transform: scale(0.9); opacity: 0; }
+          to { transform: scale(1); opacity: 1; }
+        }
+      `;
+      document.head.appendChild(animStyle);
 
-        // Make the entire bubble clickable to open chat
-        autoHelpBubble.addEventListener("click", function (e) {
-          // Ignore clicks on the close button
-          if (e.target.id === "voicero-auto-help-close") return;
+      // Add the modal HTML to the overlay
+      modalOverlay.innerHTML = modalHTML;
 
-          // Hide the bubble
-          autoHelpBubble.style.display = "none";
+      // Append the overlay to the body
+      document.body.appendChild(modalOverlay);
+
+      // Add click handlers
+      var closeButton = document.getElementById("voicero-auto-help-close");
+      if (closeButton) {
+        closeButton.addEventListener("click", function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          modalOverlay.style.display = "none";
+          modalOverlay.remove();
+        });
+      }
+
+      // Add click handler for chat button
+      var chatButton = document.getElementById("voicero-auto-help-chat-btn");
+      if (chatButton) {
+        chatButton.addEventListener("click", function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+
+          // Hide and remove the modal
+          modalOverlay.style.display = "none";
+          modalOverlay.remove();
 
           // Click the main button to open chat
           var mainButton = document.getElementById("chat-website-button");
@@ -3635,6 +3645,15 @@
           }
         });
       }
+
+      // Close modal when clicking outside the content
+      modalOverlay.addEventListener("click", function (e) {
+        // Only close if the click was directly on the overlay, not its children
+        if (e.target === modalOverlay) {
+          modalOverlay.style.display = "none";
+          modalOverlay.remove();
+        }
+      });
 
       // Add pulse animation to the main button to draw attention
       this.enhanceButtonAnimation();
