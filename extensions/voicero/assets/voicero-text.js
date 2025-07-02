@@ -450,6 +450,53 @@
       this._isChatVisible = true;
       this._lastChatToggle = Date.now();
 
+      // Show welcome screen if no AI messages
+      if (!this.hasAiMessages()) {
+        // Hide control buttons when showing welcome screen
+        var headerContainer = this.shadowRoot.getElementById(
+          "chat-controls-header",
+        );
+        if (headerContainer) {
+          var clearBtn = headerContainer.querySelector("#clear-text-chat");
+          var closeBtn = headerContainer.querySelector("#close-text-chat");
+
+          if (clearBtn) {
+            clearBtn.style.display = "none";
+          }
+
+          if (closeBtn && closeBtn.parentNode) {
+            closeBtn.parentNode.style.display = "none";
+          }
+
+          // Hide the entire header completely
+          headerContainer.style.display = "none";
+        }
+
+        // COMPLETELY HIDE the input area
+        var chatInputWrapper =
+          this.shadowRoot.getElementById("chat-input-wrapper");
+        if (chatInputWrapper) {
+          chatInputWrapper.style.display = "none";
+        }
+
+        // Reset messages container styling for welcome screen
+        var messagesContainer = this.shadowRoot.getElementById("chat-messages");
+        if (messagesContainer) {
+          messagesContainer.style.cssText = `
+            padding: 0 !important;
+            margin: 0 !important;
+            height: 350px !important;
+            max-height: 350px !important;
+            background-color: transparent !important;
+            border-radius: 12px !important;
+            overflow: hidden !important;
+            box-shadow: none !important;
+          `;
+        }
+
+        this.showWelcomeScreen();
+      }
+
       // Process existing AI messages to ensure report buttons are present
       setTimeout(() => {
         this.processExistingAIMessages();
@@ -715,9 +762,15 @@
         shouldShowWelcome = true;
       }
 
-      // If no messages were loaded and we should show welcome message
-      if (!messagesLoaded && shouldShowWelcome) {
-        this.showWelcomeMessage();
+      // If no messages were loaded, show welcome screen instead of welcome message
+      if (!messagesLoaded) {
+        if (this.hasAiMessages()) {
+          if (shouldShowWelcome) {
+            this.showWelcomeMessage();
+          }
+        } else {
+          this.showWelcomeScreen();
+        }
       }
     },
 
@@ -2528,6 +2581,15 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
         return;
       }
 
+      // If we're showing the welcome screen, reset the chat container first
+      if (this.isShowingWelcomeScreen) {
+        // Use our new helper function to reset the interface
+        this.resetWelcomeScreenAndShowChat();
+
+        // Reset the welcome screen flag
+        this.isShowingWelcomeScreen = false;
+      }
+
       // Add user message to UI
       this.addMessage(text, "user");
 
@@ -3775,6 +3837,393 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
 
         // Add to shadow DOM
         this.shadowRoot.appendChild(styleEl);
+      }
+    },
+
+    // Check if there are any AI messages in the chat
+    hasAiMessages: function () {
+      // Check internal messages array
+      if (this.messages && this.messages.length > 0) {
+        return this.messages.some(
+          (msg) => msg.role === "assistant" || msg.role === "ai",
+        );
+      }
+
+      // Also check DOM if available
+      if (this.shadowRoot) {
+        var messagesContainer = this.shadowRoot.getElementById("chat-messages");
+        if (messagesContainer) {
+          return messagesContainer.querySelectorAll(".ai-message").length > 0;
+        }
+      }
+
+      return false;
+    },
+
+    // Show initial welcome screen with buttons
+    showWelcomeScreen: function () {
+      if (!this.shadowRoot) return;
+
+      var messagesContainer = this.shadowRoot.getElementById("chat-messages");
+      if (!messagesContainer) return;
+
+      // Clear existing content
+      messagesContainer.innerHTML = "";
+
+      // Create welcome screen container
+      var welcomeScreen = document.createElement("div");
+      welcomeScreen.className = "welcome-screen";
+      welcomeScreen.style.cssText = `
+        display: flex;
+        flex-direction: column;
+        height: 350px;
+        padding: 0;
+        background-color: white;
+        border-radius: 12px;
+        position: relative;
+        overflow: hidden;
+      `;
+
+      // Create header with avatar and name - left aligned
+      var header = document.createElement("div");
+      header.style.cssText = `
+        padding: 10px 15px 5px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+      `;
+
+      // Create avatar
+      var avatar = document.createElement("div");
+      avatar.style.cssText = `
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: #6c47ff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 12px;
+        overflow: hidden;
+      `;
+
+      // Add avatar text (AI) instead of image
+      var avatarContent = document.createElement("div");
+      avatarContent.textContent = "AI";
+      avatarContent.style.cssText = `
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 16px;
+      `;
+      avatar.appendChild(avatarContent);
+
+      // No need for fallback since we're using text directly
+
+      // Create name and role
+      var nameContainer = document.createElement("div");
+      nameContainer.style.cssText = `
+        display: flex;
+        flex-direction: column;
+      `;
+
+      var name = document.createElement("div");
+      name.textContent = "Suvi";
+      name.style.cssText = `
+        font-weight: bold;
+        color: black;
+        font-size: 16px;
+        margin-bottom: 2px;
+      `;
+
+      var role = document.createElement("div");
+      role.textContent = "AI Sales Rep";
+      role.style.cssText = `
+        font-size: 12px;
+        color: #666;
+      `;
+
+      nameContainer.appendChild(name);
+      nameContainer.appendChild(role);
+
+      header.appendChild(avatar);
+      header.appendChild(nameContainer);
+      welcomeScreen.appendChild(header);
+
+      // Create welcome message
+      var messageContainer = document.createElement("div");
+      messageContainer.style.cssText = `
+        padding: 10px 15px 60px;
+        flex-grow: 1;
+        overflow-y: auto;
+      `;
+
+      var welcomeMessage = document.createElement("div");
+      welcomeMessage.style.cssText = `
+        text-align: left;
+        color: #333;
+        padding: 0;
+        margin-bottom: 10px;
+        font-size: 14px;
+        line-height: 1.4;
+      `;
+
+      // Get website name if available
+      let websiteName = window.location.hostname || "our website";
+      if (document.title) {
+        var title = document.title;
+        var separatorIndex = Math.min(
+          title.indexOf(" - ") > -1 ? title.indexOf(" - ") : Infinity,
+          title.indexOf(" | ") > -1 ? title.indexOf(" | ") : Infinity,
+        );
+        if (separatorIndex !== Infinity) {
+          websiteName = title.substring(0, separatorIndex);
+        } else {
+          websiteName = title;
+        }
+      }
+
+      welcomeMessage.innerHTML = `
+        <p style="margin-top: 0;">Hi there! I'm Suvi, an AI Sales Rep. Looking for AI email responder info? Feel free to ask!</p>
+        <p>I see you're exploring ${websiteName}, the most productive email app ever made. I'm available if you have questions or want to talk more!</p>
+      `;
+      messageContainer.appendChild(welcomeMessage);
+
+      // Create buttons container
+      var buttonsContainer = document.createElement("div");
+      buttonsContainer.style.cssText = `
+        display: flex;
+        flex-direction: row;
+        justify-content: flex-start;
+        gap: 10px;
+        margin-top: 10px;
+        padding: 0;
+      `;
+
+      // Add buttons
+      var buttons = [
+        { text: "Talk to Sales", action: "talk-to-sales" },
+        { text: "Get Started", action: "get-started" },
+        { text: "Customer Support", action: "customer-support" },
+      ];
+
+      buttons.forEach((buttonData) => {
+        var button = document.createElement("button");
+        button.textContent = buttonData.text;
+        button.dataset.action = buttonData.action;
+        button.style.cssText = `
+          background: white;
+          border: 1px solid rgba(0, 0, 0, 0.1);
+          border-radius: 16px;
+          padding: 8px 12px;
+          font-size: 13px;
+          cursor: pointer;
+          text-align: center;
+          transition: all 0.2s ease;
+          white-space: nowrap;
+        `;
+
+        button.addEventListener("mouseover", function () {
+          this.style.backgroundColor = "#f5f5f5";
+        });
+
+        button.addEventListener("mouseout", function () {
+          this.style.backgroundColor = "white";
+        });
+
+        button.addEventListener("click", () => {
+          this.handleWelcomeButtonClick(buttonData.action);
+        });
+
+        buttonsContainer.appendChild(button);
+      });
+
+      messageContainer.appendChild(buttonsContainer);
+      welcomeScreen.appendChild(messageContainer);
+
+      // Add a real input field for "Ask a question"
+      var askContainer = document.createElement("div");
+      askContainer.style.cssText = `
+        margin: auto 0 20px;
+        padding: 0 15px;
+        width: 100%;
+        box-sizing: border-box;
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+      `;
+
+      // Create a wrapper for input and send icon
+      var inputWrapper = document.createElement("div");
+      inputWrapper.style.cssText = `
+        position: relative;
+        width: 100%;
+      `;
+
+      var askInput = document.createElement("input");
+      askInput.type = "text";
+      askInput.placeholder = "Ask a question";
+      askInput.style.cssText = `
+        width: 100%;
+        padding: 12px 15px;
+        padding-right: 40px;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        border-radius: 20px;
+        font-size: 14px;
+        color: #333;
+        background: white;
+        outline: none;
+        box-sizing: border-box;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      `;
+
+      // Add send icon
+      var sendIcon = document.createElement("div");
+      sendIcon.style.cssText = `
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      `;
+
+      sendIcon.innerHTML = `
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"></path>
+        </svg>
+      `;
+
+      // Add click handler for send icon
+      sendIcon.addEventListener("click", () => {
+        const text = askInput.value.trim();
+        if (text) {
+          this.isShowingWelcomeScreen = false;
+          this.resetWelcomeScreenAndShowChat();
+          this.sendChatMessage(text);
+        }
+      });
+
+      inputWrapper.appendChild(askInput);
+      inputWrapper.appendChild(sendIcon);
+      askContainer.appendChild(inputWrapper);
+      welcomeScreen.appendChild(askContainer);
+
+      // Set focus on the input field after a short delay
+      setTimeout(() => {
+        askInput.focus();
+      }, 300);
+
+      // Add event listener for Enter key
+      askInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          const text = askInput.value.trim();
+          if (text) {
+            // Reset welcome screen state
+            this.isShowingWelcomeScreen = false;
+
+            // Show the real UI
+            this.resetWelcomeScreenAndShowChat();
+
+            // Send the user's actual message
+            this.sendChatMessage(text);
+          }
+        }
+      });
+
+      // Add to container
+      messagesContainer.appendChild(welcomeScreen);
+
+      // Store flag that we're showing welcome screen
+      this.isShowingWelcomeScreen = true;
+    },
+
+    // Handle welcome screen button clicks
+    handleWelcomeButtonClick: function (action) {
+      let message = "";
+
+      switch (action) {
+        case "talk-to-sales":
+          message = "I'd like to talk to sales about your product.";
+          break;
+        case "get-started":
+          message = "I'm interested in getting started with your product.";
+          break;
+        case "customer-support":
+          message = "I need help from customer support.";
+          break;
+        default:
+          message = "Hello, I have a question.";
+      }
+
+      // Send the message
+      this.sendChatMessage(message);
+    },
+
+    // Reset the welcome screen and show the chat interface
+    resetWelcomeScreenAndShowChat: function () {
+      if (!this.shadowRoot) return;
+
+      // Reset the container
+      var messagesContainer = this.shadowRoot.getElementById("chat-messages");
+      if (messagesContainer) {
+        messagesContainer.innerHTML = "";
+
+        // Create padding container as in the original structure
+        var paddingContainer = document.createElement("div");
+        paddingContainer.style.paddingTop = "15px";
+        messagesContainer.appendChild(paddingContainer);
+
+        // Restore messages container styling
+        messagesContainer.style.cssText = `
+          scrollbar-width: none !important;
+          -ms-overflow-style: none !important;
+          padding: 15px !important; 
+          padding-top: 10px !important;
+          margin: 0 !important;
+          background-color: #f2f2f7 !important;
+          border-radius: 0 !important;
+          transition: opacity 0.25s ease !important;
+          overflow-y: auto !important;
+          overflow-x: hidden !important;
+          height: 350px !important;
+          max-height: 350px !important;
+          min-height: 350px !important;
+          position: relative !important;
+        `;
+      }
+
+      // Show the control buttons
+      var headerContainer = this.shadowRoot.getElementById(
+        "chat-controls-header",
+      );
+      if (headerContainer) {
+        headerContainer.style.display = "flex";
+
+        var clearBtn = headerContainer.querySelector("#clear-text-chat");
+        var closeBtn = headerContainer.querySelector("#close-text-chat");
+
+        if (clearBtn) {
+          clearBtn.style.display = "block";
+        }
+
+        if (closeBtn && closeBtn.parentNode) {
+          closeBtn.parentNode.style.display = "flex";
+        }
+      }
+
+      // Show the chat input wrapper but keep it styled properly
+      var chatInputWrapper =
+        this.shadowRoot.getElementById("chat-input-wrapper");
+      if (chatInputWrapper) {
+        chatInputWrapper.style.display = "block";
       }
     },
   };
