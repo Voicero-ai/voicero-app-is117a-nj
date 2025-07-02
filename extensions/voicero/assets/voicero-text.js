@@ -401,17 +401,18 @@
         shadowHost.style.opacity = "1";
         shadowHost.style.pointerEvents = "auto";
         shadowHost.style.height = "auto";
-        shadowHost.style.width = "85%";
+        shadowHost.style.width = "400px"; // Fixed width for chat box
         shadowHost.style.zIndex = "9999999";
         shadowHost.style.borderRadius = "12px 12px 12px 12px"; // Add rounded corners to parent container
 
-        // Position in lower middle of screen to match voice interface
+        // Position in right side of screen
         shadowHost.style.position = "fixed";
-        shadowHost.style.left = "50%";
+        shadowHost.style.right = "20px"; // Position from right instead of left
         shadowHost.style.bottom = "20px";
-        shadowHost.style.transform = "translateX(-50%)";
-        shadowHost.style.maxWidth = "480px";
-        shadowHost.style.minWidth = "280px";
+        shadowHost.style.left = "auto"; // Remove left positioning
+        shadowHost.style.transform = "none"; // Remove centering transform
+        shadowHost.style.maxWidth = "450px";
+        shadowHost.style.minWidth = "320px";
         shadowHost.style.overflow = "hidden"; // Ensure border radius is visible
       }
 
@@ -489,18 +490,19 @@
         }
       }, 500); // Check every 500ms
 
-      // After the interface is fully loaded and visible, check if it should be minimized
-      // based on the previous session state (delayed to prevent race conditions)
+      // After the interface is fully loaded, ensure it stays at our fixed height
       setTimeout(() => {
-        // We no longer auto-minimize the interface when opening
-        // The interface should only be minimized when the user explicitly clicks the minimize button
-        console.log(
-          "VoiceroText: Interface opened and maximized - auto-minimize disabled",
-        );
+        // Always ensure fixed height
+        var messagesContainer = this.shadowRoot.getElementById("chat-messages");
+        if (messagesContainer) {
+          messagesContainer.style.height = "350px";
+          messagesContainer.style.maxHeight = "350px";
+          messagesContainer.style.minHeight = "350px";
+        }
 
-        // Force maximize to ensure consistency
+        // Force visible state
         this._isChatVisible = true;
-      }, 1500);
+      }, 500);
     },
 
     // Check for welcome back message and display it if found
@@ -1488,11 +1490,12 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
             margin: 0 !important;
             background-color: #f2f2f7 !important;
             border-radius: 0 !important;
-            transition: max-height 0.25s ease, opacity 0.25s ease !important;
+            transition: opacity 0.25s ease !important;
             overflow-y: auto !important;
             overflow-x: hidden !important;
-            max-height: 27vh !important;
-            height: auto !important;
+            height: 350px !important;
+            max-height: 350px !important;
+            min-height: 350px !important;
             position: relative !important;
           }
           
@@ -1649,11 +1652,12 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
         Object.assign(shadowHost.style, {
           position: "fixed",
           bottom: "20px",
-          left: "50%",
-          transform: "translateX(-50%)",
-          width: "85%",
-          maxWidth: "480px",
-          minWidth: "280px",
+          right: "20px",
+          left: "auto",
+          transform: "none",
+          width: "400px",
+          maxWidth: "450px",
+          minWidth: "320px",
           zIndex: "2147483646",
           borderRadius: "12px",
           boxShadow: "none", // Remove box shadow
@@ -1925,39 +1929,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
 
           <!-- IMPORTANT: Restructured layout - Maximize button first in the DOM order -->
           <!-- This is critical so it won't be affected by the messages container collapse -->
-          <div 
-            id="maximize-chat"
-            style="display: none; position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); z-index: 999999;"
-          >
-            <button style="
-              position: relative;
-              background: ${this.websiteColor || "#882be6"};
-              border: none;
-              color: white;
-              padding: 10px 20px;
-              border-radius: 20px 20px 0 0;
-              font-size: 14px;
-              font-weight: 500;
-              cursor: pointer;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              min-width: 160px;
-              margin-bottom: -30px;
-              height: 40px;
-              overflow: visible;
-              box-shadow: none;
-              width: auto;
-            ">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
-                <polyline points="15 3 21 3 21 9"></polyline>
-                <polyline points="9 21 3 21 3 15"></polyline>
-                <line x1="21" y1="3" x2="14" y2="10"></line>
-                <line x1="3" y1="21" x2="10" y2="14"></line>
-              </svg>
-              Open Messages
-            </button>
-          </div>
+          <!-- Maximize chat button removed -->
 
           <div id="chat-controls-header" style="
             position: sticky !important;
@@ -2008,24 +1980,6 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
               padding: 0 !important;
               height: 28px !important;
             ">
-              <button id="minimize-chat" style="
-                background: none;
-                border: none;
-                cursor: pointer;
-                padding: 5px;
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                transition: all 0.2s ease;
-              " title="Minimize">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round">
-                  <line x1="5" y1="12" x2="19" y2="12"></line>
-                </svg>
-              </button>
-              
-
-              
               <button id="close-text-chat" style="
                 background: none;
                 border: none;
@@ -2049,12 +2003,14 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
             border-radius: 0 !important;
             padding: 0 !important;
             margin: 0 !important;
-            max-height: 33vh;
+            height: 400px !important;
+            max-height: 400px !important;
+            min-height: 400px !important;
             overflow-y: auto;
             overflow-x: hidden;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
             position: relative;
-            transition: all 0.3s ease, max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
+            transition: all 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
           ">
             <div id="loading-bar" style="
               position: absolute;
@@ -2208,66 +2164,11 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
       ).shadowRoot;
       if (!shadowRoot) return;
 
-      // Get all control buttons
-      var minimizeBtn = shadowRoot.getElementById("minimize-chat");
-      var maximizeBtn = shadowRoot.getElementById("maximize-chat");
+      // Get control buttons
       var closeBtn = shadowRoot.getElementById("close-text-chat");
       var clearBtn = shadowRoot.getElementById("clear-text-chat");
 
-      // Remove onclick attributes and add event listeners
-      if (minimizeBtn) {
-        minimizeBtn.removeAttribute("onclick");
-        minimizeBtn.addEventListener("click", () => {
-          // Check if session operations are in progress
-          if (this.isSessionBusy()) {
-            console.log(
-              "VoiceroText: Minimize button click ignored - session operation in progress",
-            );
-            return;
-          }
-          this.minimizeChat();
-        });
-      }
-
-      if (maximizeBtn) {
-        maximizeBtn.removeAttribute("onclick");
-        maximizeBtn.addEventListener("click", () => {
-          // Check if session operations are in progress
-          if (this.isSessionBusy()) {
-            console.log(
-              "VoiceroText: Maximize button click ignored - session operation in progress",
-            );
-            return;
-          }
-          this.maximizeChat();
-        });
-
-        // We don't need to set the background color here anymore as it's already set in the HTML
-        // Just ensure the button has display:flex for the icon alignment
-        var maximizeButton = maximizeBtn.querySelector("button");
-        if (maximizeButton) {
-          // Reapply the main styling to ensure it's consistent
-          maximizeButton.style.position = "relative";
-          maximizeButton.style.background = this.websiteColor || "#882be6"; // Use the dynamic website color
-          maximizeButton.style.border = "none";
-          maximizeButton.style.color = "white";
-          maximizeButton.style.padding = "10px 20px";
-          maximizeButton.style.borderRadius = "20px 20px 0 0";
-          maximizeButton.style.fontSize = "14px";
-          maximizeButton.style.fontWeight = "500";
-          maximizeButton.style.cursor = "pointer";
-          maximizeButton.style.display = "flex";
-          maximizeButton.style.alignItems = "center";
-          maximizeButton.style.justifyContent = "center";
-          maximizeButton.style.minWidth = "160px";
-          maximizeButton.style.marginBottom = "-30px"; // Updated to match the HTML creation
-          maximizeButton.style.height = "40px";
-          maximizeButton.style.overflow = "visible";
-          maximizeButton.style.boxShadow = "none";
-          maximizeButton.style.width = "auto";
-        }
-      }
-
+      // Set up close button event handler
       if (closeBtn) {
         closeBtn.removeAttribute("onclick");
         closeBtn.addEventListener("click", () => {
@@ -2282,12 +2183,11 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
         });
       }
 
+      // Set up clear button event handler
       if (clearBtn) {
         clearBtn.removeAttribute("onclick");
         clearBtn.addEventListener("click", () => this.clearChatHistory());
       }
-
-      // Toggle button removed - text interface only
     },
 
     // Clear chat history
@@ -3160,8 +3060,9 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
         maximizeBtn.style.display = "block";
         maximizeBtn.style.position = "fixed";
         maximizeBtn.style.bottom = "100px";
-        maximizeBtn.style.left = "50%";
-        maximizeBtn.style.transform = "translateX(-50%)";
+        maximizeBtn.style.right = "20px"; // Position from right side
+        maximizeBtn.style.left = "auto"; // Remove left positioning
+        maximizeBtn.style.transform = "none"; // Remove centering transform
         maximizeBtn.style.zIndex = "9999999";
 
         // Ensure the button's style is applied correctly
