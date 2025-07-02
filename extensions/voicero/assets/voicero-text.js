@@ -303,6 +303,12 @@
       // Check if thread has messages
       var hasMessages = this.messages && this.messages.length > 0;
 
+      // Force reset the messages array if empty to prevent stale state
+      if (!hasMessages) {
+        console.log("VoiceroText: No messages found, resetting messages array");
+        this.messages = [];
+      }
+
       // Determine if we should show welcome message
       let shouldShowWelcome = false;
       if (window.VoiceroCore && window.VoiceroCore.appState) {
@@ -537,19 +543,18 @@
         }
       }, 500); // Check every 500ms
 
-      // After the interface is fully loaded, ensure it stays at our fixed height
-      setTimeout(() => {
-        // Always ensure fixed height
-        var messagesContainer = this.shadowRoot.getElementById("chat-messages");
-        if (messagesContainer) {
-          messagesContainer.style.height = "350px";
-          messagesContainer.style.maxHeight = "350px";
-          messagesContainer.style.minHeight = "350px";
-        }
+      // Set the fixed height immediately to avoid animation
+      var messagesContainer = this.shadowRoot.getElementById("chat-messages");
+      if (messagesContainer) {
+        messagesContainer.style.height = "400px";
+        messagesContainer.style.maxHeight = "400px";
+        messagesContainer.style.minHeight = "400px";
+        // Remove any transition that might cause animation
+        messagesContainer.style.transition = "none";
+      }
 
-        // Force visible state
-        this._isChatVisible = true;
-      }, 500);
+      // Force visible state
+      this._isChatVisible = true;
     },
 
     // Check for welcome back message and display it if found
@@ -764,12 +769,20 @@
 
       // If no messages were loaded, show welcome screen instead of welcome message
       if (!messagesLoaded) {
-        if (this.hasAiMessages()) {
-          if (shouldShowWelcome) {
-            this.showWelcomeMessage();
-          }
-        } else {
+        console.log(
+          "VoiceroText: No messages loaded, checking if we should show welcome screen",
+        );
+        // Always show the welcome screen if there are no AI messages
+        if (!this.hasAiMessages()) {
+          console.log(
+            "VoiceroText: No AI messages found, showing welcome screen",
+          );
           this.showWelcomeScreen();
+        } else if (shouldShowWelcome) {
+          console.log(
+            "VoiceroText: Has AI messages but shouldShowWelcome flag is true",
+          );
+          this.showWelcomeMessage();
         }
       }
     },
@@ -1708,9 +1721,9 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
           right: "20px",
           left: "auto",
           transform: "none",
-          width: "400px",
-          maxWidth: "450px",
-          minWidth: "320px",
+          width: "375px",
+          maxWidth: "375px",
+          minWidth: "375px",
           zIndex: "2147483646",
           borderRadius: "12px",
           boxShadow: "none", // Remove box shadow
@@ -1993,7 +2006,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
             background: rgb(242, 242, 247) !important;
             z-index: 9999999 !important;
             display: flex !important;
-            justify-content: space-between !important;
+            justify-content: flex-end !important;
             align-items: center !important;
             padding: 10px 15px !important;
             border-bottom: 1px solid rgba(0, 0, 0, 0.1) !important;
@@ -2004,35 +2017,35 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
             box-sizing: border-box !important;
             transform: translateZ(0);
           ">
-            <button id="clear-text-chat" title="Clear Chat History" style="
-              background: none;
-              border: none;
-              cursor: pointer;
-              padding: 5px 8px;
-              border-radius: 15px;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              transition: all 0.2s ease;
-              background-color: rgba(0, 0, 0, 0.07);
-              font-size: 12px;
-              color: #666;
-            ">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round" style="margin-right: 4px;">
-                <polyline points="3 6 5 6 21 6"></polyline>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-              </svg>
-              <span>Clear</span>
-            </button>
-            
             <div style="
               display: flex !important;
-              gap: 5px !important;
+              gap: 10px !important;
               align-items: center !important;
               margin: 0 !important;
               padding: 0 !important;
               height: 28px !important;
             ">
+              <button id="clear-text-chat" title="Clear Chat History" style="
+                background: none;
+                border: none;
+                cursor: pointer;
+                padding: 5px 8px;
+                border-radius: 15px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.2s ease;
+                background-color: rgba(0, 0, 0, 0.07);
+                font-size: 12px;
+                color: #666;
+              ">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round" style="margin-right: 4px;">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+                <span>Clear</span>
+              </button>
+            
               <button id="close-text-chat" style="
                 background: none;
                 border: none;
@@ -2321,11 +2334,26 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
       // Reset messages array
       this.messages = [];
 
-      // Reset the welcome flag so we can show welcome message after clearing
+      // Reset the welcome flag and prepare to show welcome screen
       this.hasShownWelcome = false;
 
-      // Show welcome message after clearing chat
-      this.showWelcomeMessage();
+      // Hide the chat input wrapper and control buttons to prepare for welcome screen
+      var chatInputWrapper =
+        this.shadowRoot.getElementById("chat-input-wrapper");
+      if (chatInputWrapper) {
+        chatInputWrapper.style.display = "none";
+      }
+
+      // Hide the header completely
+      var headerContainer = this.shadowRoot.getElementById(
+        "chat-controls-header",
+      );
+      if (headerContainer) {
+        headerContainer.style.display = "none";
+      }
+
+      // Show welcome screen instead of just a welcome message
+      this.showWelcomeScreen();
     },
 
     // Send chat message to API
@@ -3842,333 +3870,57 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
 
     // Check if there are any AI messages in the chat
     hasAiMessages: function () {
+      console.log("VoiceroText: Checking if there are any AI messages");
+
       // Check internal messages array
       if (this.messages && this.messages.length > 0) {
-        return this.messages.some(
+        const hasAiMsg = this.messages.some(
           (msg) => msg.role === "assistant" || msg.role === "ai",
         );
+        console.log("VoiceroText: Messages array has AI messages:", hasAiMsg);
+        return hasAiMsg;
       }
 
       // Also check DOM if available
       if (this.shadowRoot) {
         var messagesContainer = this.shadowRoot.getElementById("chat-messages");
         if (messagesContainer) {
-          return messagesContainer.querySelectorAll(".ai-message").length > 0;
-        }
-      }
+          const aiElements = messagesContainer.querySelectorAll(".ai-message");
+          console.log(
+            "VoiceroText: DOM has AI messages:",
+            aiElements.length > 0,
+          );
 
-      return false;
-    },
-
-    // Show initial welcome screen with buttons
-    showWelcomeScreen: function () {
-      if (!this.shadowRoot) return;
-
-      var messagesContainer = this.shadowRoot.getElementById("chat-messages");
-      if (!messagesContainer) return;
-
-      // Clear existing content
-      messagesContainer.innerHTML = "";
-
-      // Create welcome screen container
-      var welcomeScreen = document.createElement("div");
-      welcomeScreen.className = "welcome-screen";
-      welcomeScreen.style.cssText = `
-        display: flex;
-        flex-direction: column;
-        height: 350px;
-        padding: 0;
-        background-color: white;
-        border-radius: 12px;
-        position: relative;
-        overflow: hidden;
-      `;
-
-      // Create header with avatar and name - left aligned
-      var header = document.createElement("div");
-      header.style.cssText = `
-        padding: 10px 15px 5px;
-        display: flex;
-        align-items: center;
-        justify-content: flex-start;
-      `;
-
-      // Create avatar
-      var avatar = document.createElement("div");
-      avatar.style.cssText = `
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        background-color: #6c47ff;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-right: 12px;
-        overflow: hidden;
-      `;
-
-      // Add avatar text (AI) instead of image
-      var avatarContent = document.createElement("div");
-      avatarContent.textContent = "AI";
-      avatarContent.style.cssText = `
-        width: 100%;
-        height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-weight: bold;
-        font-size: 16px;
-      `;
-      avatar.appendChild(avatarContent);
-
-      // No need for fallback since we're using text directly
-
-      // Create name and role
-      var nameContainer = document.createElement("div");
-      nameContainer.style.cssText = `
-        display: flex;
-        flex-direction: column;
-      `;
-
-      var name = document.createElement("div");
-      name.textContent = "Suvi";
-      name.style.cssText = `
-        font-weight: bold;
-        color: black;
-        font-size: 16px;
-        margin-bottom: 2px;
-      `;
-
-      var role = document.createElement("div");
-      role.textContent = "AI Sales Rep";
-      role.style.cssText = `
-        font-size: 12px;
-        color: #666;
-      `;
-
-      nameContainer.appendChild(name);
-      nameContainer.appendChild(role);
-
-      header.appendChild(avatar);
-      header.appendChild(nameContainer);
-      welcomeScreen.appendChild(header);
-
-      // Create welcome message
-      var messageContainer = document.createElement("div");
-      messageContainer.style.cssText = `
-        padding: 10px 15px 60px;
-        flex-grow: 1;
-        overflow-y: auto;
-      `;
-
-      var welcomeMessage = document.createElement("div");
-      welcomeMessage.style.cssText = `
-        text-align: left;
-        color: #333;
-        padding: 0;
-        margin-bottom: 10px;
-        font-size: 14px;
-        line-height: 1.4;
-      `;
-
-      // Get website name if available
-      let websiteName = window.location.hostname || "our website";
-      if (document.title) {
-        var title = document.title;
-        var separatorIndex = Math.min(
-          title.indexOf(" - ") > -1 ? title.indexOf(" - ") : Infinity,
-          title.indexOf(" | ") > -1 ? title.indexOf(" | ") : Infinity,
-        );
-        if (separatorIndex !== Infinity) {
-          websiteName = title.substring(0, separatorIndex);
-        } else {
-          websiteName = title;
-        }
-      }
-
-      welcomeMessage.innerHTML = `
-        <p style="margin-top: 0;">Hi there! I'm Suvi, an AI Sales Rep. Looking for AI email responder info? Feel free to ask!</p>
-        <p>I see you're exploring ${websiteName}, the most productive email app ever made. I'm available if you have questions or want to talk more!</p>
-      `;
-      messageContainer.appendChild(welcomeMessage);
-
-      // Create buttons container
-      var buttonsContainer = document.createElement("div");
-      buttonsContainer.style.cssText = `
-        display: flex;
-        flex-direction: row;
-        justify-content: flex-start;
-        gap: 10px;
-        margin-top: 10px;
-        padding: 0;
-      `;
-
-      // Add buttons
-      var buttons = [
-        { text: "Talk to Sales", action: "talk-to-sales" },
-        { text: "Get Started", action: "get-started" },
-        { text: "Customer Support", action: "customer-support" },
-      ];
-
-      buttons.forEach((buttonData) => {
-        var button = document.createElement("button");
-        button.textContent = buttonData.text;
-        button.dataset.action = buttonData.action;
-        button.style.cssText = `
-          background: white;
-          border: 1px solid rgba(0, 0, 0, 0.1);
-          border-radius: 16px;
-          padding: 8px 12px;
-          font-size: 13px;
-          cursor: pointer;
-          text-align: center;
-          transition: all 0.2s ease;
-          white-space: nowrap;
-        `;
-
-        button.addEventListener("mouseover", function () {
-          this.style.backgroundColor = "#f5f5f5";
-        });
-
-        button.addEventListener("mouseout", function () {
-          this.style.backgroundColor = "white";
-        });
-
-        button.addEventListener("click", () => {
-          this.handleWelcomeButtonClick(buttonData.action);
-        });
-
-        buttonsContainer.appendChild(button);
-      });
-
-      messageContainer.appendChild(buttonsContainer);
-      welcomeScreen.appendChild(messageContainer);
-
-      // Add a real input field for "Ask a question"
-      var askContainer = document.createElement("div");
-      askContainer.style.cssText = `
-        margin: auto 0 20px;
-        padding: 0 15px;
-        width: 100%;
-        box-sizing: border-box;
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-      `;
-
-      // Create a wrapper for input and send icon
-      var inputWrapper = document.createElement("div");
-      inputWrapper.style.cssText = `
-        position: relative;
-        width: 100%;
-      `;
-
-      var askInput = document.createElement("input");
-      askInput.type = "text";
-      askInput.placeholder = "Ask a question";
-      askInput.style.cssText = `
-        width: 100%;
-        padding: 12px 15px;
-        padding-right: 40px;
-        border: 1px solid rgba(0, 0, 0, 0.1);
-        border-radius: 20px;
-        font-size: 14px;
-        color: #333;
-        background: white;
-        outline: none;
-        box-sizing: border-box;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-      `;
-
-      // Add send icon
-      var sendIcon = document.createElement("div");
-      sendIcon.style.cssText = `
-        position: absolute;
-        right: 12px;
-        top: 50%;
-        transform: translateY(-50%);
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      `;
-
-      sendIcon.innerHTML = `
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"></path>
-        </svg>
-      `;
-
-      // Add click handler for send icon
-      sendIcon.addEventListener("click", () => {
-        const text = askInput.value.trim();
-        if (text) {
-          this.isShowingWelcomeScreen = false;
-          this.resetWelcomeScreenAndShowChat();
-          this.sendChatMessage(text);
-        }
-      });
-
-      inputWrapper.appendChild(askInput);
-      inputWrapper.appendChild(sendIcon);
-      askContainer.appendChild(inputWrapper);
-      welcomeScreen.appendChild(askContainer);
-
-      // Set focus on the input field after a short delay
-      setTimeout(() => {
-        askInput.focus();
-      }, 300);
-
-      // Add event listener for Enter key
-      askInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
-          const text = askInput.value.trim();
-          if (text) {
-            // Reset welcome screen state
-            this.isShowingWelcomeScreen = false;
-
-            // Show the real UI
-            this.resetWelcomeScreenAndShowChat();
-
-            // Send the user's actual message
-            this.sendChatMessage(text);
+          // Check if these are real AI messages or just the welcome fallback
+          if (aiElements.length > 0) {
+            // If any message has content that's not just the fallback welcome message, count it as a real AI message
+            for (let i = 0; i < aiElements.length; i++) {
+              const msgContent = aiElements[i].textContent || "";
+              // Skip counting the fallback welcome message as a real AI message
+              if (
+                !msgContent.includes(
+                  "Hi there! I'm Suvi, an AI Sales Rep. How can I help you today?",
+                )
+              ) {
+                return true;
+              }
+            }
+            // If we only found the fallback welcome message, don't count it
+            return false;
           }
+          return false;
         }
-      });
-
-      // Add to container
-      messagesContainer.appendChild(welcomeScreen);
-
-      // Store flag that we're showing welcome screen
-      this.isShowingWelcomeScreen = true;
-    },
-
-    // Handle welcome screen button clicks
-    handleWelcomeButtonClick: function (action) {
-      let message = "";
-
-      switch (action) {
-        case "talk-to-sales":
-          message = "I'd like to talk to sales about your product.";
-          break;
-        case "get-started":
-          message = "I'm interested in getting started with your product.";
-          break;
-        case "customer-support":
-          message = "I need help from customer support.";
-          break;
-        default:
-          message = "Hello, I have a question.";
       }
 
-      // Send the message
-      this.sendChatMessage(message);
+      console.log("VoiceroText: No AI messages found");
+      return false;
     },
 
     // Reset the welcome screen and show the chat interface
     resetWelcomeScreenAndShowChat: function () {
+      console.log(
+        "VoiceroText: Resetting welcome screen and showing chat interface",
+      );
       if (!this.shadowRoot) return;
 
       // Reset the container
@@ -4225,6 +3977,54 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
       if (chatInputWrapper) {
         chatInputWrapper.style.display = "block";
       }
+    },
+
+    // Show initial welcome screen with buttons
+    showWelcomeScreen: function () {
+      console.log("VoiceroText: Showing welcome screen");
+
+      // Check if VoiceroWelcome module is available
+      if (
+        window.VoiceroWelcome &&
+        typeof window.VoiceroWelcome.showWelcomeScreen === "function"
+      ) {
+        console.log("VoiceroText: Using VoiceroWelcome module");
+
+        // Call the welcome module with our shadow root
+        window.VoiceroWelcome.showWelcomeScreen(this.shadowRoot);
+
+        // Set our local flag to indicate welcome screen is showing
+        this.isShowingWelcomeScreen = true;
+
+        return;
+      }
+
+      // Fallback to old implementation if welcome module isn't available
+      if (!this.shadowRoot) return;
+
+      var messagesContainer = this.shadowRoot.getElementById("chat-messages");
+      if (!messagesContainer) return;
+
+      console.warn(
+        "VoiceroText: VoiceroWelcome module not found, using fallback welcome screen",
+      );
+
+      // Clear existing content
+      messagesContainer.innerHTML = "";
+
+      // Create a simple welcome message as fallback
+      var welcomeMessage = document.createElement("div");
+      welcomeMessage.className = "ai-message fallback-welcome";
+      welcomeMessage.innerHTML = `
+        <div class="message-content">
+          <p>Hi there! I'm Suvi, an AI Sales Rep. How can I help you today?</p>
+        </div>
+      `;
+
+      messagesContainer.appendChild(welcomeMessage);
+
+      // Store flag that we're showing welcome screen
+      this.isShowingWelcomeScreen = true;
     },
   };
 })(window, document);
