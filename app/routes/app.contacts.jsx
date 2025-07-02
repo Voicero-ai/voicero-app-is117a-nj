@@ -246,7 +246,7 @@ const fetchContacts = async () => {
     console.log(data);
 
     if (data.success) {
-      return data.contactsData || [];
+      return data.contacts || [];
     } else {
       throw new Error(data.error || "Failed to fetch contacts");
     }
