@@ -599,7 +599,247 @@ async function updateThemeSettings(admin, themeId, accessKey) {
   }
 }
 
-// Helper functions for calculating progress
+// Modify trainUntrainedItems to accept setTrainingData
+const trainUntrainedItems = async (
+  accessKey,
+  untrainedItems,
+  setUntrainedItems,
+  websiteData,
+  setItemsInTraining = () => {}, // Add setItemsInTraining parameter with default value
+) => {
+  // Get websiteId from any untrained item (they all belong to the same website)
+  const websiteId =
+    untrainedItems.products?.[0]?.websiteId ||
+    untrainedItems.pages?.[0]?.websiteId ||
+    untrainedItems.posts?.[0]?.websiteId ||
+    untrainedItems.collections?.[0]?.websiteId ||
+    untrainedItems.discounts?.[0]?.websiteId;
+
+  // Check if there are any untrained items
+  const hasUntrainedItems = Object.values(untrainedItems).some(
+    (items) => items.length > 0,
+  );
+
+  let totalItems = 0;
+  Object.values(untrainedItems).forEach((items) => {
+    totalItems += items.length;
+  });
+  // Add 1 for general training if needed
+  if (hasUntrainedItems && websiteId) {
+    totalItems += 1;
+  }
+
+  try {
+    // Make copies of the untrained items to work with
+    const remainingItems = {
+      products: [...(untrainedItems.products || [])],
+      pages: [...(untrainedItems.pages || [])],
+      posts: [...(untrainedItems.posts || [])],
+      collections: [...(untrainedItems.collections || [])],
+      discounts: [...(untrainedItems.discounts || [])],
+    };
+
+    // Initialize itemsInTraining with all items
+    setItemsInTraining({
+      products: [...(untrainedItems.products || [])],
+      pages: [...(untrainedItems.pages || [])],
+      posts: [...(untrainedItems.posts || [])],
+      collections: [...(untrainedItems.collections || [])],
+      discounts: [...(untrainedItems.discounts || [])],
+    });
+
+    // Track processed items for progress calculation
+    let processedItems = 0;
+    const updateProgress = () => {
+      // Calculate and show progress
+      const progress = Math.round((processedItems / totalItems) * 100);
+      // This could be used to update a progress state if needed
+    };
+
+    // Create a flattened array of all untrained items with their category information
+    const allItems = [];
+
+    // Add all items to the combined array with their category information
+    for (const category of [
+      "products",
+      "pages",
+      "posts",
+      "collections",
+      "discounts",
+    ]) {
+      remainingItems[category].forEach((item) => {
+        allItems.push({
+          category,
+          item,
+          type: category === "posts" ? "post" : category.slice(0, -1), // Convert plural to singular
+        });
+      });
+    }
+
+    console.log(
+      `Combined ${allItems.length} items for training in batches of 8`,
+    );
+
+    // Process all items in batches of 8 regardless of category
+    while (allItems.length > 0) {
+      // Get the next batch of up to 8 items
+      const batchItems = allItems.splice(0, 8);
+
+      console.log(`Processing batch of ${batchItems.length} mixed items`);
+
+      // Create tracking objects for this batch
+      const batchByCategory = {
+        products: [],
+        pages: [],
+        posts: [],
+        collections: [],
+        discounts: [],
+      };
+
+      // Sort the batch items into their respective categories
+      batchItems.forEach(({ category, item }) => {
+        batchByCategory[category].push(item);
+      });
+
+      // Create an array of promises for this batch
+      const batchPromises = batchItems.map(({ item, type }) =>
+        trainContentItem(accessKey, type, item),
+      );
+
+      // Wait for all promises in this batch to complete
+      await Promise.all(batchPromises);
+
+      // Update progress
+      processedItems += batchItems.length;
+      updateProgress();
+
+      // Update the remaining items for each category
+      const processedIds = {};
+      batchItems.forEach(({ category, item }) => {
+        if (!processedIds[category]) {
+          processedIds[category] = [];
+        }
+        processedIds[category].push(item.id);
+      });
+
+      // Update the UI states after each batch
+      setUntrainedItems((prev) => {
+        const updated = { ...prev };
+
+        // Update each category with filtered remaining items
+        for (const category in processedIds) {
+          const categoryIds = processedIds[category];
+          updated[category] = prev[category].filter(
+            (item) => !categoryIds.includes(item.id),
+          );
+        }
+
+        return updated;
+      });
+
+      // Update items in training to remove the processed batch
+      setItemsInTraining((prev) => {
+        const updated = { ...prev };
+
+        // Remove processed items from each category
+        for (const category in processedIds) {
+          const categoryIds = processedIds[category];
+          updated[category] = prev[category].filter(
+            (item) => !categoryIds.includes(item.id),
+          );
+        }
+
+        return updated;
+      });
+
+      console.log(`Completed batch. ${allItems.length} total items remaining`);
+    }
+
+    // After all individual items are trained, train general if needed
+    if (hasUntrainedItems && websiteId) {
+      console.log("Starting general training");
+      await fetch(`http://localhost:3001/api/shopify/train/general`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${accessKey}`,
+        },
+        body: JSON.stringify({
+          websiteId: websiteId,
+        }),
+      });
+      processedItems += 1; // Count general training as one item
+      updateProgress();
+      console.log("Completed general training");
+    }
+
+    // Clear all untrained items and items in training since training is complete
+    setUntrainedItems({
+      products: [],
+      pages: [],
+      posts: [],
+      collections: [],
+      discounts: [],
+    });
+
+    setItemsInTraining({
+      products: [],
+      pages: [],
+      posts: [],
+      collections: [],
+      discounts: [],
+    });
+
+    console.log("Training process complete");
+  } catch (error) {
+    console.error("Error during batch training:", error);
+    throw error;
+  }
+};
+
+// Add new helper function for training individual content
+const trainContentItem = async (accessKey, contentType, item) => {
+  // Convert plural category names to singular if needed
+  const endpoint =
+    contentType === "post"
+      ? "post"
+      : contentType === "product"
+        ? "product"
+        : contentType === "page"
+          ? "page"
+          : contentType === "collection"
+            ? "collection"
+            : contentType === "discount"
+              ? "discount"
+              : contentType;
+
+  const response = await fetch(
+    `http://localhost:3001/api/shopify/train/${endpoint}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${accessKey}`,
+      },
+      body: JSON.stringify({
+        id: item.id,
+        vectorId: item.vectorId,
+        shopifyId: item.shopifyId,
+      }),
+    },
+  );
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(
+      `Training failed for ${endpoint} ${item.shopifyId}: ${errorData.error || "Unknown error"}`,
+    );
+  }
+
+  return response.json();
+};
 
 // Helper to calculate total items
 const calculateTotalItems = (data) => {
@@ -1177,7 +1417,7 @@ export default function Index() {
         setLoadingText("Vectorization completed successfully!");
       }
 
-      // Set up assistant (ensure website data is properly initialized)
+      // Step 4: Create or get assistant
       setLoadingText("Setting up your AI assistant...");
       setSyncStatusText("Setting up your AI assistant...");
       const assistantResponse = await fetch(
@@ -1202,108 +1442,132 @@ export default function Index() {
         );
       }
 
-      await assistantResponse.json();
+      const assistantData = await assistantResponse.json();
 
-      // Show training message and wait 30 seconds
+      // Get website ID from the assistant response
+      const websiteId = assistantData.websiteId;
+      if (!websiteId) {
+        throw new Error("No website ID found in assistant response");
+      }
+
+      // After assistant setup, start individual training
+      setIsTraining(true);
       setLoadingText(
         "Starting content training process... This may take a few minutes.",
       );
       setSyncStatusText(
         "Starting content training process... This may take a few minutes.",
       );
-      setIsTraining(true);
 
-      // Wait 30 seconds then show completion
+      // Use the parallel training approach
+      await trainUntrainedItems(
+        accessKey,
+        assistantData.content,
+        setUntrainedItems,
+        assistantData.website,
+        setItemsInTraining,
+      );
+
+      // Step 5: Train general QAs
+      setLoadingText("Wrapping up training...");
+      setSyncStatusText("Wrapping up training...");
+
+      const generalTrainingResponse = await fetch(
+        `http://localhost:3001/api/shopify/train/general`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            Authorization: `Bearer ${accessKey}`,
+          },
+          body: JSON.stringify({
+            websiteId: websiteId,
+          }),
+        },
+      );
+
+      if (!generalTrainingResponse.ok) {
+        const errorData = await generalTrainingResponse.json();
+        console.error("General training error:", errorData);
+        throw new Error(
+          `General training error! status: ${generalTrainingResponse.status}, details: ${
+            errorData.error || "unknown error"
+          }`,
+        );
+      }
+
+      setLoadingText(
+        "Training complete! Please refresh the page to see your changes.",
+      );
+      setSyncStatusText(
+        "Training complete! Please refresh the page to see your changes.",
+      );
+      setIsSuccess(true);
+
+      // Set syncing to false after a delay to ensure notifications are shown
       setTimeout(() => {
-        setLoadingText(
-          "Training complete! Please refresh the page to see your changes.",
-        );
-        setSyncStatusText(
-          "Training complete! Please refresh the page to see your changes.",
-        );
-        setIsSuccess(true);
+        setIsSyncing(false);
+      }, 2000);
 
-        // Set syncing to false after a delay to ensure notifications are shown
-        setTimeout(() => {
-          setIsSyncing(false);
-        }, 2000);
+      // Create a banner with refresh instructions
+      setError(
+        <Banner status="success" onDismiss={() => setError("")}>
+          <p>
+            Training complete!{" "}
+            <Button onClick={() => window.location.reload()} primary>
+              Refresh Page
+            </Button>{" "}
+            to see your changes.
+          </p>
+        </Banner>,
+      );
 
-        // Clear untrained items and items in training
-        setUntrainedItems({
-          products: [],
-          pages: [],
-          posts: [],
-          collections: [],
-          discounts: [],
-        });
-
-        setItemsInTraining({
-          products: [],
-          pages: [],
-          posts: [],
-          collections: [],
-          discounts: [],
-        });
-
-        // Create a banner with refresh instructions
-        setError(
-          <Banner status="success" onDismiss={() => setError("")}>
-            <p>
-              Training complete!{" "}
-              <Button onClick={() => window.location.reload()} primary>
-                Refresh Page
-              </Button>{" "}
-              to see your changes.
-            </p>
-          </Banner>,
-        );
-
-        // Show a full-page refresh notification overlay
-        document.body.insertAdjacentHTML(
-          "beforeend",
-          `<div id="refresh-overlay" style="
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(0, 0, 0, 0.7);
-            z-index: 9999;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+      // Show a full-page refresh notification overlay
+      document.body.insertAdjacentHTML(
+        "beforeend",
+        `<div id="refresh-overlay" style="
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-color: rgba(0, 0, 0, 0.7);
+          z-index: 9999;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        ">
+          <div style="
+            background-color: white;
+            border-radius: 8px;
+            padding: 32px;
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
           ">
-            <div style="
-              background-color: white;
-              border-radius: 8px;
-              padding: 32px;
-              max-width: 500px;
-              text-align: center;
-              box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-            ">
-              <div style="font-size: 24px; font-weight: bold; margin-bottom: 16px;">Training Complete!</div>
-              <p style="font-size: 16px; margin-bottom: 24px;">Please refresh the page to see your updated content and AI assistant.</p>
-              <button id="refresh-button" style="
-                background-color: #008060;
-                color: white;
-                border: none;
-                padding: 12px 24px;
-                border-radius: 4px;
-                font-size: 16px;
-                font-weight: bold;
-                cursor: pointer;
-              ">Refresh Page</button>
-            </div>
-          </div>`,
-        );
+            <div style="font-size: 24px; font-weight: bold; margin-bottom: 16px;">Training Complete!</div>
+            <p style="font-size: 16px; margin-bottom: 24px;">Please refresh the page to see your updated content and AI assistant.</p>
+            <button id="refresh-button" style="
+              background-color: #008060;
+              color: white;
+              border: none;
+              padding: 12px 24px;
+              border-radius: 4px;
+              font-size: 16px;
+              font-weight: bold;
+              cursor: pointer;
+            ">Refresh Page</button>
+          </div>
+        </div>`,
+      );
 
-        // Add event listener to refresh button
-        document
-          .getElementById("refresh-button")
-          .addEventListener("click", () => {
-            window.location.reload();
-          });
-      }, 30000); // Wait 30 seconds before showing completion
+      // Add event listener to refresh button
+      document
+        .getElementById("refresh-button")
+        .addEventListener("click", () => {
+          window.location.reload();
+        });
     } catch (error) {
       console.error("Sync process failed:", error);
       setError(
