@@ -599,8 +599,7 @@ async function updateThemeSettings(admin, themeId, accessKey) {
   }
 }
 
-// Placeholder for future implementation if needed
-// Training functions have been removed as they are no longer being used
+// Helper functions for calculating progress
 
 // Helper to calculate total items
 const calculateTotalItems = (data) => {
@@ -1178,15 +1177,16 @@ export default function Index() {
         setLoadingText("Vectorization completed successfully!");
       }
 
-      // Instead of making training API calls, simulate completion after 30 seconds
+      // Show training message and wait 30 seconds
       setLoadingText(
-        "Processing your store content... This may take a few minutes.",
+        "Starting content training process... This may take a few minutes.",
       );
       setSyncStatusText(
-        "Processing your store content... This may take a few minutes.",
+        "Starting content training process... This may take a few minutes.",
       );
+      setIsTraining(true);
 
-      // Wait 30 seconds and then show completion
+      // Wait 30 seconds then show completion
       setTimeout(() => {
         setLoadingText(
           "Training complete! Please refresh the page to see your changes.",
@@ -1196,8 +1196,27 @@ export default function Index() {
         );
         setIsSuccess(true);
 
-        // Set syncing to false
-        setIsSyncing(false);
+        // Set syncing to false after a delay to ensure notifications are shown
+        setTimeout(() => {
+          setIsSyncing(false);
+        }, 2000);
+
+        // Clear untrained items and items in training
+        setUntrainedItems({
+          products: [],
+          pages: [],
+          posts: [],
+          collections: [],
+          discounts: [],
+        });
+
+        setItemsInTraining({
+          products: [],
+          pages: [],
+          posts: [],
+          collections: [],
+          discounts: [],
+        });
 
         // Create a banner with refresh instructions
         setError(
@@ -1257,7 +1276,7 @@ export default function Index() {
           .addEventListener("click", () => {
             window.location.reload();
           });
-      }, 30000); // 30 seconds timeout
+      }, 30000); // Wait 30 seconds before showing completion
     } catch (error) {
       console.error("Sync process failed:", error);
       setError(
