@@ -599,47 +599,16 @@ async function updateThemeSettings(admin, themeId, accessKey) {
   }
 }
 
-// Modify trainUntrainedItems to accept setTrainingData
-const trainUntrainedItems = async (
+// Simplified training process replaced with timer
+const simulateTrainingProcess = async (
   accessKey,
   untrainedItems,
   setUntrainedItems,
   websiteData,
-  setItemsInTraining = () => {}, // Add setItemsInTraining parameter with default value
+  setItemsInTraining = () => {},
 ) => {
-  // Get websiteId from any untrained item (they all belong to the same website)
-  const websiteId =
-    untrainedItems.products?.[0]?.websiteId ||
-    untrainedItems.pages?.[0]?.websiteId ||
-    untrainedItems.posts?.[0]?.websiteId ||
-    untrainedItems.collections?.[0]?.websiteId ||
-    untrainedItems.discounts?.[0]?.websiteId;
-
-  // Check if there are any untrained items
-  const hasUntrainedItems = Object.values(untrainedItems).some(
-    (items) => items.length > 0,
-  );
-
-  let totalItems = 0;
-  Object.values(untrainedItems).forEach((items) => {
-    totalItems += items.length;
-  });
-  // Add 1 for general training if needed
-  if (hasUntrainedItems && websiteId) {
-    totalItems += 1;
-  }
-
   try {
-    // Make copies of the untrained items to work with
-    const remainingItems = {
-      products: [...(untrainedItems.products || [])],
-      pages: [...(untrainedItems.pages || [])],
-      posts: [...(untrainedItems.posts || [])],
-      collections: [...(untrainedItems.collections || [])],
-      discounts: [...(untrainedItems.discounts || [])],
-    };
-
-    // Initialize itemsInTraining with all items
+    // Initialize itemsInTraining with all items to show progress UI
     setItemsInTraining({
       products: [...(untrainedItems.products || [])],
       pages: [...(untrainedItems.pages || [])],
@@ -648,131 +617,10 @@ const trainUntrainedItems = async (
       discounts: [...(untrainedItems.discounts || [])],
     });
 
-    // Track processed items for progress calculation
-    let processedItems = 0;
-    const updateProgress = () => {
-      // Calculate and show progress
-      const progress = Math.round((processedItems / totalItems) * 100);
-      // This could be used to update a progress state if needed
-    };
+    console.log("Training process simulation started");
 
-    // Create a flattened array of all untrained items with their category information
-    const allItems = [];
-
-    // Add all items to the combined array with their category information
-    for (const category of [
-      "products",
-      "pages",
-      "posts",
-      "collections",
-      "discounts",
-    ]) {
-      remainingItems[category].forEach((item) => {
-        allItems.push({
-          category,
-          item,
-          type: category === "posts" ? "post" : category.slice(0, -1), // Convert plural to singular
-        });
-      });
-    }
-
-    console.log(
-      `Combined ${allItems.length} items for training in batches of 8`,
-    );
-
-    // Process all items in batches of 8 regardless of category
-    while (allItems.length > 0) {
-      // Get the next batch of up to 8 items
-      const batchItems = allItems.splice(0, 8);
-
-      console.log(`Processing batch of ${batchItems.length} mixed items`);
-
-      // Create tracking objects for this batch
-      const batchByCategory = {
-        products: [],
-        pages: [],
-        posts: [],
-        collections: [],
-        discounts: [],
-      };
-
-      // Sort the batch items into their respective categories
-      batchItems.forEach(({ category, item }) => {
-        batchByCategory[category].push(item);
-      });
-
-      // Create an array of promises for this batch
-      const batchPromises = batchItems.map(({ item, type }) =>
-        trainContentItem(accessKey, type, item),
-      );
-
-      // Wait for all promises in this batch to complete
-      await Promise.all(batchPromises);
-
-      // Update progress
-      processedItems += batchItems.length;
-      updateProgress();
-
-      // Update the remaining items for each category
-      const processedIds = {};
-      batchItems.forEach(({ category, item }) => {
-        if (!processedIds[category]) {
-          processedIds[category] = [];
-        }
-        processedIds[category].push(item.id);
-      });
-
-      // Update the UI states after each batch
-      setUntrainedItems((prev) => {
-        const updated = { ...prev };
-
-        // Update each category with filtered remaining items
-        for (const category in processedIds) {
-          const categoryIds = processedIds[category];
-          updated[category] = prev[category].filter(
-            (item) => !categoryIds.includes(item.id),
-          );
-        }
-
-        return updated;
-      });
-
-      // Update items in training to remove the processed batch
-      setItemsInTraining((prev) => {
-        const updated = { ...prev };
-
-        // Remove processed items from each category
-        for (const category in processedIds) {
-          const categoryIds = processedIds[category];
-          updated[category] = prev[category].filter(
-            (item) => !categoryIds.includes(item.id),
-          );
-        }
-
-        return updated;
-      });
-
-      console.log(`Completed batch. ${allItems.length} total items remaining`);
-    }
-
-    // After all individual items are trained, train general if needed
-    if (hasUntrainedItems && websiteId) {
-      console.log("Starting general training");
-      await fetch(`http://localhost:3001/api/shopify/train/general`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          Authorization: `Bearer ${accessKey}`,
-        },
-        body: JSON.stringify({
-          websiteId: websiteId,
-        }),
-      });
-      processedItems += 1; // Count general training as one item
-      updateProgress();
-      console.log("Completed general training");
-    }
+    // Wait for 30 seconds to simulate training time
+    await new Promise((resolve) => setTimeout(resolve, 30000));
 
     // Clear all untrained items and items in training since training is complete
     setUntrainedItems({
@@ -791,54 +639,11 @@ const trainUntrainedItems = async (
       discounts: [],
     });
 
-    console.log("Training process complete");
+    console.log("Training process simulation complete");
   } catch (error) {
-    console.error("Error during batch training:", error);
+    console.error("Error during training simulation:", error);
     throw error;
   }
-};
-
-// Add new helper function for training individual content
-const trainContentItem = async (accessKey, contentType, item) => {
-  // Convert plural category names to singular if needed
-  const endpoint =
-    contentType === "post"
-      ? "post"
-      : contentType === "product"
-        ? "product"
-        : contentType === "page"
-          ? "page"
-          : contentType === "collection"
-            ? "collection"
-            : contentType === "discount"
-              ? "discount"
-              : contentType;
-
-  const response = await fetch(
-    `http://localhost:3001/api/shopify/train/${endpoint}`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        Authorization: `Bearer ${accessKey}`,
-      },
-      body: JSON.stringify({
-        id: item.id,
-        vectorId: item.vectorId,
-        shopifyId: item.shopifyId,
-      }),
-    },
-  );
-
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(
-      `Training failed for ${endpoint} ${item.shopifyId}: ${errorData.error || "Unknown error"}`,
-    );
-  }
-
-  return response.json();
 };
 
 // Helper to calculate total items
@@ -1367,7 +1172,40 @@ export default function Index() {
         );
       }
 
-      // Step 3: Start vectorization
+      // Step 3: Create or get assistant first
+      setLoadingText("Setting up your AI assistant...");
+      setSyncStatusText("Setting up your AI assistant...");
+      const assistantResponse = await fetch(
+        `${urls.voiceroApi}/api/shopify/assistant`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            Authorization: `Bearer ${accessKey}`,
+          },
+        },
+      );
+
+      if (!assistantResponse.ok) {
+        const errorData = await assistantResponse.json();
+        console.error("Assistant setup error:", errorData);
+        throw new Error(
+          `Assistant setup error! status: ${assistantResponse.status}, details: ${
+            errorData.error || "unknown error"
+          }`,
+        );
+      }
+
+      const assistantData = await assistantResponse.json();
+
+      // Get website ID from the assistant response
+      const websiteId = assistantData.websiteId;
+      if (!websiteId) {
+        throw new Error("No website ID found in assistant response");
+      }
+
+      // Step 4: Start vectorization
       setLoadingText(
         "Vectorizing your store content... This may take a few minutes.",
       );
@@ -1417,85 +1255,19 @@ export default function Index() {
         setLoadingText("Vectorization completed successfully!");
       }
 
-      // Step 4: Create or get assistant
-      setLoadingText("Setting up your AI assistant...");
-      setSyncStatusText("Setting up your AI assistant...");
-      const assistantResponse = await fetch(
-        `${urls.voiceroApi}/api/shopify/assistant`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-            Authorization: `Bearer ${accessKey}`,
-          },
-        },
-      );
-
-      if (!assistantResponse.ok) {
-        const errorData = await assistantResponse.json();
-        console.error("Assistant setup error:", errorData);
-        throw new Error(
-          `Assistant setup error! status: ${assistantResponse.status}, details: ${
-            errorData.error || "unknown error"
-          }`,
-        );
-      }
-
-      const assistantData = await assistantResponse.json();
-
-      // Get website ID from the assistant response
-      const websiteId = assistantData.websiteId;
-      if (!websiteId) {
-        throw new Error("No website ID found in assistant response");
-      }
-
-      // After assistant setup, start individual training
+      // Step 5: Simulate training process with a 30-second timer
       setIsTraining(true);
-      setLoadingText(
-        "Starting content training process... This may take a few minutes.",
-      );
-      setSyncStatusText(
-        "Starting content training process... This may take a few minutes.",
-      );
+      setLoadingText("Processing content... This may take a few minutes.");
+      setSyncStatusText("Processing content... This may take a few minutes.");
 
-      // Use the parallel training approach
-      await trainUntrainedItems(
+      // Use the simulated training approach
+      await simulateTrainingProcess(
         accessKey,
         assistantData.content,
         setUntrainedItems,
         assistantData.website,
         setItemsInTraining,
       );
-
-      // Step 5: Train general QAs
-      setLoadingText("Wrapping up training...");
-      setSyncStatusText("Wrapping up training...");
-
-      const generalTrainingResponse = await fetch(
-        `http://localhost:3001/api/shopify/train/general`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-            Authorization: `Bearer ${accessKey}`,
-          },
-          body: JSON.stringify({
-            websiteId: websiteId,
-          }),
-        },
-      );
-
-      if (!generalTrainingResponse.ok) {
-        const errorData = await generalTrainingResponse.json();
-        console.error("General training error:", errorData);
-        throw new Error(
-          `General training error! status: ${generalTrainingResponse.status}, details: ${
-            errorData.error || "unknown error"
-          }`,
-        );
-      }
 
       setLoadingText(
         "Training complete! Please refresh the page to see your changes.",
