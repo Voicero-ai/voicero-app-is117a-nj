@@ -758,7 +758,7 @@ const trainUntrainedItems = async (
     // After all individual items are trained, train general if needed
     if (hasUntrainedItems && websiteId) {
       console.log("Starting general training");
-      await fetch(`${urls.voiceroApi}/api/shopify/train/general`, {
+      await fetch(`http://localhost:3001/api/shopify/train/general`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -815,7 +815,7 @@ const trainContentItem = async (accessKey, contentType, item) => {
               : contentType;
 
   const response = await fetch(
-    `${urls.voiceroApi}/api/shopify/train/${endpoint}`,
+    `http://localhost:3001/api/shopify/train/${endpoint}`,
     {
       method: "POST",
       headers: {
@@ -1341,7 +1341,7 @@ export default function Index() {
       }
 
       // Step 2: Send data to backend
-      const syncResponse = await fetch(`${urls.voiceroApi}/api/shopify/sync`, {
+      const syncResponse = await fetch(`http://localhost:3001/api/shopify/sync`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1373,7 +1373,7 @@ export default function Index() {
       );
 
       const vectorizeResponse = await fetch(
-        `${urls.voiceroApi}/api/shopify/vectorize`,
+        `http://localhost:3001/api/shopify/vectorize`,
         {
           method: "POST",
           headers: {
@@ -1470,7 +1470,7 @@ export default function Index() {
       setSyncStatusText("Wrapping up training...");
 
       const generalTrainingResponse = await fetch(
-        `${urls.voiceroApi}/api/shopify/train/general`,
+        `http://localhost:3001/api/shopify/train/general`,
         {
           method: "POST",
           headers: {
