@@ -1177,6 +1177,33 @@ export default function Index() {
         setLoadingText("Vectorization completed successfully!");
       }
 
+      // Set up assistant (ensure website data is properly initialized)
+      setLoadingText("Setting up your AI assistant...");
+      setSyncStatusText("Setting up your AI assistant...");
+      const assistantResponse = await fetch(
+        `${urls.voiceroApi}/api/shopify/assistant`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            Authorization: `Bearer ${accessKey}`,
+          },
+        },
+      );
+
+      if (!assistantResponse.ok) {
+        const errorData = await assistantResponse.json();
+        console.error("Assistant setup error:", errorData);
+        throw new Error(
+          `Assistant setup error! status: ${assistantResponse.status}, details: ${
+            errorData.error || "unknown error"
+          }`,
+        );
+      }
+
+      await assistantResponse.json();
+
       // Show training message and wait 30 seconds
       setLoadingText(
         "Starting content training process... This may take a few minutes.",
