@@ -1205,7 +1205,7 @@ export default function Index() {
         throw new Error("No website ID found in assistant response");
       }
 
-      // Step 4: Start vectorization
+      // Step 4: Start vectorization (fire and forget)
       setLoadingText(
         "Vectorizing your store content... This may take a few minutes.",
       );
@@ -1213,47 +1213,24 @@ export default function Index() {
         "Vectorizing your store content... This may take a few minutes.",
       );
 
-      const vectorizeResponse = await fetch(
-        `http://localhost:3001/api/shopify/vectorize`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-            Authorization: `Bearer ${accessKey}`,
-          },
+      // Fire and forget approach - don't wait for completion
+      fetch(`http://localhost:3001/api/shopify/vectorize`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${accessKey}`,
         },
+      }).catch((error) => {
+        console.error("Vectorization request error:", error);
+        // Continue with the process even if there's an error
+      });
+
+      // Don't wait for response - proceed directly
+      setLoadingText("Vectorization in progress! Proceeding with next steps.");
+      setSyncStatusText(
+        "Vectorization in progress! Proceeding with next steps.",
       );
-
-      if (!vectorizeResponse.ok) {
-        const errorData = await vectorizeResponse.json();
-        console.error("Vectorization error:", errorData);
-        throw new Error(
-          `Vectorization error! status: ${vectorizeResponse.status}, details: ${
-            errorData.error || "unknown error"
-          }`,
-        );
-      }
-
-      // Process the regular JSON response
-      const vectorizeData = await vectorizeResponse.json();
-
-      // Check if the vectorization was successful
-      if (!vectorizeData.success) {
-        console.error("Vectorization failed:", vectorizeData.error);
-        throw new Error(
-          `Vectorization failed: ${vectorizeData.error || "Unknown error"}`,
-        );
-      }
-
-      // Show some stats if available
-      if (vectorizeData.stats) {
-        setLoadingText(
-          `Vectorization complete! Added ${vectorizeData.stats.added} items to the vector database.`,
-        );
-      } else {
-        setLoadingText("Vectorization completed successfully!");
-      }
 
       // Step 5: Simulate training process with a 30-second timer
       setIsTraining(true);
@@ -2040,7 +2017,7 @@ export default function Index() {
                     </BlockStack>
                   </div>
 
-                  {/* NEW: Extended Analytics Card */}
+                  {/* NEW: Extended Analytics Card
                   {accessKey && fetcher.data?.success && (
                     <div
                       style={{
@@ -2159,7 +2136,7 @@ export default function Index() {
                         )}
                       </BlockStack>
                     </div>
-                  )}
+                  )} */}
 
                   {/* NEW: Top Content Card - REPLACING with Action Statistics */}
                   {accessKey && fetcher.data?.success && (
