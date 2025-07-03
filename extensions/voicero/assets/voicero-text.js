@@ -1385,7 +1385,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
             "background: " +
             mainColor +
             ";" +
-            "padding: 10px 15px;" +
+            "padding: 8px 12px;" +
             "border-radius: 17px;" +
             "cursor: pointer;" +
             "transition: all 0.2s ease;" +
@@ -1581,8 +1581,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
           #chat-messages {
             scrollbar-width: none !important; /* Firefox */
             -ms-overflow-style: none !important; /* IE and Edge */
-            padding: 15px !important; 
-            padding-top: 10px !important;
+            padding: 10px !important; 
             margin: 0 !important;
             background-color: #f2f2f7 !important;
             border-radius: 0 !important;
@@ -1888,8 +1887,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
             #chat-messages {
               scrollbar-width: none !important; /* Firefox */
               -ms-overflow-style: none !important; /* IE and Edge */
-              padding: 15px !important; 
-              padding-top: 10px !important;
+              padding: 10px !important; 
               margin: 0 !important;
               background-color: #f2f2f7 !important;
               border-radius: 0 !important;
@@ -2162,8 +2160,8 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
           <div id="chat-messages" style="
             background: #f2f2f7 !important;
             border-radius: 0 !important;
-            padding: 0 !important;
-            margin: 10px 0 0 0 !important;
+            padding: 10px !important;
+            margin: 0 !important;
             height: 400px !important;
             max-height: 400px !important;
             min-height: 400px !important;
@@ -2189,9 +2187,9 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
               z-index: 9999999;
             "></div>
             
-            <div style="padding-top: 16px;">
+            <div>
               <div id="initial-suggestions" style="
-                padding: 10px 15px;
+                padding: 0;
                 opacity: 1;
                 transition: all 0.3s ease;
               ">
@@ -3374,8 +3372,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
         messagesContainer.style.maxHeight = "33vh";
         messagesContainer.style.minHeight = "auto";
         messagesContainer.style.height = "auto";
-        messagesContainer.style.padding = "15px";
-        messagesContainer.style.paddingTop = "0";
+        messagesContainer.style.padding = "10px"; // Reduced padding
         messagesContainer.style.margin = "0";
         messagesContainer.style.overflow = "auto";
         messagesContainer.style.overflowY = "scroll";
@@ -3383,14 +3380,13 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
         messagesContainer.style.opacity = "1";
         messagesContainer.style.borderRadius = "0"; // Square corners for maximized view
 
-        // Show padding container
+        // Remove padding-top container that could cause floating space
         var paddingContainer = messagesContainer.querySelector(
           "div[style*='padding-top']",
         );
         if (paddingContainer) {
-          paddingContainer.style.display = "block";
-          paddingContainer.style.height = "auto";
-          paddingContainer.style.paddingTop = "15px";
+          paddingContainer.style.paddingTop = "0";
+          paddingContainer.style.marginTop = "0";
         }
 
         // Show all message content
@@ -4048,17 +4044,13 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
         if (messagesContainer) {
           messagesContainer.innerHTML = "";
 
-          // Create padding container as in the original structure
-          var paddingContainer = document.createElement("div");
-          paddingContainer.style.paddingTop = "15px";
-          messagesContainer.appendChild(paddingContainer);
+          // Remove the padding container creation to avoid floating space
 
           // Restore messages container styling
           messagesContainer.style.cssText = `
             scrollbar-width: none !important;
             -ms-overflow-style: none !important;
-            padding: 15px !important; 
-            padding-top: 10px !important;
+            padding: 10px !important; 
             margin: 0 !important;
             background-color: #f2f2f7 !important;
             border-radius: 0 !important;
@@ -4067,9 +4059,9 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
             overflow-x: hidden !important;
             height: 350px !important;
             max-height: 350px !important;
-            min-height: 350px !important;
-            position: relative !important;
-          `;
+                          min-height: 350px !important;
+              position: relative !important;
+            `;
         }
 
         // Show the control buttons

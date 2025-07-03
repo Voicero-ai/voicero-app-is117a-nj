@@ -572,7 +572,7 @@
 
       welcomeMessage.innerHTML = `
         <p style="margin-top: 0;">Hi there! I'm Suvi, an AI Sales Rep. Looking for AI email responder info? Feel free to ask!</p>
-        <p>I see you're exploring ${websiteName}, the most productive email app ever made. I'm available if you have questions or want to talk more!</p>
+        <p>I see you're exploring ${websiteName}. I'm available if you have questions or want to talk more!</p>
       `;
       messageContainer.appendChild(welcomeMessage);
 
@@ -654,32 +654,155 @@
               assistantMessage = "Hello! How can I help you today?";
           }
 
+          // Store reference to VoiceroWelcome to use in the closure
+          const voiceroWelcome = self;
+
           // First check if we have a direct reference to the VoiceroText instance
-          if (this.voiceroTextInstance) {
+          if (voiceroWelcome.voiceroTextInstance) {
             // First reset welcome screen state
-            this.voiceroTextInstance.isShowingWelcomeScreen = false;
+            voiceroWelcome.voiceroTextInstance.isShowingWelcomeScreen = false;
 
             // Reset the welcome screen and show chat interface
-            if (this.voiceroTextInstance.resetWelcomeScreenAndShowChat) {
-              this.voiceroTextInstance.resetWelcomeScreenAndShowChat();
+            if (
+              voiceroWelcome.voiceroTextInstance.resetWelcomeScreenAndShowChat
+            ) {
+              voiceroWelcome.voiceroTextInstance.resetWelcomeScreenAndShowChat();
 
-              // Add message directly as AI response AFTER resetting the screen
+              // Display message in UI only without adding to backend thread
               setTimeout(() => {
-                if (this.voiceroTextInstance.addMessage) {
-                  this.voiceroTextInstance.addMessage(assistantMessage, "ai");
+                // Just use the original addMessage method but only render to UI without sending to backend
+                if (voiceroWelcome.voiceroTextInstance.addMessage) {
+                  console.log(
+                    "VoiceroWelcome: Force displaying message in UI:",
+                    assistantMessage,
+                  );
+                  // Force using the original method with UI-only flag if it has one
+                  try {
+                    // Try to call with UI-only flag if it accepts it
+                    voiceroWelcome.voiceroTextInstance.addMessage(
+                      assistantMessage,
+                      "ai",
+                      true,
+                    );
+                  } catch (e) {
+                    // If error, fall back to standard call
+                    voiceroWelcome.voiceroTextInstance.addMessage(
+                      assistantMessage,
+                      "ai",
+                    );
+                  }
+
+                  // Important: Prevent the message from being sent to backend
+                  // Find and remove from pending messages if that exists
+                  if (voiceroWelcome.voiceroTextInstance.pendingMessages) {
+                    voiceroWelcome.voiceroTextInstance.pendingMessages =
+                      voiceroWelcome.voiceroTextInstance.pendingMessages.filter(
+                        (msg) => msg.content !== assistantMessage,
+                      );
+                  }
                 }
-              }, 100);
+
+                // As a backup, also try DOM insertion
+                // Find all possible message containers
+                const containers = [
+                  document.querySelector(".voicero-chat-messages"),
+                  document.querySelector(".chat-messages"),
+                  document.querySelector(".message-container"),
+                  document.getElementById("voicero-messages"),
+                  document.getElementById("chat-messages"),
+                ].filter(Boolean);
+
+                if (containers.length > 0) {
+                  // Create styled message element
+                  const messageEl = document.createElement("div");
+                  messageEl.className = "voicero-message voicero-ai-message";
+                  messageEl.style.cssText = `
+                    padding: 10px 15px;
+                    background-color: #f0f0f0;
+                    border-radius: 15px;
+                    margin-bottom: 10px;
+                    display: inline-block;
+                    max-width: 80%;
+                  `;
+                  messageEl.innerHTML = `<div class="voicero-message-content">${assistantMessage}</div>`;
+
+                  // Add to all found containers for redundancy
+                  containers.forEach((container) => {
+                    container.appendChild(messageEl.cloneNode(true));
+                    container.scrollTop = container.scrollHeight;
+                  });
+                }
+              }, 300);
             } else {
               // If resetWelcomeScreenAndShowChat isn't available, try openTextChat
-              if (this.voiceroTextInstance.openTextChat) {
-                this.voiceroTextInstance.openTextChat();
+              if (voiceroWelcome.voiceroTextInstance.openTextChat) {
+                voiceroWelcome.voiceroTextInstance.openTextChat();
 
-                // Add message directly as AI response after opening
+                // Display message in UI only without adding to backend thread
                 setTimeout(() => {
-                  if (this.voiceroTextInstance.addMessage) {
-                    this.voiceroTextInstance.addMessage(assistantMessage, "ai");
+                  // Just use the original addMessage method but only render to UI without sending to backend
+                  if (voiceroWelcome.voiceroTextInstance.addMessage) {
+                    console.log(
+                      "VoiceroWelcome: Force displaying message in UI:",
+                      assistantMessage,
+                    );
+                    // Force using the original method with UI-only flag if it has one
+                    try {
+                      // Try to call with UI-only flag if it accepts it
+                      voiceroWelcome.voiceroTextInstance.addMessage(
+                        assistantMessage,
+                        "ai",
+                        true,
+                      );
+                    } catch (e) {
+                      // If error, fall back to standard call
+                      voiceroWelcome.voiceroTextInstance.addMessage(
+                        assistantMessage,
+                        "ai",
+                      );
+                    }
+
+                    // Important: Prevent the message from being sent to backend
+                    // Find and remove from pending messages if that exists
+                    if (voiceroWelcome.voiceroTextInstance.pendingMessages) {
+                      voiceroWelcome.voiceroTextInstance.pendingMessages =
+                        voiceroWelcome.voiceroTextInstance.pendingMessages.filter(
+                          (msg) => msg.content !== assistantMessage,
+                        );
+                    }
                   }
-                }, 100);
+
+                  // As a backup, also try DOM insertion
+                  // Find all possible message containers
+                  const containers = [
+                    document.querySelector(".voicero-chat-messages"),
+                    document.querySelector(".chat-messages"),
+                    document.querySelector(".message-container"),
+                    document.getElementById("voicero-messages"),
+                    document.getElementById("chat-messages"),
+                  ].filter(Boolean);
+
+                  if (containers.length > 0) {
+                    // Create styled message element
+                    const messageEl = document.createElement("div");
+                    messageEl.className = "voicero-message voicero-ai-message";
+                    messageEl.style.cssText = `
+                      padding: 10px 15px;
+                      background-color: #f0f0f0;
+                      border-radius: 15px;
+                      margin-bottom: 10px;
+                      display: inline-block;
+                      max-width: 80%;
+                    `;
+                    messageEl.innerHTML = `<div class="voicero-message-content">${assistantMessage}</div>`;
+
+                    // Add to all found containers for redundancy
+                    containers.forEach((container) => {
+                      container.appendChild(messageEl.cloneNode(true));
+                      container.scrollTop = container.scrollHeight;
+                    });
+                  }
+                }, 300);
               }
             }
           }
@@ -692,23 +815,131 @@
             if (window.VoiceroText.resetWelcomeScreenAndShowChat) {
               window.VoiceroText.resetWelcomeScreenAndShowChat();
 
-              // Add message directly as AI response AFTER resetting the screen
+              // Display message in UI only without adding to backend thread
               setTimeout(() => {
+                // Just use the original addMessage method but only render to UI without sending to backend
                 if (window.VoiceroText.addMessage) {
-                  window.VoiceroText.addMessage(assistantMessage, "ai");
+                  console.log(
+                    "VoiceroWelcome: Force displaying message in UI (global):",
+                    assistantMessage,
+                  );
+                  // Force using the original method with UI-only flag if it has one
+                  try {
+                    // Try to call with UI-only flag if it accepts it
+                    window.VoiceroText.addMessage(assistantMessage, "ai", true);
+                  } catch (e) {
+                    // If error, fall back to standard call
+                    window.VoiceroText.addMessage(assistantMessage, "ai");
+                  }
+
+                  // Important: Prevent the message from being sent to backend
+                  // Find and remove from pending messages if that exists
+                  if (window.VoiceroText.pendingMessages) {
+                    window.VoiceroText.pendingMessages =
+                      window.VoiceroText.pendingMessages.filter(
+                        (msg) => msg.content !== assistantMessage,
+                      );
+                  }
                 }
-              }, 100);
+
+                // As a backup, also try DOM insertion
+                // Find all possible message containers
+                const containers = [
+                  document.querySelector(".voicero-chat-messages"),
+                  document.querySelector(".chat-messages"),
+                  document.querySelector(".message-container"),
+                  document.getElementById("voicero-messages"),
+                  document.getElementById("chat-messages"),
+                ].filter(Boolean);
+
+                if (containers.length > 0) {
+                  // Create styled message element
+                  const messageEl = document.createElement("div");
+                  messageEl.className = "voicero-message voicero-ai-message";
+                  messageEl.style.cssText = `
+                    padding: 10px 15px;
+                    background-color: #f0f0f0;
+                    border-radius: 15px;
+                    margin-bottom: 10px;
+                    display: inline-block;
+                    max-width: 80%;
+                  `;
+                  messageEl.innerHTML = `<div class="voicero-message-content">${assistantMessage}</div>`;
+
+                  // Add to all found containers for redundancy
+                  containers.forEach((container) => {
+                    container.appendChild(messageEl.cloneNode(true));
+                    container.scrollTop = container.scrollHeight;
+                  });
+                }
+              }, 300);
             } else {
               // If resetWelcomeScreenAndShowChat isn't available, try openTextChat
               if (window.VoiceroText.openTextChat) {
                 window.VoiceroText.openTextChat();
 
-                // Add message directly as AI response after opening
+                // Display message in UI only without adding to backend thread
                 setTimeout(() => {
+                  // Just use the original addMessage method but only render to UI without sending to backend
                   if (window.VoiceroText.addMessage) {
-                    window.VoiceroText.addMessage(assistantMessage, "ai");
+                    console.log(
+                      "VoiceroWelcome: Force displaying message in UI (global):",
+                      assistantMessage,
+                    );
+                    // Force using the original method with UI-only flag if it has one
+                    try {
+                      // Try to call with UI-only flag if it accepts it
+                      window.VoiceroText.addMessage(
+                        assistantMessage,
+                        "ai",
+                        true,
+                      );
+                    } catch (e) {
+                      // If error, fall back to standard call
+                      window.VoiceroText.addMessage(assistantMessage, "ai");
+                    }
+
+                    // Important: Prevent the message from being sent to backend
+                    // Find and remove from pending messages if that exists
+                    if (window.VoiceroText.pendingMessages) {
+                      window.VoiceroText.pendingMessages =
+                        window.VoiceroText.pendingMessages.filter(
+                          (msg) => msg.content !== assistantMessage,
+                        );
+                    }
                   }
-                }, 100);
+
+                  // As a backup, also try DOM insertion
+                  // Find all possible message containers
+                  const containers = [
+                    document.querySelector(".voicero-chat-messages"),
+                    document.querySelector(".chat-messages"),
+                    document.querySelector(".message-container"),
+                    document.getElementById("voicero-messages"),
+                    document.getElementById("chat-messages"),
+                  ].filter(Boolean);
+
+                  if (containers.length > 0) {
+                    // Create styled message element
+                    const messageEl = document.createElement("div");
+                    messageEl.className = "voicero-message voicero-ai-message";
+                    messageEl.style.cssText = `
+                      padding: 10px 15px;
+                      background-color: #f0f0f0;
+                      border-radius: 15px;
+                      margin-bottom: 10px;
+                      display: inline-block;
+                      max-width: 80%;
+                    `;
+                    messageEl.innerHTML = `<div class="voicero-message-content">${assistantMessage}</div>`;
+
+                    // Add to all found containers for redundancy
+                    containers.forEach((container) => {
+                      container.appendChild(messageEl.cloneNode(true));
+                      container.scrollTop = container.scrollHeight;
+                    });
+                  }
+                }, 300);
               }
             }
           }
@@ -826,6 +1057,9 @@
       // Store the text for later use
       const userText = text;
 
+      // Store a reference to this for use in closures
+      const self = this;
+
       // Remove the welcome container
       const welcomeContainer = document.getElementById(
         "voicero-welcome-container",
@@ -863,7 +1097,7 @@
           console.log(
             "VoiceroWelcome: Sending message via direct instance: " + userText,
           );
-          this.voiceroTextInstance.sendChatMessage(userText);
+          self.voiceroTextInstance.sendChatMessage(userText);
         }, 500);
       }
       // Fallback to global VoiceroText
