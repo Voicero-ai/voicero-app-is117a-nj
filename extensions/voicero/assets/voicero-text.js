@@ -2032,13 +2032,13 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
             top: 0 !important;
             left: 0 !important;
             right: 0 !important;
-            height: 40px !important;
+            height: 38px !important;
             background: rgb(242, 242, 247) !important;
             z-index: 9999999 !important;
             display: flex !important;
             justify-content: space-between !important;
             align-items: center !important;
-            padding: 10px 15px !important;
+            padding: 0 15px !important;
             border-bottom: 1px solid rgba(0, 0, 0, 0.1) !important;
             border-radius: 0 !important;
             margin: 0 !important;
@@ -2163,7 +2163,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
             background: #f2f2f7 !important;
             border-radius: 0 !important;
             padding: 0 !important;
-            margin: 6px 0 0 0 !important;
+            margin: 10px 0 0 0 !important;
             height: 400px !important;
             max-height: 400px !important;
             min-height: 400px !important;
@@ -2189,9 +2189,9 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
               z-index: 9999999;
             "></div>
             
-            <div style="padding-top: 20px;">
+            <div style="padding-top: 16px;">
               <div id="initial-suggestions" style="
-                padding: 10px 0;
+                padding: 10px 15px;
                 opacity: 1;
                 transition: all 0.3s ease;
               ">
