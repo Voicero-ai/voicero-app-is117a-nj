@@ -1489,92 +1489,22 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
             100% { background-position: 100% 50%; }
           }
           
-          @keyframes colorRotate {
-            0% { 
-              box-shadow: 0 0 20px 5px rgba(${parseInt(
-                mainColor.slice(1, 3),
-                16,
-              )}, ${parseInt(mainColor.slice(3, 5), 16)}, ${parseInt(
-                mainColor.slice(5, 7),
-                16,
-              )}, 0.7);
-              background: radial-gradient(circle, rgba(${parseInt(
-                mainColor.slice(1, 3),
-                16,
-              )}, ${parseInt(mainColor.slice(3, 5), 16)}, ${parseInt(
-                mainColor.slice(5, 7),
-                16,
-              )}, 0.8) 0%, rgba(${parseInt(mainColor.slice(1, 3), 16)}, ${parseInt(
-                mainColor.slice(3, 5),
-                16,
-              )}, ${parseInt(mainColor.slice(5, 7), 16)}, 0.4) 70%);
-            }
-            20% { 
-              box-shadow: 0 0 20px 5px rgba(68, 124, 242, 0.7);
-              background: radial-gradient(circle, rgba(68, 124, 242, 0.8) 0%, rgba(68, 124, 242, 0.4) 70%);
-            }
-            33% { 
-              box-shadow: 0 0 20px 5px rgba(0, 204, 255, 0.7);
-              background: radial-gradient(circle, rgba(0, 204, 255, 0.8) 0%, rgba(0, 204, 255, 0.4) 70%);
-            }
-            50% { 
-              box-shadow: 0 0 20px 5px rgba(0, 220, 180, 0.7);
-              background: radial-gradient(circle, rgba(0, 220, 180, 0.8) 0%, rgba(0, 220, 180, 0.4) 70%);
-            }
-            66% { 
-              box-shadow: 0 0 20px 5px rgba(0, 230, 118, 0.7);
-              background: radial-gradient(circle, rgba(0, 230, 118, 0.8) 0%, rgba(0, 230, 118, 0.4) 70%);
-            }
-            83% { 
-              box-shadow: 0 0 20px 5px rgba(92, 92, 237, 0.7);
-              background: radial-gradient(circle, rgba(92, 92, 237, 0.8) 0%, rgba(92, 92, 237, 0.4) 70%);
-            }
-            100% { 
-              box-shadow: 0 0 20px 5px rgba(${parseInt(
-                mainColor.slice(1, 3),
-                16,
-              )}, ${parseInt(mainColor.slice(3, 5), 16)}, ${parseInt(
-                mainColor.slice(5, 7),
-                16,
-              )}, 0.7);
-              background: radial-gradient(circle, rgba(${parseInt(
-                mainColor.slice(1, 3),
-                16,
-              )}, ${parseInt(mainColor.slice(3, 5), 16)}, ${parseInt(
-                mainColor.slice(5, 7),
-                16,
-              )}, 0.8) 0%, rgba(${parseInt(mainColor.slice(1, 3), 16)}, ${parseInt(
-                mainColor.slice(3, 5),
-                16,
-              )}, ${parseInt(mainColor.slice(5, 7), 16)}, 0.4) 70%);
-            }
+          @keyframes simplePulse {
+            0% { opacity: 0.7; }
+            50% { opacity: 1; }
+            100% { opacity: 0.7; }
           }
           
           .siri-active {
             position: relative !important;
-            animation: colorRotate 8s ease-in-out infinite !important;
+            background-color: ${mainColor} !important;
+            opacity: 0.8 !important;
+            animation: simplePulse 1.5s ease-in-out infinite !important;
             border: none !important;
             overflow: visible !important;
           }
           
-          .siri-active::before {
-            content: "" !important;
-            position: absolute !important;
-            top: 0 !important;
-            left: 0 !important;
-            right: 0 !important;
-            bottom: 0 !important;
-            border-radius: 50% !important;
-            z-index: -1 !important;
-            background: rgba(255, 255, 255, 0.15) !important;
-            animation: pulseSize 2s ease-in-out infinite !important;
-          }
-          
-          @keyframes pulseSize {
-            0% { transform: scale(1); opacity: 0.7; }
-            50% { transform: scale(1.2); opacity: 0.3; }
-            100% { transform: scale(1); opacity: 0.7; }
-          }
+          /* Removed pulsing animation */
       
 
           /* Hide scrollbar for different browsers */
@@ -1614,7 +1544,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
           .user-message {
             display: flex;
             justify-content: flex-end;
-            margin-bottom: 16px; /* Increased from default */
+            margin-bottom: 25px; /* Increased for status indicator space */
             position: relative;
             padding-right: 8px;
             padding-top: 2px;
@@ -1670,6 +1600,10 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
             text-align: right;
             margin-top: 2px;
             margin-right: 8px;
+            position: absolute;
+            right: 0;
+            bottom: -15px;
+            width: auto;
           }
 
           .chat-link {
@@ -1790,92 +1724,22 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
               100% { background-position: 100% 50%; }
             }
             
-            @keyframes colorRotate {
-              0% { 
-                box-shadow: 0 0 20px 5px rgba(${parseInt(
-                  mainColor.slice(1, 3),
-                  16,
-                )}, ${parseInt(mainColor.slice(3, 5), 16)}, ${parseInt(
-                  mainColor.slice(5, 7),
-                  16,
-                )}, 0.7);
-                background: radial-gradient(circle, rgba(${parseInt(
-                  mainColor.slice(1, 3),
-                  16,
-                )}, ${parseInt(mainColor.slice(3, 5), 16)}, ${parseInt(
-                  mainColor.slice(5, 7),
-                  16,
-                )}, 0.8) 0%, rgba(${parseInt(mainColor.slice(1, 3), 16)}, ${parseInt(
-                  mainColor.slice(3, 5),
-                  16,
-                )}, ${parseInt(mainColor.slice(5, 7), 16)}, 0.4) 70%);
-              }
-              20% { 
-                box-shadow: 0 0 20px 5px rgba(68, 124, 242, 0.7);
-                background: radial-gradient(circle, rgba(68, 124, 242, 0.8) 0%, rgba(68, 124, 242, 0.4) 70%);
-              }
-              33% { 
-                box-shadow: 0 0 20px 5px rgba(0, 204, 255, 0.7);
-                background: radial-gradient(circle, rgba(0, 204, 255, 0.8) 0%, rgba(0, 204, 255, 0.4) 70%);
-              }
-              50% { 
-                box-shadow: 0 0 20px 5px rgba(0, 220, 180, 0.7);
-                background: radial-gradient(circle, rgba(0, 220, 180, 0.8) 0%, rgba(0, 220, 180, 0.4) 70%);
-              }
-              66% { 
-                box-shadow: 0 0 20px 5px rgba(0, 230, 118, 0.7);
-                background: radial-gradient(circle, rgba(0, 230, 118, 0.8) 0%, rgba(0, 230, 118, 0.4) 70%);
-              }
-              83% { 
-                box-shadow: 0 0 20px 5px rgba(92, 92, 237, 0.7);
-                background: radial-gradient(circle, rgba(92, 92, 237, 0.8) 0%, rgba(92, 92, 237, 0.4) 70%);
-              }
-              100% { 
-                box-shadow: 0 0 20px 5px rgba(${parseInt(
-                  mainColor.slice(1, 3),
-                  16,
-                )}, ${parseInt(mainColor.slice(3, 5), 16)}, ${parseInt(
-                  mainColor.slice(5, 7),
-                  16,
-                )}, 0.7);
-                background: radial-gradient(circle, rgba(${parseInt(
-                  mainColor.slice(1, 3),
-                  16,
-                )}, ${parseInt(mainColor.slice(3, 5), 16)}, ${parseInt(
-                  mainColor.slice(5, 7),
-                  16,
-                )}, 0.8) 0%, rgba(${parseInt(mainColor.slice(1, 3), 16)}, ${parseInt(
-                  mainColor.slice(3, 5),
-                  16,
-                )}, ${parseInt(mainColor.slice(5, 7), 16)}, 0.4) 70%);
-              }
+            @keyframes simplePulse {
+              0% { opacity: 0.7; }
+              50% { opacity: 1; }
+              100% { opacity: 0.7; }
             }
             
             .siri-active {
               position: relative !important;
-              animation: colorRotate 8s ease-in-out infinite !important;
+              background-color: ${mainColor} !important;
+              opacity: 0.8 !important;
+              animation: simplePulse 1.5s ease-in-out infinite !important;
               border: none !important;
               overflow: visible !important;
             }
             
-            .siri-active::before {
-              content: "" !important;
-              position: absolute !important;
-              top: 0 !important;
-              left: 0 !important;
-              right: 0 !important;
-              bottom: 0 !important;
-              border-radius: 50% !important;
-              z-index: -1 !important;
-              background: rgba(255, 255, 255, 0.15) !important;
-              animation: pulseSize 2s ease-in-out infinite !important;
-            }
-            
-            @keyframes pulseSize {
-              0% { transform: scale(1); opacity: 0.7; }
-              50% { transform: scale(1.2); opacity: 0.3; }
-              100% { transform: scale(1); opacity: 0.7; }
-            }
+            /* Removed pulsing animation */
             
             
             
@@ -1888,6 +1752,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
               scrollbar-width: none !important; /* Firefox */
               -ms-overflow-style: none !important; /* IE and Edge */
               padding: 10px !important; 
+              padding-bottom: 70px !important; /* Space for input box */
               margin: 0 !important;
               background-color: #f2f2f7 !important;
               border-radius: 0 !important;
@@ -2161,6 +2026,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
             background: #f2f2f7 !important;
             border-radius: 0 !important;
             padding: 10px !important;
+            padding-bottom: 70px !important;
             margin: 0 !important;
             height: 400px !important;
             max-height: 400px !important;
@@ -2199,56 +2065,63 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
           </div>
 
           <div id="chat-input-wrapper" style="
-            margin: auto 0 20px;
-            padding: 0 15px;
-            width: 100%;
-            box-sizing: border-box;
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: white;
-            border-radius: 0 0 12px 12px;
+            margin: auto 0 0 !important;
+            padding: 0 15px !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+            position: absolute !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            background: white !important;
+            border-radius: 0 0 12px 12px !important;
+            z-index: 999999 !important;
           ">
             <div style="
-              position: relative;
-              width: 100%;
-              padding: 12px 0;
+              position: relative !important;
+              width: 100% !important;
+              padding: 12px 0 15px !important;
+              display: flex !important;
+              align-items: center !important;
             ">
-              <input
-                type="text"
-                id="chat-input"
-                placeholder="Ask a question"
-                style="
-                  width: 100%;
-                  padding: 12px 15px;
-                  padding-right: 40px;
-                  border: 1px solid rgba(0, 0, 0, 0.1);
-                  border-radius: 8px;
-                  font-size: 14px;
-                  color: #333;
-                  background: white;
-                  outline: none;
-                  box-sizing: border-box;
-                  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-                "
+                              <input
+                  type="text"
+                  id="chat-input"
+                  placeholder="Ask a question"
+                  style="
+                    width: 100% !important;
+                    padding: 12px 15px !important;
+                    padding-right: 45px !important;
+                    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+                    border-radius: 8px !important;
+                    font-size: 14px !important;
+                    color: #333 !important;
+                    background: white !important;
+                    outline: none !important;
+                    box-sizing: border-box !important;
+                    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+                    position: relative !important;
+                    z-index: 1 !important;
+                  "
               >
               <div id="send-message-btn" style="
-                position: absolute;
-                right: 12px;
-                top: 50%;
-                transform: translateY(-50%);
+                position: absolute !important;
+                right: 12px !important;
+                top: 50% !important;
+                transform: translateY(-50%) !important;
                 background: transparent !important;
                 background-color: transparent !important;
-                border: none;
-                cursor: pointer;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                padding: 0;
-                margin: 0;
-                width: 24px;
-                height: 24px;
+                border: none !important;
+                cursor: pointer !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                width: 24px !important;
+                height: 24px !important;
+                z-index: 99999999 !important;
+                pointer-events: auto !important;
               ">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#444" stroke-width="2">
                   <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"></path>
@@ -2703,6 +2576,29 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
       let sendButton = null;
       if (this.shadowRoot) {
         sendButton = this.shadowRoot.getElementById("send-message-btn");
+
+        // Force maintain position before any changes happen
+        if (sendButton) {
+          sendButton.style.cssText = `
+            position: absolute !important;
+            right: 12px !important;
+            top: 50% !important;
+            transform: translateY(-50%) !important;
+            background: transparent !important;
+            background-color: transparent !important;
+            border: none !important;
+            cursor: pointer !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            width: 24px !important;
+            height: 24px !important;
+            z-index: 99999999 !important;
+            pointer-events: auto !important;
+          `;
+        }
       }
 
       // Check if VoiceroWait is available and use it
@@ -2914,6 +2810,11 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
 
             // Reset waiting state
             this.isWaitingForResponse = false;
+
+            // IMPORTANT: Make sure send button is properly positioned at the end of all operations
+            this.ensureSendButtonPosition();
+            setTimeout(() => this.ensureSendButtonPosition(), 100);
+            setTimeout(() => this.ensureSendButtonPosition(), 500);
           })
           .catch((error) => {
             // Turn off loading indicator
@@ -2929,6 +2830,11 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
             }
             this.addMessage(errorMessage, "ai");
             this.isWaitingForResponse = false;
+
+            // IMPORTANT: Make sure send button is properly positioned even after error
+            this.ensureSendButtonPosition();
+            setTimeout(() => this.ensureSendButtonPosition(), 100);
+            setTimeout(() => this.ensureSendButtonPosition(), 500);
           });
       } else {
         // Turn off loading indicator
@@ -2968,6 +2874,34 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
       this.sendChatMessageLogic(text);
     },
 
+    // Ensure send button is correctly positioned
+    ensureSendButtonPosition: function () {
+      if (!this.shadowRoot) return;
+
+      var sendButton = this.shadowRoot.getElementById("send-message-btn");
+      if (sendButton) {
+        sendButton.style.cssText = `
+          position: absolute !important;
+          right: 12px !important;
+          top: 50% !important;
+          transform: translateY(-50%) !important;
+          background: transparent !important;
+          background-color: transparent !important;
+          border: none !important;
+          cursor: pointer !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          padding: 0 !important;
+          margin: 0 !important;
+          width: 24px !important;
+          height: 24px !important;
+          z-index: 99999999 !important;
+          pointer-events: auto !important;
+        `;
+      }
+    },
+
     // Create a new helper function for sendChatMessage logic
     sendChatMessageLogic: function (text) {
       // If no text provided, get from input field
@@ -2977,6 +2911,9 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
           if (chatInput) {
             text = chatInput.value.trim();
             chatInput.value = "";
+
+            // Ensure send button position after clearing input
+            this.ensureSendButtonPosition();
           }
         }
       }
@@ -3373,6 +3310,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
         messagesContainer.style.minHeight = "auto";
         messagesContainer.style.height = "auto";
         messagesContainer.style.padding = "10px"; // Reduced padding
+        messagesContainer.style.paddingBottom = "70px"; // Extra padding for input box
         messagesContainer.style.margin = "0";
         messagesContainer.style.overflow = "auto";
         messagesContainer.style.overflowY = "scroll";
@@ -3416,6 +3354,9 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
       // Additional styles for maximized state
       if (inputWrapper) {
         inputWrapper.style.marginTop = "0";
+        inputWrapper.style.backgroundColor = "white";
+        inputWrapper.style.boxShadow = "0 -2px 10px rgba(0, 0, 0, 0.05)";
+        inputWrapper.style.zIndex = "999999";
       }
     },
 
@@ -3469,10 +3410,12 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
         // Apply the main color to user messages - use website color directly
         contentDiv.style.backgroundColor = this.websiteColor || "#882be6";
 
-        // Add delivery status for user messages (iPhone-style)
+        // Add delivery status for user messages (iPhone-style) with fixed positioning
         var statusDiv = document.createElement("div");
         statusDiv.className = "read-status";
         statusDiv.textContent = "Delivered";
+        statusDiv.style.cssText =
+          "position: absolute; right: 8px; bottom: -20px; font-size: 11px; color: #8e8e93;";
         messageDiv.appendChild(statusDiv);
       }
 
@@ -3503,6 +3446,8 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
             userStatusDivs.forEach((div) => {
               div.textContent = "Read";
               div.style.color = this.websiteColor || "#882be6";
+              // Ensure consistent positioning
+              div.style.cssText = `position: absolute; right: 8px; bottom: -20px; font-size: 11px; color: ${this.websiteColor || "#882be6"};`;
             });
           }
 
@@ -4051,6 +3996,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
             scrollbar-width: none !important;
             -ms-overflow-style: none !important;
             padding: 10px !important; 
+            padding-bottom: 70px !important; 
             margin: 0 !important;
             background-color: #f2f2f7 !important;
             border-radius: 0 !important;
@@ -4059,8 +4005,8 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
             overflow-x: hidden !important;
             height: 350px !important;
             max-height: 350px !important;
-                          min-height: 350px !important;
-              position: relative !important;
+            min-height: 350px !important;
+            position: relative !important;
             `;
         }
 
