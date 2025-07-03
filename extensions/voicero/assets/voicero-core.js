@@ -151,6 +151,9 @@
       this.appState.hasShownTextWelcome = false;
       this.appState.hasShownHelpBubble = false; // Track if help bubble has been shown
 
+      // Add interface visibility observer
+      this.setupInterfaceVisibilityObserver();
+
       // Create additional backup for appState to prevent it from being undefined
       window.voiceroAppState = this.appState;
 
@@ -667,6 +670,11 @@
                   textInterface.style.display = "none";
                 }
               } else {
+                // FIRST hide the button immediately before any other operations
+                if (window.VoiceroCore && window.VoiceroCore.hideMainButton) {
+                  window.VoiceroCore.hideMainButton();
+                }
+
                 // Update session state directly to open text chat
                 if (
                   window.VoiceroCore &&
@@ -695,10 +703,38 @@
                 // Try to open text interface
                 if (window.VoiceroText && window.VoiceroText.openTextChat) {
                   window.VoiceroText.openTextChat();
+
+                  // Force the button to stay hidden with multiple attempts
+                  setTimeout(() => {
+                    if (
+                      window.VoiceroCore &&
+                      window.VoiceroCore.hideMainButton
+                    ) {
+                      window.VoiceroCore.hideMainButton();
+                    }
+                  }, 200);
+
+                  setTimeout(() => {
+                    if (
+                      window.VoiceroCore &&
+                      window.VoiceroCore.hideMainButton
+                    ) {
+                      window.VoiceroCore.hideMainButton();
+                    }
+                  }, 500);
+
                   // Force maximize after opening
                   setTimeout(() => {
                     if (window.VoiceroText && window.VoiceroText.maximizeChat) {
                       window.VoiceroText.maximizeChat();
+
+                      // Hide button again after maximizing
+                      if (
+                        window.VoiceroCore &&
+                        window.VoiceroCore.hideMainButton
+                      ) {
+                        window.VoiceroCore.hideMainButton();
+                      }
                     }
                   }, 100);
                 } else if (
@@ -716,6 +752,14 @@
                     if (window.VoiceroText && window.VoiceroText.openTextChat) {
                       window.VoiceroText.openTextChat();
 
+                      // Hide button again after opening text chat
+                      if (
+                        window.VoiceroCore &&
+                        window.VoiceroCore.hideMainButton
+                      ) {
+                        window.VoiceroCore.hideMainButton();
+                      }
+
                       // Force maximize after opening
                       setTimeout(() => {
                         if (
@@ -723,6 +767,14 @@
                           window.VoiceroText.maximizeChat
                         ) {
                           window.VoiceroText.maximizeChat();
+
+                          // Hide button again after maximizing
+                          if (
+                            window.VoiceroCore &&
+                            window.VoiceroCore.hideMainButton
+                          ) {
+                            window.VoiceroCore.hideMainButton();
+                          }
                         }
                       }, 100);
                     }
@@ -1317,7 +1369,11 @@
           width: 0 !important;
           overflow: hidden !important;
           position: absolute !important;
+          transform: scale(0) !important;
         `;
+
+        // Force-remove the element from layout flow
+        toggleContainer.classList.add("voicero-hidden-element");
       }
 
       // Hide main button with comprehensive styles
@@ -1333,10 +1389,61 @@
           width: 0 !important;
           overflow: hidden !important;
           position: absolute !important;
+          transform: scale(0) !important;
         `;
+
+        // Force-remove the element from layout flow
+        mainButton.classList.add("voicero-hidden-element");
       }
 
-      // No chooser needed anymore - direct text interface only
+      // Set multiple hiding timeouts to ensure the button stays hidden
+      setTimeout(() => {
+        var toggleContainer = document.getElementById("voice-toggle-container");
+        var mainButton = document.getElementById("chat-website-button");
+
+        if (toggleContainer) {
+          toggleContainer.style.cssText = `
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+            z-index: -1 !important;
+            transform: scale(0) !important;
+          `;
+        }
+
+        if (mainButton) {
+          mainButton.style.cssText = `
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+            z-index: -1 !important;
+            transform: scale(0) !important;
+          `;
+        }
+      }, 100);
+
+      // Add CSS to document head that will hide these elements completely
+      var styleEl = document.getElementById("voicero-hide-button-style");
+      if (!styleEl) {
+        styleEl = document.createElement("style");
+        styleEl.id = "voicero-hide-button-style";
+        styleEl.innerHTML = `
+          .voicero-hidden-element {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+            z-index: -1 !important;
+            height: 0 !important;
+            width: 0 !important;
+            position: absolute !important;
+            transform: scale(0) !important;
+          }
+        `;
+        document.head.appendChild(styleEl);
+      }
 
       // Set a flag in the object to remember button is hidden
       this._buttonHidden = true;
@@ -1973,6 +2080,30 @@
         return;
       }
 
+      // Check if welcome screen is visible - don't show button if welcome is showing
+      var welcomeContainer = document.getElementById(
+        "voicero-welcome-container",
+      );
+      if (
+        welcomeContainer &&
+        window.getComputedStyle(welcomeContainer).display !== "none"
+      ) {
+        console.log(
+          "VoiceroCore: Welcome screen is visible, keeping button hidden",
+        );
+        this.hideMainButton();
+        return;
+      }
+
+      // Also check if welcome is flagged in session
+      if (this.session && this.session.textWelcome === true) {
+        console.log(
+          "VoiceroCore: Session has textWelcome=true, keeping button hidden",
+        );
+        this.hideMainButton();
+        return;
+      }
+
       // Also check if any interfaces are currently visible in the DOM
       var textInterface = document.getElementById(
         "voicero-text-chat-container",
@@ -2019,6 +2150,9 @@
       // Make sure button container is visible
       var buttonContainer = document.getElementById("voice-toggle-container");
       if (buttonContainer) {
+        // Remove the voicero-hidden-element class we added
+        buttonContainer.classList.remove("voicero-hidden-element");
+
         buttonContainer.style.display = "block";
         buttonContainer.style.visibility = "visible";
         buttonContainer.style.opacity = "1";
@@ -2037,12 +2171,19 @@
           transform: none !important;
           top: auto !important;
           left: auto !important;
+          height: auto !important;
+          width: auto !important;
+          overflow: visible !important;
+          pointer-events: auto !important;
         `;
       }
 
       // Make sure the main button is visible
       var mainButton = document.getElementById("chat-website-button");
       if (mainButton) {
+        // Remove the voicero-hidden-element class we added
+        mainButton.classList.remove("voicero-hidden-element");
+
         var themeColor = this.websiteColor || "#882be6";
         mainButton.style.cssText = `
           background-color: ${themeColor};
@@ -2064,6 +2205,8 @@
           position: relative !important;
           z-index: 2147483647 !important;
           animation: pulse 2s infinite !important;
+          transform: scale(1) !important;
+          pointer-events: auto !important;
         `;
       }
 
@@ -2072,6 +2215,21 @@
 
       // Update the button icon
       this.updateButtonIcon();
+
+      // Reset the button hidden flag
+      this._buttonHidden = false;
+
+      // Schedule multiple attempts to keep the button visible
+      if (this.buttonVisibilityTimeouts) {
+        this.buttonVisibilityTimeouts.forEach((timeoutId) =>
+          clearTimeout(timeoutId),
+        );
+      }
+      this.buttonVisibilityTimeouts = [
+        setTimeout(() => this._forceButtonVisibility(), 100),
+        setTimeout(() => this._forceButtonVisibility(), 500),
+        setTimeout(() => this._forceButtonVisibility(), 1000),
+      ];
 
       // Try to show help bubble whenever button becomes visible
       // (but only if it hasn't been shown before)
@@ -2085,6 +2243,39 @@
             this.showHelpBubble();
           }
         }, 500);
+      }
+    },
+
+    // Add a new helper function to force button visibility
+    _forceButtonVisibility: function () {
+      // Only proceed if button should be visible (not during active interfaces)
+      if (this._buttonHidden) return;
+
+      var buttonContainer = document.getElementById("voice-toggle-container");
+      var mainButton = document.getElementById("chat-website-button");
+
+      if (buttonContainer) {
+        buttonContainer.classList.remove("voicero-hidden-element");
+        buttonContainer.style.display = "block";
+        buttonContainer.style.visibility = "visible";
+        buttonContainer.style.opacity = "1";
+        buttonContainer.style.pointerEvents = "auto";
+        buttonContainer.style.transform = "none";
+        buttonContainer.style.zIndex = "2147483647";
+        buttonContainer.style.height = "auto";
+        buttonContainer.style.width = "auto";
+      }
+
+      if (mainButton) {
+        mainButton.classList.remove("voicero-hidden-element");
+        mainButton.style.display = "flex";
+        mainButton.style.visibility = "visible";
+        mainButton.style.opacity = "1";
+        mainButton.style.pointerEvents = "auto";
+        mainButton.style.transform = "scale(1)";
+        mainButton.style.zIndex = "2147483647";
+        mainButton.style.height = "50px";
+        mainButton.style.width = "50px";
       }
     },
 
@@ -2116,8 +2307,60 @@
         windowState.coreOpen = false;
         // Also set chooserOpen to false to be explicit
         windowState.chooserOpen = false;
-        // Hide the main button when voice or text interface is open
+
+        // Hide the main button immediately when voice or text interface is open
         this.hideMainButton();
+
+        // Add multiple attempts to hide the button to ensure it stays hidden
+        setTimeout(() => this.hideMainButton(), 100);
+        setTimeout(() => this.hideMainButton(), 300);
+        setTimeout(() => this.hideMainButton(), 500);
+        setTimeout(() => this.hideMainButton(), 1000);
+      }
+      // Check for welcome screen or textWelcome flag - keep button hidden if welcome is showing
+      else if (windowState.textWelcome === true) {
+        console.log("VoiceroCore: textWelcome is true, keeping button hidden");
+        windowState.coreOpen = false;
+        this.hideMainButton();
+
+        // Add multiple attempts to hide the button to ensure it stays hidden
+        setTimeout(() => this.hideMainButton(), 100);
+        setTimeout(() => this.hideMainButton(), 300);
+        setTimeout(() => this.hideMainButton(), 500);
+      } else if (
+        windowState.textOpen === false &&
+        windowState.voiceOpen === false &&
+        windowState.textWelcome !== true
+      ) {
+        // Check if welcome screen is visible - don't show button if welcome is shown
+        const welcomeContainer = document.getElementById(
+          "voicero-welcome-container",
+        );
+        if (
+          welcomeContainer &&
+          window.getComputedStyle(welcomeContainer).display !== "none"
+        ) {
+          console.log(
+            "VoiceroCore: Welcome screen is visible, keeping button hidden",
+          );
+          windowState.coreOpen = false;
+          this.hideMainButton();
+          return;
+        }
+
+        // If both interfaces are closed and no welcome screen, make sure the button is visible
+        console.log(
+          "VoiceroCore: Both interfaces closed, ensuring button visibility",
+        );
+
+        // Make sure coreOpen is true when interfaces are closed
+        windowState.coreOpen = true;
+
+        // Ensure button is visible with multiple attempts
+        this.ensureMainButtonVisible();
+        setTimeout(() => this.ensureMainButtonVisible(), 100);
+        setTimeout(() => this.ensureMainButtonVisible(), 500);
+        setTimeout(() => this.ensureMainButtonVisible(), 1000);
       } else if (windowState.chooserOpen === true) {
         // If chooserOpen is explicitly set to true, respect that
         windowState.coreOpen = true;
@@ -3253,6 +3496,153 @@
       };
 
       document.head.appendChild(script);
+    },
+
+    // Add this new function to the VoiceroCore object
+    setupInterfaceVisibilityObserver: function () {
+      // Track last handled timestamp to debounce rapid changes
+      this.lastInterfaceChangeTime = 0;
+
+      // Create observer to monitor when interfaces become visible/hidden
+      this.interfaceObserver = new MutationObserver((mutations) => {
+        // Debounce handler - only process changes every 300ms
+        const now = Date.now();
+        if (now - this.lastInterfaceChangeTime < 300) {
+          return; // Skip processing if too soon after last change
+        }
+        this.lastInterfaceChangeTime = now;
+
+        // Only process the last relevant mutation in the batch
+        const relevantMutations = mutations.filter(
+          (m) =>
+            m.type === "attributes" &&
+            (m.attributeName === "style" || m.attributeName === "class"),
+        );
+
+        if (relevantMutations.length === 0) return;
+
+        const textInterface = document.getElementById(
+          "voicero-text-chat-container",
+        );
+        const voiceInterface = document.getElementById("voice-chat-interface");
+        const welcomeContainer = document.getElementById(
+          "voicero-welcome-container",
+        );
+
+        // Always check for welcome container first - it takes precedence
+        if (
+          welcomeContainer &&
+          window.getComputedStyle(welcomeContainer).display !== "none"
+        ) {
+          // Keep button hidden as welcome screen is showing
+          this.hideMainButton();
+          return;
+        }
+
+        // Check if text or voice interfaces are visible
+        if (
+          (textInterface &&
+            window.getComputedStyle(textInterface).display === "block") ||
+          (voiceInterface &&
+            window.getComputedStyle(voiceInterface).display === "block")
+        ) {
+          // Hide the main button when an interface is visible
+          this.hideMainButton();
+
+          // Just one timeout is enough
+          setTimeout(() => this.hideMainButton(), 100);
+        }
+        // Check if interfaces were just closed (display changed to none)
+        else if (
+          (textInterface &&
+            window.getComputedStyle(textInterface).display === "none") ||
+          (voiceInterface &&
+            window.getComputedStyle(voiceInterface).display === "none")
+        ) {
+          // Double check that welcome screen is not visible
+          if (
+            welcomeContainer &&
+            window.getComputedStyle(welcomeContainer).display !== "none"
+          ) {
+            this.hideMainButton();
+            return;
+          }
+
+          // Also check if welcome is flagged in session
+          if (this.session && this.session.textWelcome === true) {
+            this.hideMainButton();
+            return;
+          }
+
+          // Ensure main button is visible when interfaces are closed
+          console.log("VoiceroCore: Interface closed, showing core button");
+
+          // Update window state to explicitly mark interfaces as closed - only once
+          if (this.updateWindowState) {
+            this.updateWindowState({
+              textOpen: false,
+              voiceOpen: false,
+              coreOpen: true,
+            });
+          }
+
+          // Just one attempt is enough
+          this.ensureMainButtonVisible();
+        }
+      });
+
+      // Set up the observer once DOM is ready
+      setTimeout(() => {
+        const textInterface = document.getElementById(
+          "voicero-text-chat-container",
+        );
+        const voiceInterface = document.getElementById("voice-chat-interface");
+
+        if (textInterface) {
+          this.interfaceObserver.observe(textInterface, {
+            attributes: true,
+            attributeFilter: ["style", "class"],
+          });
+        }
+
+        if (voiceInterface) {
+          this.interfaceObserver.observe(voiceInterface, {
+            attributes: true,
+            attributeFilter: ["style", "class"],
+          });
+        }
+
+        // Also observe for new interfaces being added
+        this.interfaceObserver.observe(document.body, {
+          childList: true,
+          subtree: true,
+        });
+      }, 500);
+    },
+
+    // Add a new method to handle clearing the chat properly
+    handleClearChat: function () {
+      console.log("VoiceroCore: Handling clear chat action");
+
+      // Make sure the welcome flag is set in session
+      if (this.session) {
+        this.session.textWelcome = true;
+      }
+
+      // Update the window state to show welcome and hide core button
+      // Only make one call to update window state
+      this.updateWindowState({
+        textWelcome: true,
+        coreOpen: false,
+        textOpen: false, // Make sure text is closed
+        voiceOpen: false, // Make sure voice is closed
+      });
+
+      // Just hide the button once - the window state update will do the rest
+      this.hideMainButton();
+
+      // Return true to indicate we handled this
+      return true;
     },
   };
 

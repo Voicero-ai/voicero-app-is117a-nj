@@ -64,6 +64,23 @@
         existingWelcome.remove();
       }
 
+      // Hide the main button when welcome is shown
+      if (window.VoiceroCore) {
+        // Update session state to show welcome
+        if (window.VoiceroCore.updateWindowState) {
+          console.log("VoiceroWelcome: Setting textWelcome=true");
+          window.VoiceroCore.updateWindowState({
+            textWelcome: true,
+            coreOpen: false,
+          });
+        }
+
+        // Hide button directly
+        if (window.VoiceroCore.hideMainButton) {
+          window.VoiceroCore.hideMainButton();
+        }
+      }
+
       // Create fresh container for welcome screen
       let welcomeContainer = document.createElement("div");
       welcomeContainer.id = "voicero-welcome-container";
@@ -252,66 +269,51 @@
           textContainer.style.opacity = "0";
         }
 
-        // Function to ensure core button is visible
-        const showCoreButton = function () {
-          console.log("VoiceroWelcome: Attempting to show core button");
+        // Simplified function to show core button - consolidate all the calls
+        if (window.VoiceroCore) {
+          console.log(
+            "VoiceroWelcome: Showing core button - single consolidated call",
+          );
 
-          // CRITICAL: First force create the button if it doesn't exist
-          if (window.VoiceroCore) {
-            // Update window state to show the core button
-            if (window.VoiceroCore.updateWindowState) {
-              console.log(
-                "VoiceroWelcome: Using updateWindowState to show core",
-              );
-              window.VoiceroCore.updateWindowState({
-                textOpen: false,
-                textOpenWindowUp: false,
-                coreOpen: true,
-                voiceOpen: false,
-                voiceOpenWindowUp: false,
-                textWelcome: false,
-                chooserOpen: false,
-              });
-            }
-
-            // Try to create the button first if it doesn't exist
-            if (window.VoiceroCore.createButton) {
-              console.log("VoiceroWelcome: Creating button via createButton");
-              window.VoiceroCore.createButton();
-            }
-
-            // Try the failsafe button creation method
-            if (window.VoiceroCore.createFailsafeButton) {
-              console.log(
-                "VoiceroWelcome: Creating button via createFailsafeButton",
-              );
-              window.VoiceroCore.createFailsafeButton();
-            }
-
-            // Now try to make it visible
-            if (window.VoiceroCore.ensureMainButtonVisible) {
-              console.log("VoiceroWelcome: Using ensureMainButtonVisible");
-              window.VoiceroCore.ensureMainButtonVisible();
-            }
+          // Update window state only once
+          if (window.VoiceroCore.updateWindowState) {
+            window.VoiceroCore.updateWindowState({
+              textOpen: false,
+              textOpenWindowUp: false,
+              coreOpen: true,
+              voiceOpen: false,
+              voiceOpenWindowUp: false,
+              textWelcome: false,
+              chooserOpen: false,
+            });
           }
 
-          // Direct DOM manipulation as failsafe
-          // Make sure the app container is visible
+          // Reset the button hidden flag
+          if (window.VoiceroCore._buttonHidden !== undefined) {
+            window.VoiceroCore._buttonHidden = false;
+          }
+
+          // Just use one single approach to show button - avoid multiple redundant calls
+          if (window.VoiceroCore.createFailsafeButton) {
+            window.VoiceroCore.createFailsafeButton();
+          } else if (window.VoiceroCore.ensureMainButtonVisible) {
+            window.VoiceroCore.ensureMainButtonVisible();
+          }
+        }
+
+        // Quick direct DOM manipulation as a final fallback
+        // This avoids making too many separate calls
+        setTimeout(() => {
+          // Get all the elements we might need to touch
           const appContainer = document.getElementById("voicero-app-container");
-          if (appContainer) {
-            appContainer.style.cssText = `
-              display: block !important;
-              visibility: visible !important;
-              opacity: 1 !important;
-            `;
-          }
-
-          // Make sure toggle container is visible
           const toggleContainer = document.getElementById(
             "voice-toggle-container",
           );
+          const mainButton = document.getElementById("chat-website-button");
+
+          // Quick one-time setup without repeated calls
           if (toggleContainer) {
-            console.log("VoiceroWelcome: Making toggle container visible");
+            toggleContainer.classList.remove("voicero-hidden-element");
             toggleContainer.style.cssText = `
               position: fixed !important;
               bottom: 20px !important;
@@ -320,33 +322,11 @@
               display: block !important;
               visibility: visible !important;
               opacity: 1 !important;
-              margin: 0 !important;
-              padding: 0 !important;
-              transform: none !important;
-              pointer-events: auto !important;
             `;
-          } else if (appContainer) {
-            // If toggle container doesn't exist, create it
-            console.log("VoiceroWelcome: Creating toggle container");
-            appContainer.insertAdjacentHTML(
-              "beforeend",
-              `<div id="voice-toggle-container" style="
-                position: fixed !important;
-                bottom: 20px !important;
-                right: 20px !important;
-                z-index: 2147483647 !important;
-                display: block !important;
-                visibility: visible !important;
-                opacity: 1 !important;
-              "></div>`,
-            );
-            toggleContainer = document.getElementById("voice-toggle-container");
           }
 
-          // Make sure the main button is visible
-          let mainButton = document.getElementById("chat-website-button");
           if (mainButton) {
-            console.log("VoiceroWelcome: Directly showing main button element");
+            mainButton.classList.remove("voicero-hidden-element");
             const themeColor = window.VoiceroCore?.websiteColor || "#882be6";
             mainButton.style.cssText = `
               background-color: ${themeColor};
@@ -359,100 +339,12 @@
               justify-content: center !important;
               align-items: center !important;
               color: white !important;
-              box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2) !important;
               border: none !important;
               cursor: pointer !important;
-              transition: all 0.2s ease !important;
-              padding: 0 !important;
-              margin: 0 !important;
-              position: relative !important;
               z-index: 2147483647 !important;
-              animation: pulse 2s infinite !important;
             `;
-          } else if (toggleContainer) {
-            // If button doesn't exist but container does, create it
-            console.log(
-              "VoiceroWelcome: Button doesn't exist, creating it manually",
-            );
-            const themeColor = window.VoiceroCore?.websiteColor || "#882be6";
-            toggleContainer.innerHTML = `
-              <button id="chat-website-button" class="visible" style="
-                background-color: ${themeColor};
-                display: flex !important;
-                visibility: visible !important;
-                opacity: 1 !important;
-                width: 50px !important;
-                height: 50px !important;
-                border-radius: 50% !important;
-                justify-content: center !important;
-                align-items: center !important;
-                color: white !important;
-                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2) !important;
-                border: none !important;
-                cursor: pointer !important;
-                transition: all 0.2s ease !important;
-                padding: 0 !important;
-                margin: 0 !important;
-                position: relative !important;
-                z-index: 2147483647 !important;
-              ">
-                <svg viewBox="0 0 24 24" width="24" height="24">
-                  <path fill="currentColor" d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                </svg>
-              </button>
-            `;
-
-            // Add click handler to the new button
-            setTimeout(() => {
-              const newButton = document.getElementById("chat-website-button");
-              if (
-                newButton &&
-                window.VoiceroCore &&
-                window.VoiceroCore.attachButtonClickHandler
-              ) {
-                window.VoiceroCore.attachButtonClickHandler();
-              } else if (newButton) {
-                // Add our own click handler if VoiceroCore method isn't available
-                newButton.addEventListener("click", function (e) {
-                  e.preventDefault();
-                  e.stopPropagation();
-
-                  // Try to update state via VoiceroCore
-                  if (
-                    window.VoiceroCore &&
-                    window.VoiceroCore.updateWindowState
-                  ) {
-                    window.VoiceroCore.updateWindowState({
-                      textOpen: true,
-                      textOpenWindowUp: true,
-                      coreOpen: false,
-                    });
-                  }
-
-                  // Try to open text chat
-                  if (window.VoiceroText && window.VoiceroText.openTextChat) {
-                    window.VoiceroText.openTextChat();
-                  }
-                });
-              }
-            }, 50);
           }
-        };
-
-        // First immediate attempt
-        try {
-          showCoreButton();
-        } catch (e) {
-          console.error(
-            "VoiceroWelcome: Error in first core button show attempt:",
-            e,
-          );
-        }
-
-        // Follow up attempts with increasing delays
-        setTimeout(showCoreButton, 100);
-        setTimeout(showCoreButton, 500);
-        setTimeout(showCoreButton, 1000);
+        }, 50);
       });
 
       welcomeScreen.appendChild(closeButton);
