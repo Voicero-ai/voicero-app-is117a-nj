@@ -16,6 +16,7 @@
     isShowingWelcomeScreen: false,
     websiteColor: null, // Will be populated from VoiceroCore
     initialized: false,
+    voiceroTextInstance: null, // Store reference to VoiceroText instance
 
     // Initialize the welcome module
     init: function () {
@@ -51,12 +52,121 @@
       }
     },
 
+    // Create the welcome container and show the welcome screen
+    createWelcomeContainer: function () {
+      console.log("VoiceroWelcome: Creating welcome container");
+
+      // CRITICAL: First remove any existing welcome container to prevent duplicates
+      const existingWelcome = document.getElementById(
+        "voicero-welcome-container",
+      );
+      if (existingWelcome) {
+        existingWelcome.remove();
+      }
+
+      // Create fresh container for welcome screen
+      let welcomeContainer = document.createElement("div");
+      welcomeContainer.id = "voicero-welcome-container";
+      welcomeContainer.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 375px;
+        max-width: 90vw;
+        max-height: 400px;
+        z-index: 9999999;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        background: white;
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+      `;
+      document.body.appendChild(welcomeContainer);
+
+      // Create shadow root for welcome container
+      let welcomeShadow = welcomeContainer.attachShadow({ mode: "open" });
+
+      // Add basic styles to the shadow root
+      const styleEl = document.createElement("style");
+      styleEl.textContent = `
+        :host {
+          display: block;
+          width: 100%;
+          height: 100%;
+        }
+        #chat-messages {
+          height: 400px;
+          background: white;
+          border-radius: 12px;
+          overflow: hidden;
+        }
+      `;
+      welcomeShadow.appendChild(styleEl);
+
+      // Initialize if needed
+      if (!this.initialized && this.init) {
+        this.init();
+      }
+
+      try {
+        // Create a messages container first
+        const messagesDiv = document.createElement("div");
+        messagesDiv.id = "chat-messages";
+        welcomeShadow.appendChild(messagesDiv);
+
+        // Show the welcome screen
+        this.showWelcomeScreen(welcomeShadow);
+        console.log("VoiceroWelcome: Welcome screen shown successfully");
+      } catch (error) {
+        console.error("VoiceroWelcome: Error showing welcome screen:", error);
+
+        // Fallback to simple HTML
+        welcomeShadow.innerHTML += `
+          <div id="chat-messages" style="padding: 20px; text-align: center;">
+            <h3>Hi there! I'm Suvi, an AI Sales Rep.</h3>
+            <p>How can I help you today?</p>
+            <div style="margin-top: 20px;">
+              <button style="background: #882be6; color: white; border: none; padding: 10px 15px; border-radius: 20px; margin: 5px; cursor: pointer;">Talk to Sales</button>
+              <button style="background: #882be6; color: white; border: none; padding: 10px 15px; border-radius: 20px; margin: 5px; cursor: pointer;">Get Started</button>
+            </div>
+          </div>
+        `;
+      }
+
+      // Make sure the welcome container is visible
+      welcomeContainer.style.display = "block";
+      welcomeContainer.style.visibility = "visible";
+      welcomeContainer.style.opacity = "1";
+
+      return welcomeContainer;
+    },
+
     // Show initial welcome screen with buttons
     showWelcomeScreen: function (shadowRoot) {
-      if (!shadowRoot) return;
+      if (!shadowRoot) {
+        console.error(
+          "VoiceroWelcome: No shadow root provided to showWelcomeScreen",
+        );
+        return;
+      }
 
+      console.log(
+        "VoiceroWelcome: Showing welcome screen in shadow root",
+        shadowRoot,
+      );
+
+      // If there's no messages container, create one
       var messagesContainer = shadowRoot.getElementById("chat-messages");
-      if (!messagesContainer) return;
+      if (!messagesContainer) {
+        console.log(
+          "VoiceroWelcome: Creating messages container in shadow root",
+        );
+        messagesContainer = document.createElement("div");
+        messagesContainer.id = "chat-messages";
+        shadowRoot.appendChild(messagesContainer);
+      }
 
       // Clear existing content
       messagesContainer.innerHTML = "";
@@ -68,6 +178,7 @@
         display: flex;
         flex-direction: column;
         height: 400px;
+        max-height: 400px;
         padding: 0;
         background-color: white;
         border-radius: 12px;
@@ -110,10 +221,238 @@
       });
 
       // Add click handler to close button
-      closeButton.addEventListener("click", () => {
-        if (window.VoiceroText && window.VoiceroText.closeTextChat) {
-          window.VoiceroText.closeTextChat();
+      closeButton.addEventListener("click", function (e) {
+        console.log("Close button clicked in welcome screen");
+
+        // Stop event propagation
+        e.stopPropagation();
+        e.preventDefault();
+
+        // CRITICAL: Force remove the welcome container immediately
+        const welcomeContainer = document.getElementById(
+          "voicero-welcome-container",
+        );
+        if (welcomeContainer) {
+          console.log("VoiceroWelcome: Removing welcome container");
+          welcomeContainer.style.display = "none";
+          welcomeContainer.style.visibility = "hidden";
+          welcomeContainer.style.opacity = "0";
+
+          // Remove from DOM after hiding it
+          setTimeout(() => welcomeContainer.remove(), 10);
         }
+
+        // CRITICAL: Force hide any text container that might be visible
+        const textContainer = document.getElementById(
+          "voicero-text-chat-container",
+        );
+        if (textContainer) {
+          textContainer.style.display = "none";
+          textContainer.style.visibility = "hidden";
+          textContainer.style.opacity = "0";
+        }
+
+        // Function to ensure core button is visible
+        const showCoreButton = function () {
+          console.log("VoiceroWelcome: Attempting to show core button");
+
+          // CRITICAL: First force create the button if it doesn't exist
+          if (window.VoiceroCore) {
+            // Update window state to show the core button
+            if (window.VoiceroCore.updateWindowState) {
+              console.log(
+                "VoiceroWelcome: Using updateWindowState to show core",
+              );
+              window.VoiceroCore.updateWindowState({
+                textOpen: false,
+                textOpenWindowUp: false,
+                coreOpen: true,
+                voiceOpen: false,
+                voiceOpenWindowUp: false,
+                textWelcome: false,
+                chooserOpen: false,
+              });
+            }
+
+            // Try to create the button first if it doesn't exist
+            if (window.VoiceroCore.createButton) {
+              console.log("VoiceroWelcome: Creating button via createButton");
+              window.VoiceroCore.createButton();
+            }
+
+            // Try the failsafe button creation method
+            if (window.VoiceroCore.createFailsafeButton) {
+              console.log(
+                "VoiceroWelcome: Creating button via createFailsafeButton",
+              );
+              window.VoiceroCore.createFailsafeButton();
+            }
+
+            // Now try to make it visible
+            if (window.VoiceroCore.ensureMainButtonVisible) {
+              console.log("VoiceroWelcome: Using ensureMainButtonVisible");
+              window.VoiceroCore.ensureMainButtonVisible();
+            }
+          }
+
+          // Direct DOM manipulation as failsafe
+          // Make sure the app container is visible
+          const appContainer = document.getElementById("voicero-app-container");
+          if (appContainer) {
+            appContainer.style.cssText = `
+              display: block !important;
+              visibility: visible !important;
+              opacity: 1 !important;
+            `;
+          }
+
+          // Make sure toggle container is visible
+          const toggleContainer = document.getElementById(
+            "voice-toggle-container",
+          );
+          if (toggleContainer) {
+            console.log("VoiceroWelcome: Making toggle container visible");
+            toggleContainer.style.cssText = `
+              position: fixed !important;
+              bottom: 20px !important;
+              right: 20px !important;
+              z-index: 2147483647 !important;
+              display: block !important;
+              visibility: visible !important;
+              opacity: 1 !important;
+              margin: 0 !important;
+              padding: 0 !important;
+              transform: none !important;
+              pointer-events: auto !important;
+            `;
+          } else if (appContainer) {
+            // If toggle container doesn't exist, create it
+            console.log("VoiceroWelcome: Creating toggle container");
+            appContainer.insertAdjacentHTML(
+              "beforeend",
+              `<div id="voice-toggle-container" style="
+                position: fixed !important;
+                bottom: 20px !important;
+                right: 20px !important;
+                z-index: 2147483647 !important;
+                display: block !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+              "></div>`,
+            );
+            toggleContainer = document.getElementById("voice-toggle-container");
+          }
+
+          // Make sure the main button is visible
+          let mainButton = document.getElementById("chat-website-button");
+          if (mainButton) {
+            console.log("VoiceroWelcome: Directly showing main button element");
+            const themeColor = window.VoiceroCore?.websiteColor || "#882be6";
+            mainButton.style.cssText = `
+              background-color: ${themeColor};
+              display: flex !important;
+              visibility: visible !important;
+              opacity: 1 !important;
+              width: 50px !important;
+              height: 50px !important;
+              border-radius: 50% !important;
+              justify-content: center !important;
+              align-items: center !important;
+              color: white !important;
+              box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2) !important;
+              border: none !important;
+              cursor: pointer !important;
+              transition: all 0.2s ease !important;
+              padding: 0 !important;
+              margin: 0 !important;
+              position: relative !important;
+              z-index: 2147483647 !important;
+              animation: pulse 2s infinite !important;
+            `;
+          } else if (toggleContainer) {
+            // If button doesn't exist but container does, create it
+            console.log(
+              "VoiceroWelcome: Button doesn't exist, creating it manually",
+            );
+            const themeColor = window.VoiceroCore?.websiteColor || "#882be6";
+            toggleContainer.innerHTML = `
+              <button id="chat-website-button" class="visible" style="
+                background-color: ${themeColor};
+                display: flex !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+                width: 50px !important;
+                height: 50px !important;
+                border-radius: 50% !important;
+                justify-content: center !important;
+                align-items: center !important;
+                color: white !important;
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2) !important;
+                border: none !important;
+                cursor: pointer !important;
+                transition: all 0.2s ease !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                position: relative !important;
+                z-index: 2147483647 !important;
+              ">
+                <svg viewBox="0 0 24 24" width="24" height="24">
+                  <path fill="currentColor" d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+              </button>
+            `;
+
+            // Add click handler to the new button
+            setTimeout(() => {
+              const newButton = document.getElementById("chat-website-button");
+              if (
+                newButton &&
+                window.VoiceroCore &&
+                window.VoiceroCore.attachButtonClickHandler
+              ) {
+                window.VoiceroCore.attachButtonClickHandler();
+              } else if (newButton) {
+                // Add our own click handler if VoiceroCore method isn't available
+                newButton.addEventListener("click", function (e) {
+                  e.preventDefault();
+                  e.stopPropagation();
+
+                  // Try to update state via VoiceroCore
+                  if (
+                    window.VoiceroCore &&
+                    window.VoiceroCore.updateWindowState
+                  ) {
+                    window.VoiceroCore.updateWindowState({
+                      textOpen: true,
+                      textOpenWindowUp: true,
+                      coreOpen: false,
+                    });
+                  }
+
+                  // Try to open text chat
+                  if (window.VoiceroText && window.VoiceroText.openTextChat) {
+                    window.VoiceroText.openTextChat();
+                  }
+                });
+              }
+            }, 50);
+          }
+        };
+
+        // First immediate attempt
+        try {
+          showCoreButton();
+        } catch (e) {
+          console.error(
+            "VoiceroWelcome: Error in first core button show attempt:",
+            e,
+          );
+        }
+
+        // Follow up attempts with increasing delays
+        setTimeout(showCoreButton, 100);
+        setTimeout(showCoreButton, 500);
+        setTimeout(showCoreButton, 1000);
       });
 
       welcomeScreen.appendChild(closeButton);
@@ -241,6 +580,11 @@
       messageContainer.appendChild(welcomeMessage);
       welcomeScreen.appendChild(messageContainer);
 
+      // Ensure the welcome screen doesn't exceed viewport height
+      const viewportHeight = window.innerHeight;
+      const maxHeight = Math.min(400, viewportHeight * 0.8); // 80% of viewport or 400px, whichever is smaller
+      welcomeScreen.style.height = maxHeight + "px";
+
       // Create buttons container - position right above input box
       var buttonsContainer = document.createElement("div");
       buttonsContainer.style.cssText = `
@@ -290,29 +634,57 @@
         });
 
         button.addEventListener("click", () => {
-          // Reset welcome screen state in VoiceroText
-          if (window.VoiceroText) {
-            console.log("Button clicked: " + buttonData.action);
+          console.log("Button clicked: " + buttonData.action);
 
-            // Prepare assistant message based on button clicked
-            let assistantMessage = "";
-            switch (buttonData.action) {
-              case "talk-to-sales":
-                assistantMessage =
-                  "How can I help you talk to our sales team about our product?";
-                break;
-              case "get-started":
-                assistantMessage =
-                  "How can I help you get started with our product?";
-                break;
-              case "customer-support":
-                assistantMessage =
-                  "How can I assist you with customer support?";
-                break;
-              default:
-                assistantMessage = "Hello! How can I help you today?";
+          // Prepare assistant message based on button clicked
+          let assistantMessage = "";
+          switch (buttonData.action) {
+            case "talk-to-sales":
+              assistantMessage =
+                "How can I help you talk to our sales team about our product?";
+              break;
+            case "get-started":
+              assistantMessage =
+                "How can I help you get started with our product?";
+              break;
+            case "customer-support":
+              assistantMessage = "How can I assist you with customer support?";
+              break;
+            default:
+              assistantMessage = "Hello! How can I help you today?";
+          }
+
+          // First check if we have a direct reference to the VoiceroText instance
+          if (this.voiceroTextInstance) {
+            // First reset welcome screen state
+            this.voiceroTextInstance.isShowingWelcomeScreen = false;
+
+            // Reset the welcome screen and show chat interface
+            if (this.voiceroTextInstance.resetWelcomeScreenAndShowChat) {
+              this.voiceroTextInstance.resetWelcomeScreenAndShowChat();
+
+              // Add message directly as AI response AFTER resetting the screen
+              setTimeout(() => {
+                if (this.voiceroTextInstance.addMessage) {
+                  this.voiceroTextInstance.addMessage(assistantMessage, "ai");
+                }
+              }, 100);
+            } else {
+              // If resetWelcomeScreenAndShowChat isn't available, try openTextChat
+              if (this.voiceroTextInstance.openTextChat) {
+                this.voiceroTextInstance.openTextChat();
+
+                // Add message directly as AI response after opening
+                setTimeout(() => {
+                  if (this.voiceroTextInstance.addMessage) {
+                    this.voiceroTextInstance.addMessage(assistantMessage, "ai");
+                  }
+                }, 100);
+              }
             }
-
+          }
+          // Fallback to global VoiceroText
+          else if (window.VoiceroText) {
             // First reset welcome screen state
             window.VoiceroText.isShowingWelcomeScreen = false;
 
@@ -326,6 +698,18 @@
                   window.VoiceroText.addMessage(assistantMessage, "ai");
                 }
               }, 100);
+            } else {
+              // If resetWelcomeScreenAndShowChat isn't available, try openTextChat
+              if (window.VoiceroText.openTextChat) {
+                window.VoiceroText.openTextChat();
+
+                // Add message directly as AI response after opening
+                setTimeout(() => {
+                  if (window.VoiceroText.addMessage) {
+                    window.VoiceroText.addMessage(assistantMessage, "ai");
+                  }
+                }, 100);
+              }
             }
           }
         });
@@ -395,18 +779,9 @@
       // Add click handler for send icon
       sendIcon.addEventListener("click", () => {
         const text = askInput.value.trim();
-        if (text && window.VoiceroText) {
+        if (text) {
           console.log("Send icon clicked with text: " + text);
-          // First reset welcome screen state
-          window.VoiceroText.isShowingWelcomeScreen = false;
-
-          // Reset the welcome screen and show chat interface
-          window.VoiceroText.resetWelcomeScreenAndShowChat();
-
-          // Add the message after a short delay to ensure UI is ready
-          setTimeout(() => {
-            window.VoiceroText.sendChatMessage(text);
-          }, 100);
+          this.handleUserInput(text);
         }
       });
 
@@ -424,18 +799,9 @@
       askInput.addEventListener("keydown", (e) => {
         if (e.key === "Enter") {
           const text = askInput.value.trim();
-          if (text && window.VoiceroText) {
+          if (text) {
             console.log("Enter key pressed with text: " + text);
-            // First reset welcome screen state
-            window.VoiceroText.isShowingWelcomeScreen = false;
-
-            // Show the real UI
-            window.VoiceroText.resetWelcomeScreenAndShowChat();
-
-            // Send the user's actual message after a short delay
-            setTimeout(() => {
-              window.VoiceroText.sendChatMessage(text);
-            }, 100);
+            this.handleUserInput(text);
           }
         }
       });
@@ -450,6 +816,91 @@
 
       return welcomeScreen;
     },
+
+    // New helper method to handle user input from welcome screen
+    handleUserInput: function (text) {
+      if (!text) return;
+
+      console.log("VoiceroWelcome: Handling user input: " + text);
+
+      // Store the text for later use
+      const userText = text;
+
+      // Remove the welcome container
+      const welcomeContainer = document.getElementById(
+        "voicero-welcome-container",
+      );
+      if (welcomeContainer) {
+        welcomeContainer.remove();
+      }
+
+      // First try to use the direct instance reference
+      if (this.voiceroTextInstance) {
+        console.log(
+          "VoiceroWelcome: Using direct instance reference to handle input",
+        );
+
+        // Reset welcome screen state
+        this.voiceroTextInstance.isShowingWelcomeScreen = false;
+
+        // First explicitly make the text container visible
+        const textChatContainer = document.getElementById(
+          "voicero-text-chat-container",
+        );
+        if (textChatContainer) {
+          textChatContainer.style.cssText = "";
+          textChatContainer.style.display = "block";
+          textChatContainer.style.visibility = "visible";
+          textChatContainer.style.opacity = "1";
+          textChatContainer.style.pointerEvents = "auto";
+        }
+
+        // Open the text chat interface
+        this.voiceroTextInstance.openTextChat();
+
+        // Send the message after a longer delay to ensure UI is ready
+        setTimeout(() => {
+          console.log(
+            "VoiceroWelcome: Sending message via direct instance: " + userText,
+          );
+          this.voiceroTextInstance.sendChatMessage(userText);
+        }, 500);
+      }
+      // Fallback to global VoiceroText
+      else if (window.VoiceroText) {
+        console.log("VoiceroWelcome: Using global VoiceroText to handle input");
+
+        // Reset welcome screen state
+        window.VoiceroText.isShowingWelcomeScreen = false;
+
+        // First explicitly make the text container visible
+        const textChatContainer = document.getElementById(
+          "voicero-text-chat-container",
+        );
+        if (textChatContainer) {
+          textChatContainer.style.cssText = "";
+          textChatContainer.style.display = "block";
+          textChatContainer.style.visibility = "visible";
+          textChatContainer.style.opacity = "1";
+          textChatContainer.style.pointerEvents = "auto";
+        }
+
+        // Open the text chat interface
+        window.VoiceroText.openTextChat();
+
+        // Send the message after a longer delay to ensure UI is ready
+        setTimeout(() => {
+          console.log(
+            "VoiceroWelcome: Sending message via global instance: " + userText,
+          );
+          window.VoiceroText.sendChatMessage(userText);
+        }, 500);
+      } else {
+        console.error(
+          "VoiceroWelcome: No VoiceroText instance available to handle input",
+        );
+      }
+    },
   };
 
   // Initialize the module
@@ -458,10 +909,76 @@
     document.readyState === "interactive"
   ) {
     setTimeout(function () {
+      // Check if text interface is already visible before initializing welcome
+      const textChatContainer = document.getElementById(
+        "voicero-text-chat-container",
+      );
+      const existingWelcome = document.getElementById(
+        "voicero-welcome-container",
+      );
+
+      // Don't initialize welcome if text chat is already visible or another welcome exists
+      if (
+        (textChatContainer &&
+          (textChatContainer.style.display === "block" ||
+            textChatContainer.style.visibility === "visible")) ||
+        existingWelcome
+      ) {
+        console.log(
+          "VoiceroWelcome: Text chat or welcome already visible, skipping welcome init",
+        );
+        return;
+      }
+
+      // Only initialize welcome if VoiceroCore indicates it should be shown
+      if (window.VoiceroCore && window.VoiceroCore.session) {
+        if (
+          !window.VoiceroCore.session.textWelcome &&
+          window.VoiceroCore.session.textOpen
+        ) {
+          console.log(
+            "VoiceroWelcome: Session indicates text should be shown instead of welcome",
+          );
+          return;
+        }
+      }
+
       window.VoiceroWelcome.init();
-    }, 1);
+    }, 100); // Slight delay to ensure DOM is ready
   } else {
     document.addEventListener("DOMContentLoaded", function () {
+      // Same checks for DOMContentLoaded case
+      const textChatContainer = document.getElementById(
+        "voicero-text-chat-container",
+      );
+      const existingWelcome = document.getElementById(
+        "voicero-welcome-container",
+      );
+
+      if (
+        (textChatContainer &&
+          (textChatContainer.style.display === "block" ||
+            textChatContainer.style.visibility === "visible")) ||
+        existingWelcome
+      ) {
+        console.log(
+          "VoiceroWelcome: Text chat or welcome already visible, skipping welcome init",
+        );
+        return;
+      }
+
+      if (window.VoiceroCore && window.VoiceroCore.session) {
+        if (
+          !window.VoiceroCore.session.textWelcome &&
+          window.VoiceroCore.session.textOpen
+        ) {
+          console.log(
+            "VoiceroWelcome: Session indicates text should be shown instead of welcome",
+          );
+          return;
+        }
+      }
+
       window.VoiceroWelcome.init();
     });
   }

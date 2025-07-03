@@ -242,6 +242,17 @@
 
     // Open text chat interface
     openTextChat: function () {
+      // CRITICAL: First remove any welcome container that might be causing floating elements
+      const welcomeContainer = document.getElementById(
+        "voicero-welcome-container",
+      );
+      if (welcomeContainer) {
+        console.log(
+          "VoiceroText: Removing existing welcome container before opening text chat",
+        );
+        welcomeContainer.remove();
+      }
+
       // CRITICAL CHECK: Only proceed if textOpen is explicitly set to true in the session
       // This prevents the interface from showing up when it shouldn't
 
@@ -395,31 +406,40 @@
       // Apply dynamic colors to all elements
       this.applyDynamicColors();
 
+      // CRITICAL: First remove any existing welcome container to prevent conflicts
+      const existingWelcome = document.getElementById(
+        "voicero-welcome-container",
+      );
+      if (existingWelcome) {
+        existingWelcome.remove();
+      }
+
       // Show the shadow host (which contains the chat interface)
       var shadowHost = document.getElementById("voicero-text-chat-container");
       if (shadowHost) {
         // CRITICAL FIX: Reset ALL style properties that might be preventing display
         shadowHost.style.cssText = "";
 
-        // Now set the required styles for visibility
-        shadowHost.style.display = "block";
-        shadowHost.style.visibility = "visible";
-        shadowHost.style.opacity = "1";
-        shadowHost.style.pointerEvents = "auto";
-        shadowHost.style.height = "auto";
-        shadowHost.style.width = "400px"; // Fixed width for chat box
-        shadowHost.style.zIndex = "9999999";
-        shadowHost.style.borderRadius = "12px 12px 12px 12px"; // Add rounded corners to parent container
-
-        // Position in right side of screen
-        shadowHost.style.position = "fixed";
-        shadowHost.style.right = "20px"; // Position from right instead of left
-        shadowHost.style.bottom = "20px";
-        shadowHost.style.left = "auto"; // Remove left positioning
-        shadowHost.style.transform = "none"; // Remove centering transform
-        shadowHost.style.maxWidth = "450px";
-        shadowHost.style.minWidth = "320px";
-        shadowHost.style.overflow = "hidden"; // Ensure border radius is visible
+        // Now set the required styles for visibility with !important flags
+        shadowHost.style.cssText = `
+          display: block !important;
+          visibility: visible !important;
+          opacity: 1 !important;
+          pointer-events: auto !important;
+          height: auto !important;
+          width: 400px !important; 
+          z-index: 9999999 !important;
+          border-radius: 12px !important;
+          position: fixed !important;
+          right: 20px !important;
+          bottom: 20px !important;
+          left: auto !important;
+          transform: none !important;
+          max-width: 450px !important;
+          min-width: 320px !important;
+          overflow: hidden !important;
+          max-height: none !important;
+        `;
       }
 
       // Make sure the header has high z-index
@@ -1420,6 +1440,18 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
       try {
         // First check if elements already exist
         var existingInterface = document.getElementById("text-chat-interface");
+
+        // Also check for standalone welcome container that might cause floating box
+        var welcomeContainer = document.getElementById(
+          "voicero-welcome-container",
+        );
+        if (welcomeContainer) {
+          console.log(
+            "VoiceroText: Found existing welcome container during interface creation, removing it",
+          );
+          welcomeContainer.remove();
+        }
+
         if (existingInterface) {
           var messagesContainer = document.getElementById("chat-messages");
           if (messagesContainer) {
@@ -2258,6 +2290,33 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
 
     // Clear chat history
     clearChatHistory: function () {
+      console.log("VoiceroText: Clearing chat history");
+
+      // Reset messages array
+      this.messages = [];
+
+      // Reset the welcome flag
+      this.hasShownWelcome = false;
+
+      // Hide the text chat interface first to prevent UI conflicts
+      const textChatContainer = document.getElementById(
+        "voicero-text-chat-container",
+      );
+      if (textChatContainer) {
+        textChatContainer.style.display = "none";
+      }
+
+      // Update window state to hide text interface
+      if (window.VoiceroCore && window.VoiceroCore.updateWindowState) {
+        window.VoiceroCore.updateWindowState({
+          textOpen: false,
+          textOpenWindowUp: false,
+          coreOpen: false,
+          voiceOpen: false,
+          voiceOpenWindowUp: false,
+        });
+      }
+
       // Call the session/clear API endpoint
       if (window.VoiceroCore && window.VoiceroCore.sessionId) {
         // Use direct API endpoint
@@ -2304,56 +2363,28 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
           });
       }
 
-      // Also update the UI if the chat is currently open
-      var messagesContainer = this.shadowRoot
-        ? this.shadowRoot.getElementById("chat-messages")
-        : document.getElementById("chat-messages");
-      if (messagesContainer) {
-        var existingMessages = messagesContainer.querySelectorAll(
-          ".user-message, .ai-message",
+      // Use VoiceroWelcome module to show welcome screen
+      if (
+        window.VoiceroWelcome &&
+        typeof window.VoiceroWelcome.createWelcomeContainer === "function"
+      ) {
+        console.log(
+          "VoiceroText: Delegating to VoiceroWelcome module for welcome screen",
         );
-        existingMessages.forEach((el) => el.remove());
-        // Reset height and padding after clearing
-        messagesContainer.style.height = "auto";
-        messagesContainer.style.paddingTop = "35px";
 
-        // Show initial suggestions again
-        var initialSuggestions = messagesContainer.querySelector(
-          "#initial-suggestions",
-        );
-        if (initialSuggestions) {
-          initialSuggestions.style.display = "block";
-          initialSuggestions.style.opacity = "1";
-          initialSuggestions.style.height = "auto";
-          initialSuggestions.style.margin = "";
-          initialSuggestions.style.padding = "";
-          initialSuggestions.style.overflow = "visible";
-        }
+        // Pass this instance to VoiceroWelcome for proper event handling
+        window.VoiceroWelcome.voiceroTextInstance = this;
+
+        // Let VoiceroWelcome handle creating and showing the welcome screen
+        window.VoiceroWelcome.createWelcomeContainer();
+      } else {
+        console.error("VoiceroText: VoiceroWelcome module not available");
       }
 
-      // Reset messages array
-      this.messages = [];
-
-      // Reset the welcome flag and prepare to show welcome screen
-      this.hasShownWelcome = false;
-
-      // Hide the chat input wrapper and control buttons to prepare for welcome screen
-      var chatInputWrapper =
-        this.shadowRoot.getElementById("chat-input-wrapper");
-      if (chatInputWrapper) {
-        chatInputWrapper.style.display = "none";
+      // Force hide the main button to ensure it doesn't appear during transition
+      if (window.VoiceroCore && window.VoiceroCore.hideMainButton) {
+        window.VoiceroCore.hideMainButton();
       }
-
-      // Hide the header completely
-      var headerContainer = this.shadowRoot.getElementById(
-        "chat-controls-header",
-      );
-      if (headerContainer) {
-        headerContainer.style.display = "none";
-      }
-
-      // Show welcome screen instead of just a welcome message
-      this.showWelcomeScreen();
     },
 
     // Send chat message to API
@@ -2946,22 +2977,28 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
     closeTextChat: function () {
       console.log("VoiceroText: Closing text chat");
 
-      // Check if API request is in progress
+      // Set closing flag first to allow operations to proceed even if busy
+      this.isClosingTextChat = true;
+
+      // CRITICAL: Don't block close operations
+      // If we're waiting for response, we will still proceed with closing
       if (this.isWaitingForResponse) {
-        console.log("VoiceroText: Cannot close - waiting for API response");
-        return;
+        console.log(
+          "VoiceroText: Warning - closing while API response is pending",
+        );
+        // Continue with closing
       }
 
-      // Check if session operations are in progress
+      // Don't block close operations due to session operations
       if (
         window.VoiceroCore &&
         window.VoiceroCore.isSessionBusy &&
         window.VoiceroCore.isSessionBusy()
       ) {
         console.log(
-          "VoiceroText: Cannot close - session operation in progress",
+          "VoiceroText: Warning - closing while session operation in progress",
         );
-        return;
+        // Continue with closing
       }
 
       // Set closing flag
@@ -3783,11 +3820,22 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
           this.isSessionOperationInProgress = false;
           return false;
         }
+
+        // CRITICAL: Reset flag if we're closing the text chat
+        // This ensures we can always close when needed, even if another operation is in progress
+        if (this.isClosingTextChat) {
+          console.log(
+            "VoiceroText: Resetting session busy flag for close operation",
+          );
+          this.isSessionOperationInProgress = false;
+          return false;
+        }
+
         return true;
       }
 
-      // Also check if waiting for API response
-      if (this.isWaitingForResponse) {
+      // Also check if waiting for API response, but allow close operations
+      if (this.isWaitingForResponse && !this.isClosingTextChat) {
         console.log("VoiceroText: Session busy - waiting for API response");
         return true;
       }
@@ -3921,62 +3969,114 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
       console.log(
         "VoiceroText: Resetting welcome screen and showing chat interface",
       );
-      if (!this.shadowRoot) return;
 
-      // Reset the container
-      var messagesContainer = this.shadowRoot.getElementById("chat-messages");
-      if (messagesContainer) {
-        messagesContainer.innerHTML = "";
+      // CRITICAL: First remove any existing welcome container
+      const existingWelcome = document.getElementById(
+        "voicero-welcome-container",
+      );
+      if (existingWelcome) {
+        existingWelcome.remove();
+      }
 
-        // Create padding container as in the original structure
-        var paddingContainer = document.createElement("div");
-        paddingContainer.style.paddingTop = "15px";
-        messagesContainer.appendChild(paddingContainer);
-
-        // Restore messages container styling
-        messagesContainer.style.cssText = `
-          scrollbar-width: none !important;
-          -ms-overflow-style: none !important;
-          padding: 15px !important; 
-          padding-top: 10px !important;
-          margin: 0 !important;
-          background-color: #f2f2f7 !important;
-          border-radius: 0 !important;
-          transition: opacity 0.25s ease !important;
-          overflow-y: auto !important;
-          overflow-x: hidden !important;
-          height: 350px !important;
-          max-height: 350px !important;
-          min-height: 350px !important;
-          position: relative !important;
+      // IMPORTANT: Make sure the text chat container is visible with proper positioning
+      const textChatContainer = document.getElementById(
+        "voicero-text-chat-container",
+      );
+      if (textChatContainer) {
+        textChatContainer.style.cssText = `
+          display: block !important;
+          visibility: visible !important;
+          opacity: 1 !important;
+          pointer-events: auto !important;
+          height: auto !important;
+          width: 400px !important; 
+          z-index: 9999999 !important;
+          border-radius: 12px !important;
+          position: fixed !important;
+          right: 20px !important;
+          bottom: 20px !important;
+          left: auto !important;
+          transform: none !important;
+          max-width: 450px !important;
+          min-width: 320px !important;
+          overflow: hidden !important;
+          max-height: none !important;
         `;
       }
 
-      // Show the control buttons
-      var headerContainer = this.shadowRoot.getElementById(
-        "chat-controls-header",
-      );
-      if (headerContainer) {
-        headerContainer.style.display = "flex";
+      // Make sure we open the text chat interface
+      this.openTextChat();
 
-        var clearBtn = headerContainer.querySelector("#clear-text-chat");
-        var closeBtn = headerContainer.querySelector("#close-text-chat");
+      // Wait for shadowRoot to be available after openTextChat
+      setTimeout(() => {
+        if (!this.shadowRoot) return;
 
-        if (clearBtn) {
-          clearBtn.style.display = "block";
+        // Reset the container
+        var messagesContainer = this.shadowRoot.getElementById("chat-messages");
+        if (messagesContainer) {
+          messagesContainer.innerHTML = "";
+
+          // Create padding container as in the original structure
+          var paddingContainer = document.createElement("div");
+          paddingContainer.style.paddingTop = "15px";
+          messagesContainer.appendChild(paddingContainer);
+
+          // Restore messages container styling
+          messagesContainer.style.cssText = `
+            scrollbar-width: none !important;
+            -ms-overflow-style: none !important;
+            padding: 15px !important; 
+            padding-top: 10px !important;
+            margin: 0 !important;
+            background-color: #f2f2f7 !important;
+            border-radius: 0 !important;
+            transition: opacity 0.25s ease !important;
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+            height: 350px !important;
+            max-height: 350px !important;
+            min-height: 350px !important;
+            position: relative !important;
+          `;
         }
 
-        if (closeBtn && closeBtn.parentNode) {
-          closeBtn.parentNode.style.display = "flex";
-        }
-      }
+        // Show the control buttons
+        var headerContainer = this.shadowRoot.getElementById(
+          "chat-controls-header",
+        );
+        if (headerContainer) {
+          headerContainer.style.display = "flex";
 
-      // Show the chat input wrapper but keep it styled properly
-      var chatInputWrapper =
-        this.shadowRoot.getElementById("chat-input-wrapper");
-      if (chatInputWrapper) {
-        chatInputWrapper.style.display = "block";
-      }
+          var clearBtn = headerContainer.querySelector("#clear-text-chat");
+          var closeBtn = headerContainer.querySelector("#close-text-chat");
+
+          if (clearBtn) {
+            clearBtn.style.display = "block";
+          }
+
+          if (closeBtn && closeBtn.parentNode) {
+            closeBtn.parentNode.style.display = "flex";
+          }
+        }
+
+        // Show the chat input wrapper but keep it styled properly
+        var chatInputWrapper =
+          this.shadowRoot.getElementById("chat-input-wrapper");
+        if (chatInputWrapper) {
+          chatInputWrapper.style.display = "block";
+        }
+
+        // Update window state to ensure text interface is open
+        if (window.VoiceroCore && window.VoiceroCore.updateWindowState) {
+          window.VoiceroCore.updateWindowState({
+            textOpen: true,
+            textOpenWindowUp: true,
+            coreOpen: false,
+            voiceOpen: false,
+            voiceOpenWindowUp: false,
+          });
+        }
+      }, 100);
     },
 
     // Show initial welcome screen with buttons

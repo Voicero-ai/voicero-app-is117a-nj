@@ -962,6 +962,59 @@
 
                 // Also store in global variable for immediate access
                 window.voiceroWelcomeBackMessage = data.welcomeBackMessage;
+
+                // IMMEDIATELY open the text interface when we receive a welcome back message
+                console.log(
+                  "VoiceroUserData: Auto-opening text interface for welcome back message",
+                );
+
+                // Wait a short delay to ensure VoiceroCore and VoiceroText are initialized
+                setTimeout(() => {
+                  if (window.VoiceroCore) {
+                    // Update session state to ensure text chat will open
+                    if (window.VoiceroCore.session) {
+                      window.VoiceroCore.session.textOpen = true;
+                      window.VoiceroCore.session.textOpenWindowUp = true;
+                      window.VoiceroCore.session.coreOpen = false; // Close main button
+                    }
+
+                    // Use the official update method if available
+                    if (
+                      typeof window.VoiceroCore.updateWindowState === "function"
+                    ) {
+                      window.VoiceroCore.updateWindowState({
+                        textOpen: true,
+                        textOpenWindowUp: true,
+                        coreOpen: false,
+                      });
+                    }
+
+                    // Hide main button
+                    if (
+                      typeof window.VoiceroCore.hideMainButton === "function"
+                    ) {
+                      window.VoiceroCore.hideMainButton();
+                    }
+                  }
+
+                  // Open the text chat interface
+                  if (
+                    window.VoiceroText &&
+                    typeof window.VoiceroText.openTextChat === "function"
+                  ) {
+                    window.VoiceroText.openTextChat();
+
+                    // Force maximize after opening
+                    setTimeout(() => {
+                      if (
+                        window.VoiceroText &&
+                        window.VoiceroText.maximizeChat
+                      ) {
+                        window.VoiceroText.maximizeChat();
+                      }
+                    }, 100);
+                  }
+                }, 500);
               } catch (e) {
                 console.warn(
                   "VoiceroUserData: Unable to store welcome back message",
