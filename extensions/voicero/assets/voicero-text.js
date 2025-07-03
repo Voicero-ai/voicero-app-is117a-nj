@@ -3,6 +3,9 @@
  * Handles text chat functionality
  */
 
+// Note: We can't use ES module syntax in regular JS files
+// dynamic = "force-dynamic"; // Browser compatibility issue
+
 // Use IIFE to avoid global variable conflicts
 (function (window, document) {
   // Check if VoiceroText already exists to prevent redeclaration
@@ -1025,8 +1028,68 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
       // Skip if no messages
       if (!aiMessages || aiMessages.length === 0) return;
 
+      // Get the icon path - try to find a consistent way to get the icon
+      var iconSrc = "";
+
+      // First try to use the extension URL from scripts
+      var scripts = document.querySelectorAll("script");
+      for (var i = 0; i < scripts.length; i++) {
+        var src = scripts[i].src || "";
+        if (src.includes("voicero-") || src.includes("voicero/")) {
+          iconSrc = src.substring(0, src.lastIndexOf("/") + 1) + "icon.png";
+          break;
+        }
+      }
+
+      // If we couldn't find it from scripts, try common locations
+      if (!iconSrc) {
+        iconSrc = "./icon.png"; // Default to simple path
+      }
+
       // Process each message
       aiMessages.forEach((message) => {
+        // First check if we need to add the icon
+        var messageContent = message.querySelector(".message-content");
+        if (messageContent && !message.querySelector(".ai-icon-container")) {
+          // Ensure the message content has relative positioning
+          messageContent.style.position = "relative";
+
+          // Create icon container
+          var iconContainer = document.createElement("div");
+          iconContainer.className = "ai-icon-container";
+          iconContainer.style.cssText = `
+            position: absolute;
+            top: -15px;
+            left: -15px;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            overflow: hidden;
+            z-index: 9999;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+            border: 2px solid white;
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+          `;
+
+          var icon = document.createElement("img");
+          icon.src = iconSrc;
+          icon.alt = "Suvi";
+          icon.style.cssText = `
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+          `;
+
+          iconContainer.appendChild(icon);
+          messageContent.appendChild(iconContainer);
+        }
+
         // Check if there's already a report button
         if (message.querySelector(".voicero-report-button")) return;
 
@@ -1085,8 +1148,95 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
 
       // Set the content (handle HTML if needed)
       if (role === "ai") {
-        // Make sure any HTML content (especially for welcome questions) is preserved
+        // Position the message container relatively for absolute positioning of icon
+        messageContent.style.position = "relative";
+
+        // Add icon for AI messages - placing inside the message content for better positioning
+        var iconContainer = document.createElement("div");
+        iconContainer.className = "ai-icon-container";
+        iconContainer.style.cssText = `
+          position: absolute;
+          top: -15px;
+          left: -15px;
+          width: 30px;
+          height: 30px;
+          border-radius: 50%;
+          overflow: hidden;
+          z-index: 9999;
+          background: white;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+          border: 2px solid white;
+        `;
+
+        // Get the icon from a hardcoded path to ensure it works
+        var iconSrc = "";
+
+        // First try to use the extension URL from scripts
+        var scripts = document.querySelectorAll("script");
+        for (var i = 0; i < scripts.length; i++) {
+          var src = scripts[i].src || "";
+          if (src.includes("voicero-") || src.includes("voicero/")) {
+            iconSrc = src.substring(0, src.lastIndexOf("/") + 1) + "icon.png";
+            break;
+          }
+        }
+
+        // If we couldn't find it from scripts, try common locations
+        if (!iconSrc) {
+          // Try several common paths
+          var possiblePaths = [
+            "./icon.png",
+            "/extensions/voicero/assets/icon.png",
+            "https://cdn.shopify.com/extensions/voicero/assets/icon.png",
+            "https://cdn.jsdelivr.net/gh/voicero/assets/icon.png",
+            // Attempt to use a data URL as final fallback
+            "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjODgyYmU2IiBzdHJva2Utd2lkdGg9IjIiPjxjaXJjbGUgY3g9IjEyIiBjeT0iMTIiIHI9IjEwIj48L2NpcmNsZT48cGF0aCBkPSJNMTIgOHY0TTEyIDE2aDAuMDEiPjwvcGF0aD48L3N2Zz4=",
+          ];
+
+          // Try to find the first working path
+          iconSrc = possiblePaths[0]; // Default to first option initially
+
+          // Also look for icon.png in the current page's HTML
+          var imgElements = document.querySelectorAll("img");
+          for (var i = 0; i < imgElements.length; i++) {
+            var imgSrc = imgElements[i].src || "";
+            if (imgSrc.includes("icon.png") || imgSrc.includes("suvi")) {
+              iconSrc = imgSrc;
+              console.log("Found icon in page:", iconSrc);
+              break;
+            }
+          }
+        }
+
+        var icon = document.createElement("img");
+        icon.src = iconSrc;
+        icon.alt = "Suvi";
+        icon.style.cssText = `
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        `;
+
+        // Force the icon to be visible with !important flags
+        icon.style.cssText += `
+          display: block !important;
+          visibility: visible !important;
+          opacity: 1 !important;
+          z-index: 99999 !important;
+          position: relative !important;
+        `;
+
+        iconContainer.appendChild(icon);
+
+        // CRITICAL FIX: First set the formatted content
         messageContent.innerHTML = this.formatContent(text);
+
+        // THEN add the icon container to the message content
+        // This ensures the icon isn't overwritten by the innerHTML operation
+        messageContent.appendChild(iconContainer);
+
+        // Debug logging to track icon addition
+        console.log("Added AI message icon with src:", iconSrc);
 
         // Use event delegation instead of individual click handlers
         // We'll set up a single click handler on the message element
@@ -1569,6 +1719,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
             margin-bottom: 16px; /* Increased from default */
             position: relative;
             padding-left: 8px;
+            margin-top: 12px; /* Add space for icon */
           }
 
           .ai-message .message-content {
@@ -1582,6 +1733,33 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
             line-height: 1.4;
             text-align: left;
             box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+            position: relative; /* Ensure positioning context */
+          }
+          
+          .ai-message .ai-icon-container {
+            position: absolute;
+            top: -15px;
+            left: -15px;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            overflow: hidden;
+            z-index: 9999;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+            border: 2px solid white;
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+          }
+          
+          .ai-message .ai-icon-container img {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover !important;
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
           }
           
           /* iPhone-style message grouping */
@@ -1809,6 +1987,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
               margin-bottom: 16px; /* Increased from default */
               position: relative;
               padding-left: 8px;
+              margin-top: 12px; /* Add space for icon */
             }
 
             .ai-message .message-content {
@@ -1822,6 +2001,33 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
               line-height: 1.4;
               text-align: left;
               box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+              position: relative; /* Ensure positioning context */
+            }
+            
+            .ai-message .ai-icon-container {
+              position: absolute;
+              top: -15px;
+              left: -15px;
+              width: 30px;
+              height: 30px;
+              border-radius: 50%;
+              overflow: hidden;
+              z-index: 9999;
+              background: white;
+              box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+              border: 2px solid white;
+              display: block !important;
+              visibility: visible !important;
+              opacity: 1 !important;
+            }
+            
+            .ai-message .ai-icon-container img {
+              width: 100% !important;
+              height: 100% !important;
+              object-fit: cover !important;
+              display: block !important;
+              visibility: visible !important;
+              opacity: 1 !important;
             }
             
             /* iPhone-style message grouping */
@@ -3361,7 +3567,12 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
     },
 
     // Add message to the chat interface (used for both user and AI messages)
-    addMessage: function (text, role, isLoading = false, isInitial = false) {
+    addMessage: function (
+      text,
+      role,
+      skipAddToMessages = false,
+      isInitial = false,
+    ) {
       if (!text) return;
 
       // Format message if needed
@@ -3385,7 +3596,98 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
       // Create message content
       var contentDiv = document.createElement("div");
       contentDiv.className = "message-content";
-      contentDiv.innerHTML = text;
+
+      // For AI messages, we need special handling to add the icon
+      if (role === "ai") {
+        // Set position relative for the content div
+        contentDiv.style.position = "relative";
+
+        // First set the formatted content
+        contentDiv.innerHTML = this.formatContent(text);
+
+        // Now create the icon
+        var iconContainer = document.createElement("div");
+        iconContainer.className = "ai-icon-container";
+        iconContainer.style.cssText = `
+          position: absolute;
+          top: -15px;
+          left: -15px;
+          width: 30px;
+          height: 30px;
+          border-radius: 50%;
+          overflow: hidden;
+          z-index: 9999;
+          background: white;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+          border: 2px solid white;
+          display: block !important;
+          visibility: visible !important;
+          opacity: 1 !important;
+        `;
+
+        // Get the icon path
+        var iconSrc = "";
+
+        // First try to use the extension URL from scripts
+        var scripts = document.querySelectorAll("script");
+        for (var i = 0; i < scripts.length; i++) {
+          var src = scripts[i].src || "";
+          if (src.includes("voicero-") || src.includes("voicero/")) {
+            iconSrc = src.substring(0, src.lastIndexOf("/") + 1) + "icon.png";
+            break;
+          }
+        }
+
+        // If still no icon, look in existing images on page
+        if (!iconSrc) {
+          var imgElements = document.querySelectorAll("img");
+          for (var i = 0; i < imgElements.length; i++) {
+            var imgSrc = imgElements[i].src || "";
+            if (imgSrc.includes("icon.png") || imgSrc.includes("suvi")) {
+              iconSrc = imgSrc;
+              console.log("Found icon in page:", iconSrc);
+              break;
+            }
+          }
+        }
+
+        // If still no icon, use a fallback
+        if (!iconSrc) {
+          iconSrc = "./icon.png";
+        }
+
+        var icon = document.createElement("img");
+        icon.src = iconSrc;
+        icon.alt = "Suvi";
+        icon.style.cssText = `
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          display: block !important;
+          visibility: visible !important;
+          opacity: 1 !important;
+        `;
+
+        iconContainer.appendChild(icon);
+        contentDiv.appendChild(iconContainer);
+
+        console.log("Added icon to new AI message:", iconSrc);
+      } else if (role === "user") {
+        contentDiv.innerHTML = text;
+
+        // Apply the main color to user messages - use website color directly
+        contentDiv.style.backgroundColor = this.websiteColor || "#882be6";
+
+        // Add delivery status for user messages (iPhone-style) with fixed positioning
+        var statusDiv = document.createElement("div");
+        statusDiv.className = "read-status";
+        statusDiv.textContent = "Delivered";
+        statusDiv.style.cssText =
+          "position: absolute; right: 8px; bottom: -20px; font-size: 11px; color: #8e8e93;";
+        messageDiv.appendChild(statusDiv);
+      } else {
+        contentDiv.innerHTML = text;
+      }
 
       if (isInitial) {
         contentDiv.style.background = "#e5e5ea";
@@ -3406,21 +3708,12 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
             contentDiv.innerHTML = promptText;
           }
         }
-      } else if (role === "user") {
-        // Apply the main color to user messages - use website color directly
-        contentDiv.style.backgroundColor = this.websiteColor || "#882be6";
-
-        // Add delivery status for user messages (iPhone-style) with fixed positioning
-        var statusDiv = document.createElement("div");
-        statusDiv.className = "read-status";
-        statusDiv.textContent = "Delivered";
-        statusDiv.style.cssText =
-          "position: absolute; right: 8px; bottom: -20px; font-size: 11px; color: #8e8e93;";
-        messageDiv.appendChild(statusDiv);
       }
 
-      // Add to message div
-      messageDiv.appendChild(contentDiv);
+      // Add to message div if it hasn't been added yet
+      if (!messageDiv.querySelector(".message-content")) {
+        messageDiv.appendChild(contentDiv);
+      }
 
       // Add to messages container in both shadow DOM and regular DOM
       if (this.shadowRoot) {
@@ -3456,8 +3749,8 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
         }
       }
 
-      // Store message in history if not a loading indicator
-      if (!isLoading) {
+      // Store message in history unless skipping
+      if (!skipAddToMessages) {
         this.messages = this.messages || [];
         this.messages.push({
           role: role === "user" ? "user" : "assistant",
@@ -3467,7 +3760,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
         // Update VoiceroCore state if available
       }
 
-      if (role === "ai" && !isInitial && !isLoading) {
+      if (role === "ai" && !isInitial) {
         try {
           // Try three different methods to ensure the report button gets added
 
