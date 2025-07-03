@@ -2038,7 +2038,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
             background: rgb(242, 242, 247) !important;
             z-index: 9999999 !important;
             display: flex !important;
-            justify-content: flex-end !important;
+            justify-content: space-between !important;
             align-items: center !important;
             padding: 10px 15px !important;
             border-bottom: 1px solid rgba(0, 0, 0, 0.1) !important;
@@ -2049,6 +2049,71 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
             box-sizing: border-box !important;
             transform: translateZ(0);
           ">
+            <!-- Suvi header with avatar and name (left side) -->
+            <div style="
+              display: flex !important;
+              align-items: center !important;
+              gap: 8px !important;
+            ">
+              <div style="
+                width: 28px !important;
+                height: 28px !important;
+                border-radius: 50% !important;
+                overflow: hidden !important;
+                position: relative !important;
+                background-color: transparent !important;
+              ">
+                <img
+                  src="${(() => {
+                    // Try to build the correct path for Shopify theme extension assets
+                    var extensionUrl = "";
+                    var scripts = document.querySelectorAll("script");
+                    for (var i = 0; i < scripts.length; i++) {
+                      var src = scripts[i].src || "";
+                      if (
+                        src.includes("voicero-") ||
+                        src.includes("voicero/")
+                      ) {
+                        extensionUrl = src.substring(
+                          0,
+                          src.lastIndexOf("/") + 1,
+                        );
+                        break;
+                      }
+                    }
+                    return extensionUrl
+                      ? extensionUrl + "icon.png"
+                      : "./icon.png";
+                  })()}"
+                  alt="Suvi"
+                  style="
+                    width: 100% !important;
+                    height: 100% !important;
+                    object-fit: cover !important;
+                    border-radius: 50% !important;
+                  "
+                >
+              </div>
+              <div style="
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: flex-start !important;
+              ">
+                <div style="
+                  font-weight: bold !important;
+                  color: black !important;
+                  font-size: 14px !important;
+                  line-height: 1 !important;
+                ">Suvi</div>
+                <div style="
+                  font-size: 10px !important;
+                  color: #666 !important;
+                  line-height: 1 !important;
+                ">AI Sales Rep</div>
+              </div>
+            </div>
+            
+            <!-- Control buttons (right side) -->
             <div style="
               display: flex !important;
               gap: 10px !important;
