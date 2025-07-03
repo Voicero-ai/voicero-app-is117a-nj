@@ -2138,92 +2138,56 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
           </div>
 
           <div id="chat-input-wrapper" style="
-            position: relative;
-            padding: 2px;
-            background: linear-gradient(90deg, 
-              ${this.adjustColor(
-                `var(--voicero-theme-color, ${this.websiteColor || "#882be6"})`,
-                -0.4,
-              )}, 
-              ${this.adjustColor(
-                `var(--voicero-theme-color, ${this.websiteColor || "#882be6"})`,
-                -0.2,
-              )}, 
-              var(--voicero-theme-color, ${this.websiteColor || "#882be6"}),
-              ${this.adjustColor(
-                `var(--voicero-theme-color, ${this.websiteColor || "#882be6"})`,
-                0.2,
-              )}, 
-              ${this.adjustColor(
-                `var(--voicero-theme-color, ${this.websiteColor || "#882be6"})`,
-                0.4,
-              )}
-            );
-            background-size: 500% 100%;
+            margin: auto 0 20px;
+            padding: 0 15px;
+            width: 100%;
+            box-sizing: border-box;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
             border-radius: 0 0 12px 12px;
-            animation: gradientBorder 15s linear infinite;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-            margin-top: 0;
-            border-top: 0;
           ">
             <div style="
-              display: flex;
-              align-items: center;
-              background: white;
-              border-radius: 0 0 10px 10px;
-              padding: 8px 12px;
-              min-height: 45px;
-              width: calc(100% - 24px);
+              position: relative;
+              width: 100%;
+              padding: 12px 0;
             ">
               <input
                 type="text"
                 id="chat-input"
-                placeholder="Message"
+                placeholder="Ask a question"
                 style="
-                  flex: 1;
-                  border: none;
-                  padding: 8px 12px;
-                  font-size: 16px;
+                  width: 100%;
+                  padding: 12px 15px;
+                  padding-right: 40px;
+                  border: 1px solid rgba(0, 0, 0, 0.1);
+                  border-radius: 8px;
+                  font-size: 14px;
+                  color: #333;
+                  background: white;
                   outline: none;
-                  background: rgba(0, 0, 0, 0.05);
-                  border-radius: 20px;
-                  margin: 0 8px;
-                  overflow: hidden;
-                  text-overflow: ellipsis;
-                  resize: none;
-                  height: auto;
-                  min-height: 36px;
-                  line-height: 20px;
+                  box-sizing: border-box;
+                  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
                 "
               >
               <button id="send-message-btn" style="
-                width: 36px;
-                height: 36px;
-                border-radius: 50%;
-                background: ${this.websiteColor || "#882be6"};
+                position: absolute;
+                right: 12px;
+                top: 50%;
+                transform: translateY(-50%);
+                background: transparent;
                 border: none;
+                cursor: pointer;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                cursor: pointer;
-                transition: all 0.3s ease;
-                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-                position: relative;
               ">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"></path>
                 </svg>
               </button>
-            </div>
-            <div style="
-              position: absolute;
-              bottom: 2px;
-              left: 0;
-              right: 0;
-              text-align: center;
-              line-height: 1;
-            ">
             </div>
           </div>
         `;
