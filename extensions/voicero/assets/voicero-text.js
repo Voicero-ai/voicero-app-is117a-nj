@@ -169,11 +169,9 @@
       // Get the main color - USE WEBSITE COLOR DIRECTLY INSTEAD OF VARIANTS
       var mainColor = this.websiteColor || "#882be6"; // Use website color directly
 
-      // Update send button color
+      // Don't set background color for send button (keep it transparent)
       var sendButton = this.shadowRoot.getElementById("send-message-btn");
-      if (sendButton) {
-        sendButton.style.backgroundColor = mainColor;
-      }
+      // No background color applied to keep it transparent
 
       // Update user message bubbles
       var userMessages = this.shadowRoot.querySelectorAll(
@@ -2040,10 +2038,10 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
             display: flex !important;
             justify-content: space-between !important;
             align-items: center !important;
-            padding: 10px 15px 15px !important;
+            padding: 10px 15px !important;
             border-bottom: 1px solid rgba(0, 0, 0, 0.1) !important;
             border-radius: 0 !important;
-            margin: 0 0 10px 0 !important;
+            margin: 0 !important;
             width: 100% !important;
             box-shadow: none !important;
             box-sizing: border-box !important;
@@ -2164,8 +2162,8 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
           <div id="chat-messages" style="
             background: #f2f2f7 !important;
             border-radius: 0 !important;
-            padding: 10px 0 0 0 !important;
-            margin: 0 !important;
+            padding: 0 !important;
+            margin: 6px 0 0 0 !important;
             height: 400px !important;
             max-height: 400px !important;
             min-height: 400px !important;
@@ -2237,7 +2235,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
                   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
                 "
               >
-              <button id="send-message-btn" style="
+              <div id="send-message-btn" style="
                 position: absolute;
                 right: 12px;
                 top: 50%;
@@ -2251,15 +2249,13 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
                 justify-content: center;
                 padding: 0;
                 margin: 0;
-                width: 36px;
-                height: 36px;
-                box-shadow: none !important;
+                width: 24px;
+                height: 24px;
               ">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #000000;">
-                  <line x1="22" y1="2" x2="11" y2="13" stroke="#000000"></line>
-                  <polygon points="22 2 15 22 11 13 2 9 22 2" stroke="#000000" fill="none"></polygon>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#444" stroke-width="2">
+                  <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"></path>
                 </svg>
-              </button>
+              </div>
             </div>
           </div>
         `;
