@@ -2242,15 +2242,22 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
                 right: 12px;
                 top: 50%;
                 transform: translateY(-50%);
-                background: transparent;
+                background: transparent !important;
+                background-color: transparent !important;
                 border: none;
                 cursor: pointer;
                 display: flex;
                 align-items: center;
                 justify-content: center;
+                padding: 0;
+                margin: 0;
+                width: 36px;
+                height: 36px;
+                box-shadow: none !important;
               ">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="black !important" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: black !important;">
-                  <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="black !important"></path>
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #000000;">
+                  <line x1="22" y1="2" x2="11" y2="13" stroke="#000000"></line>
+                  <polygon points="22 2 15 22 11 13 2 9 22 2" stroke="#000000" fill="none"></polygon>
                 </svg>
               </button>
             </div>
