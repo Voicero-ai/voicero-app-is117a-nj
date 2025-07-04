@@ -5,6 +5,9 @@
 
 // Use IIFE to avoid global variable conflicts
 (function (window, document) {
+  // Set up global variable to track interaction type
+  window.voiceroInteractionType = "noneSpecified";
+
   // Check if VoiceroWelcome already exists to prevent redeclaration
   if (window.VoiceroWelcome) {
     console.log("VoiceroWelcome is already defined, not redefining");
@@ -528,21 +531,24 @@
         button.addEventListener("click", () => {
           console.log("Button clicked: " + buttonData.action);
 
-          // Prepare assistant message based on button clicked
-          let assistantMessage = "";
+          // Set global interaction type based on button clicked
           switch (buttonData.action) {
             case "talk-to-sales":
+              window.voiceroInteractionType = "sales";
               assistantMessage =
                 "How can I help you talk to our sales team about our product?";
               break;
             case "get-started":
+              window.voiceroInteractionType = "general";
               assistantMessage =
                 "How can I help you get started with our product?";
               break;
             case "customer-support":
+              window.voiceroInteractionType = "support";
               assistantMessage = "How can I assist you with customer support?";
               break;
             default:
+              window.voiceroInteractionType = "noneSpecified";
               assistantMessage = "Hello! How can I help you today?";
           }
 
@@ -945,6 +951,9 @@
       if (!text) return;
 
       console.log("VoiceroWelcome: Handling user input: " + text);
+
+      // Set default type for direct text input
+      window.voiceroInteractionType = "noneSpecified";
 
       // Store the text for later use
       const userText = text;

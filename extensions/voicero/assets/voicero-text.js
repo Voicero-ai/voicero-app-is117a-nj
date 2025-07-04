@@ -2507,6 +2507,15 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
         type: "text",
       };
 
+      // Add interaction type from global variable if available
+      if (window.voiceroInteractionType) {
+        requestBody.interactionType = window.voiceroInteractionType;
+        console.log(
+          "[VOICERO TEXT] Adding interaction type:",
+          window.voiceroInteractionType,
+        );
+      }
+
       // Add thread ID if available (priority order: passed in > current instance > most recent from session)
       if (threadId) {
         requestBody.threadId = threadId;
