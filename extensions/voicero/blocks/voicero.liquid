@@ -249,18 +249,13 @@
       loadScript("{{ 'voicero-welcome.js' | asset_url }}", function() {
         console.log("VoiceroWelcome loaded - initializing");
         
-        // Load text module next
-        loadScript("{{ 'voicero-text.js' | asset_url }}", function() {
-          console.log("VoiceroText loaded");
-          
-          // Ensure welcome screen is created after text module is loaded
-          if (window.VoiceroWelcome && window.VoiceroWelcome.createWelcomeContainer) {
-            console.log("Ensuring welcome container is created");
-            setTimeout(function() {
-              window.VoiceroWelcome.createWelcomeContainer();
-            }, 200);
-          }
-        });
+        // Ensure welcome screen is created after modules are loaded
+        if (window.VoiceroWelcome && window.VoiceroWelcome.createWelcomeContainer) {
+          console.log("Ensuring welcome container is created");
+          setTimeout(function() {
+            window.VoiceroWelcome.createWelcomeContainer();
+          }, 200);
+        }
       });
       
       // Load other scripts in parallel after core and welcome are loaded

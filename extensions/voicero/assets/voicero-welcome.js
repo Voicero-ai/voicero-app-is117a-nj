@@ -17,8 +17,8 @@
     return;
   }
 
-  // Helper function to check if there are existing thread messages and open chat if needed
-  const checkForThreadMessagesAndOpenChat = function () {
+  // Helper function to check if there are existing thread messages
+  const checkForThreadMessages = function () {
     console.log("VoiceroWelcome: Checking for existing thread messages");
 
     // Check if VoiceroCore has thread messages
@@ -40,45 +40,9 @@
           latestThread.messages.length > 0
         ) {
           console.log(
-            `VoiceroWelcome: Latest thread has ${latestThread.messages.length} messages, opening chat`,
+            `VoiceroWelcome: Latest thread has ${latestThread.messages.length} messages`,
           );
-
-          // Force open text chat instead of welcome
-          if (window.VoiceroText) {
-            // Ensure the text chat is open and visible
-            if (window.VoiceroText.openTextChat) {
-              console.log(
-                "VoiceroWelcome: Opening text chat due to existing messages",
-              );
-              window.VoiceroText.openTextChat();
-
-              // Make sure it stays visible
-              setTimeout(() => {
-                const textChatContainer = document.getElementById(
-                  "voicero-text-chat-container",
-                );
-                if (textChatContainer) {
-                  textChatContainer.style.display = "block";
-                  textChatContainer.style.visibility = "visible";
-                  textChatContainer.style.opacity = "1";
-                  textChatContainer.style.zIndex = "9999999";
-                }
-
-                // Update window state
-                if (
-                  window.VoiceroCore &&
-                  window.VoiceroCore.updateWindowState
-                ) {
-                  window.VoiceroCore.updateWindowState({
-                    textChat: true,
-                    textWelcome: false,
-                  });
-                }
-              }, 100);
-
-              return true; // Indicate we opened chat
-            }
-          }
+          return true; // Indicate we found messages
         }
       }
     } else if (
@@ -93,124 +57,15 @@
       );
 
       if (messages.length > 0) {
-        console.log(
-          "VoiceroWelcome: Current thread has messages, opening chat",
-        );
-
-        // Force open text chat instead of welcome
-        if (window.VoiceroText) {
-          // Ensure the text chat is open and visible
-          if (window.VoiceroText.openTextChat) {
-            console.log(
-              "VoiceroWelcome: Opening text chat due to existing messages",
-            );
-            window.VoiceroText.openTextChat();
-
-            // Make sure it stays visible
-            setTimeout(() => {
-              const textChatContainer = document.getElementById(
-                "voicero-text-chat-container",
-              );
-              if (textChatContainer) {
-                textChatContainer.style.display = "block";
-                textChatContainer.style.visibility = "visible";
-                textChatContainer.style.opacity = "1";
-                textChatContainer.style.zIndex = "9999999";
-              }
-
-              // Update window state
-              if (window.VoiceroCore && window.VoiceroCore.updateWindowState) {
-                window.VoiceroCore.updateWindowState({
-                  textChat: true,
-                  textWelcome: false,
-                });
-              }
-            }, 100);
-
-            return true; // Indicate we opened chat
-          }
-        }
+        console.log("VoiceroWelcome: Current thread has messages");
+        return true; // Indicate we found messages
       }
     }
 
-    return false; // Indicate we didn't open chat
+    return false; // Indicate we didn't find messages
   };
 
-  // CRITICAL: Override VoiceroText closeTextChat method to prevent it from closing the chat
-  const overrideVoiceroTextClose = function () {
-    if (window.VoiceroText) {
-      console.log(
-        "VoiceroWelcome: Overriding VoiceroText.closeTextChat method",
-      );
-
-      // Save original method if it exists
-      if (window.VoiceroText.closeTextChat) {
-        window.originalCloseTextChat = window.VoiceroText.closeTextChat;
-
-        // Replace with our version that prevents closing
-        window.VoiceroText.closeTextChat = function () {
-          console.log(
-            "VoiceroWelcome: Preventing VoiceroText from closing chat",
-          );
-
-          // Instead of closing, make sure it stays open
-          const textChatContainer = document.getElementById(
-            "voicero-text-chat-container",
-          );
-          if (textChatContainer) {
-            textChatContainer.style.display = "block";
-            textChatContainer.style.visibility = "visible";
-            textChatContainer.style.opacity = "1";
-            textChatContainer.style.zIndex = "9999999";
-          }
-
-          // Force update window state to keep chat open
-          if (window.VoiceroCore && window.VoiceroCore.updateWindowState) {
-            window.VoiceroCore.updateWindowState({
-              textChat: true,
-            });
-          }
-
-          return false; // Prevent original method from being called
-        };
-      }
-
-      // Also override any other methods that might close the chat
-      if (window.VoiceroText.resetChat) {
-        window.originalResetChat = window.VoiceroText.resetChat;
-
-        window.VoiceroText.resetChat = function () {
-          console.log("VoiceroWelcome: Intercepted resetChat call");
-          // Allow reset but ensure it stays visible
-          const result = window.originalResetChat.apply(this, arguments);
-
-          // Make sure it stays visible
-          setTimeout(() => {
-            const textChatContainer = document.getElementById(
-              "voicero-text-chat-container",
-            );
-            if (textChatContainer) {
-              textChatContainer.style.display = "block";
-              textChatContainer.style.visibility = "visible";
-              textChatContainer.style.opacity = "1";
-              textChatContainer.style.zIndex = "9999999";
-            }
-          }, 100);
-
-          return result;
-        };
-      }
-    }
-  };
-
-  // Try to override immediately
-  overrideVoiceroTextClose();
-
-  // Also try again after a delay to catch late initialization
-  setTimeout(overrideVoiceroTextClose, 1000);
-  setTimeout(overrideVoiceroTextClose, 2000);
-
-  // Add global CSS to ensure welcome screen is always on top
+  // Add global CSS for welcome screen
   const globalWelcomeStyle = document.createElement("style");
   globalWelcomeStyle.innerHTML = `
     #voicero-welcome-container {
@@ -232,14 +87,6 @@
     #voicero-welcome-container {
       animation: forceOnTop 0.1s forwards !important;
     }
-    
-    /* Force text chat to stay visible */
-    #voicero-text-chat-container {
-      display: block !important;
-      visibility: visible !important;
-      opacity: 1 !important;
-      z-index: 9999999 !important;
-    }
   `;
   document.head.appendChild(globalWelcomeStyle);
 
@@ -248,7 +95,6 @@
     isShowingWelcomeScreen: false,
     websiteColor: null, // Will be populated from VoiceroCore
     initialized: false,
-    voiceroTextInstance: null, // Store reference to VoiceroText instance
 
     // Initialize the welcome module
     init: function () {
@@ -259,9 +105,6 @@
       this.initialized = true;
 
       console.log("VoiceroWelcome: Initializing");
-
-      // Override VoiceroText close method again to be sure
-      overrideVoiceroTextClose();
 
       // IMPORTANT: Always get the latest website color from VoiceroCore
       if (window.VoiceroCore && window.VoiceroCore.websiteColor) {
@@ -287,8 +130,7 @@
       }
 
       // First check if there are existing thread messages
-      // If so, open text chat instead of welcome screen
-      if (!checkForThreadMessagesAndOpenChat()) {
+      if (!checkForThreadMessages()) {
         // No existing messages, show welcome screen
         setTimeout(() => {
           this.createWelcomeContainer();
@@ -320,16 +162,7 @@
       }
 
       // Mark session as showing welcome but don't hide the button
-      if (window.VoiceroCore) {
-        // Update session state to show welcome
-        if (window.VoiceroCore.updateWindowState) {
-          console.log("VoiceroWelcome: Setting textWelcome=true");
-          window.VoiceroCore.updateWindowState({
-            textWelcome: true,
-          });
-        }
-      }
-
+    
       // Create fresh container for welcome screen
       let welcomeContainer = document.createElement("div");
       welcomeContainer.id = "voicero-welcome-container";
@@ -414,9 +247,6 @@
 
       // Set flag that we're showing welcome screen
       this.isShowingWelcomeScreen = true;
-      if (window.VoiceroText) {
-        window.VoiceroText.isShowingWelcomeScreen = true;
-      }
 
       // Reset the flag after a short delay to allow future welcome screen creation
       setTimeout(() => {
@@ -512,7 +342,7 @@
         opacity: 0;
       `;
 
-      // Store reference to VoiceroText for button handlers
+      // Store reference for button handlers
       var self = this;
 
       // Add hover functionality for the welcome screen
@@ -546,18 +376,9 @@
           setTimeout(() => welcomeContainer.remove(), 10);
         }
 
-        // Update session state - only one call needed
-        if (window.VoiceroCore && window.VoiceroCore.updateWindowState) {
-          window.VoiceroCore.updateWindowState({
-            textWelcome: false,
-          });
-        }
 
         // Set flag to indicate welcome is closed
         self.isShowingWelcomeScreen = false;
-        if (window.VoiceroText) {
-          window.VoiceroText.isShowingWelcomeScreen = false;
-        }
       });
 
       welcomeScreen.appendChild(closeButton);
@@ -741,547 +562,31 @@
         button.addEventListener("click", () => {
           console.log("Button clicked: " + buttonData.action);
 
-          // Override VoiceroText close method again to be sure
-          overrideVoiceroTextClose();
-
           // Set global interaction type based on button clicked
           switch (buttonData.action) {
             case "talk-to-sales":
               window.voiceroInteractionType = "sales";
-              assistantMessage =
-                "How can I help you talk to our sales team about our product?";
               break;
             case "get-started":
               window.voiceroInteractionType = "general";
-              assistantMessage =
-                "How can I help you get started with our product?";
               break;
             case "customer-support":
               window.voiceroInteractionType = "support";
-              assistantMessage = "How can I assist you with customer support?";
               break;
             default:
               window.voiceroInteractionType = "noneSpecified";
-              assistantMessage = "Hello! How can I help you today?";
           }
 
-          // Store reference to VoiceroWelcome to use in the closure
-          const voiceroWelcome = self;
-
-          // CRITICAL: Set up a MutationObserver to prevent the chat from being closed
-          const setupChatObserver = () => {
-            const textChatContainer = document.getElementById(
-              "voicero-text-chat-container",
-            );
-            if (textChatContainer) {
-              console.log(
-                "VoiceroWelcome: Setting up MutationObserver to prevent chat closing",
-              );
-
-              // Create an observer to watch for style or visibility changes
-              const observer = new MutationObserver((mutations) => {
-                mutations.forEach((mutation) => {
-                  if (
-                    mutation.type === "attributes" &&
-                    (mutation.attributeName === "style" ||
-                      mutation.attributeName === "class" ||
-                      mutation.attributeName === "display" ||
-                      mutation.attributeName === "visibility")
-                  ) {
-                    // Check if the chat is being hidden
-                    const style = window.getComputedStyle(textChatContainer);
-                    if (
-                      style.display === "none" ||
-                      style.visibility === "hidden" ||
-                      style.opacity === "0"
-                    ) {
-                      console.log(
-                        "VoiceroWelcome: Chat container being hidden, forcing display",
-                      );
-
-                      // Force it to stay visible
-                      textChatContainer.style.display = "block";
-                      textChatContainer.style.visibility = "visible";
-                      textChatContainer.style.opacity = "1";
-                      textChatContainer.style.zIndex = "9999999";
-
-                      // Also update window state
-                      if (
-                        window.VoiceroCore &&
-                        window.VoiceroCore.updateWindowState
-                      ) {
-                        window.VoiceroCore.updateWindowState({
-                          textChat: true,
-                        });
-                      }
-                    }
-                  }
-                });
-              });
-
-              // Start observing
-              observer.observe(textChatContainer, {
-                attributes: true,
-                attributeFilter: ["style", "class", "display", "visibility"],
-              });
-
-              // Store observer reference to prevent garbage collection
-              window.voiceroChatObserver = observer;
-            }
-          };
-
-          // Override any VoiceroCore methods that might close the chat
-          if (window.VoiceroCore) {
-            // Save original methods if not already saved
-            if (!window.originalVoiceroCoreUpdateWindowState) {
-              window.originalVoiceroCoreUpdateWindowState =
-                window.VoiceroCore.updateWindowState;
-
-              // Override updateWindowState to prevent closing chat
-              window.VoiceroCore.updateWindowState = function (state) {
-                // If attempting to close text chat, force it to stay open
-                if (state && state.textChat === false) {
-                  console.log(
-                    "VoiceroWelcome: Preventing chat from being closed",
-                  );
-                  state.textChat = true;
-                }
-
-                // Call original method with modified state
-                return window.originalVoiceroCoreUpdateWindowState.call(
-                  window.VoiceroCore,
-                  state,
-                );
-              };
-            }
+          // SIMPLIFIED: Remove the welcome container
+          const welcomeContainer = document.getElementById(
+            "voicero-welcome-container",
+          );
+          if (welcomeContainer) {
+            welcomeContainer.remove();
           }
 
-          // Update window state to ensure text chat stays open
-          if (window.VoiceroCore && window.VoiceroCore.updateWindowState) {
-            window.VoiceroCore.updateWindowState({
-              textWelcome: false,
-              textChat: true, // Ensure text chat stays open
-            });
-          }
-
-          // First check if we have a direct reference to the VoiceroText instance
-          if (voiceroWelcome.voiceroTextInstance) {
-            // First reset welcome screen state
-            voiceroWelcome.voiceroTextInstance.isShowingWelcomeScreen = false;
-
-            // Prevent any automatic closing of the chat interface
-            if (voiceroWelcome.voiceroTextInstance.preventAutoClose) {
-              voiceroWelcome.voiceroTextInstance.preventAutoClose = true;
-            }
-
-            // Reset the welcome screen and show chat interface
-            if (
-              voiceroWelcome.voiceroTextInstance.resetWelcomeScreenAndShowChat
-            ) {
-              voiceroWelcome.voiceroTextInstance.resetWelcomeScreenAndShowChat();
-
-              // Set up observer to prevent chat from being closed
-              setupChatObserver();
-
-              // Display message in UI only without adding to backend thread
-              setTimeout(() => {
-                // Just use the original addMessage method but only render to UI without sending to backend
-                if (voiceroWelcome.voiceroTextInstance.addMessage) {
-                  console.log(
-                    "VoiceroWelcome: Force displaying message in UI:",
-                    assistantMessage,
-                  );
-                  // Force using the original method with UI-only flag if it has one
-                  try {
-                    // Try to call with UI-only flag if it accepts it
-                    voiceroWelcome.voiceroTextInstance.addMessage(
-                      assistantMessage,
-                      "ai",
-                      true,
-                    );
-                  } catch (e) {
-                    // If error, fall back to standard call
-                    voiceroWelcome.voiceroTextInstance.addMessage(
-                      assistantMessage,
-                      "ai",
-                    );
-                  }
-
-                  // Important: Prevent the message from being sent to backend
-                  // Find and remove from pending messages if that exists
-                  if (voiceroWelcome.voiceroTextInstance.pendingMessages) {
-                    voiceroWelcome.voiceroTextInstance.pendingMessages =
-                      voiceroWelcome.voiceroTextInstance.pendingMessages.filter(
-                        (msg) => msg.content !== assistantMessage,
-                      );
-                  }
-                }
-
-                // As a backup, also try DOM insertion
-                // Find all possible message containers
-                const containers = [
-                  document.querySelector(".voicero-chat-messages"),
-                  document.querySelector(".chat-messages"),
-                  document.querySelector(".message-container"),
-                  document.getElementById("voicero-messages"),
-                  document.getElementById("chat-messages"),
-                ].filter(Boolean);
-
-                if (containers.length > 0) {
-                  // Create styled message element
-                  const messageEl = document.createElement("div");
-                  messageEl.className = "voicero-message voicero-ai-message";
-                  messageEl.style.cssText = `
-                    padding: 10px 15px;
-                    background-color: #f0f0f0;
-                    border-radius: 15px;
-                    margin-bottom: 10px;
-                    display: inline-block;
-                    max-width: 80%;
-                  `;
-                  messageEl.innerHTML = `<div class="voicero-message-content">${assistantMessage}</div>`;
-
-                  // Add to all found containers for redundancy
-                  containers.forEach((container) => {
-                    container.appendChild(messageEl.cloneNode(true));
-                    container.scrollTop = container.scrollHeight;
-                  });
-                }
-
-                // Ensure text chat container stays visible
-                const textChatContainer = document.getElementById(
-                  "voicero-text-chat-container",
-                );
-                if (textChatContainer) {
-                  textChatContainer.style.display = "block";
-                  textChatContainer.style.visibility = "visible";
-                  textChatContainer.style.opacity = "1";
-                  textChatContainer.style.zIndex = "9999999"; // Ensure highest z-index
-                }
-
-                // Force update window state again to ensure chat stays open
-                if (
-                  window.VoiceroCore &&
-                  window.VoiceroCore.updateWindowState
-                ) {
-                  window.VoiceroCore.updateWindowState({
-                    textChat: true,
-                  });
-                }
-
-                // Set up a recurring check to keep chat visible
-                const keepChatVisibleInterval = setInterval(() => {
-                  const textChatContainer = document.getElementById(
-                    "voicero-text-chat-container",
-                  );
-                  if (textChatContainer) {
-                    const style = window.getComputedStyle(textChatContainer);
-                    if (
-                      style.display === "none" ||
-                      style.visibility === "hidden" ||
-                      style.opacity === "0"
-                    ) {
-                      console.log(
-                        "VoiceroWelcome: Forcing chat to stay visible",
-                      );
-                      textChatContainer.style.display = "block";
-                      textChatContainer.style.visibility = "visible";
-                      textChatContainer.style.opacity = "1";
-                      textChatContainer.style.zIndex = "9999999";
-
-                      // Update window state
-                      if (
-                        window.VoiceroCore &&
-                        window.VoiceroCore.updateWindowState
-                      ) {
-                        window.VoiceroCore.updateWindowState({
-                          textChat: true,
-                        });
-                      }
-                    }
-                  } else {
-                    // If container is gone, stop checking
-                    clearInterval(keepChatVisibleInterval);
-                  }
-                }, 500);
-
-                // Store interval ID in window to prevent garbage collection
-                window.voiceroChatVisibilityInterval = keepChatVisibleInterval;
-              }, 300);
-            } else {
-              // If resetWelcomeScreenAndShowChat isn't available, try openTextChat
-              if (voiceroWelcome.voiceroTextInstance.openTextChat) {
-                voiceroWelcome.voiceroTextInstance.openTextChat();
-
-                // Set up observer to prevent chat from being closed
-                setupChatObserver();
-
-                // Display message in UI only without adding to backend thread
-                setTimeout(() => {
-                  // Just use the original addMessage method but only render to UI without sending to backend
-                  if (voiceroWelcome.voiceroTextInstance.addMessage) {
-                    console.log(
-                      "VoiceroWelcome: Force displaying message in UI:",
-                      assistantMessage,
-                    );
-                    // Force using the original method with UI-only flag if it has one
-                    try {
-                      // Try to call with UI-only flag if it accepts it
-                      voiceroWelcome.voiceroTextInstance.addMessage(
-                        assistantMessage,
-                        "ai",
-                        true,
-                      );
-                    } catch (e) {
-                      // If error, fall back to standard call
-                      voiceroWelcome.voiceroTextInstance.addMessage(
-                        assistantMessage,
-                        "ai",
-                      );
-                    }
-
-                    // Important: Prevent the message from being sent to backend
-                    // Find and remove from pending messages if that exists
-                    if (voiceroWelcome.voiceroTextInstance.pendingMessages) {
-                      voiceroWelcome.voiceroTextInstance.pendingMessages =
-                        voiceroWelcome.voiceroTextInstance.pendingMessages.filter(
-                          (msg) => msg.content !== assistantMessage,
-                        );
-                    }
-                  }
-
-                  // As a backup, also try DOM insertion
-                  // Find all possible message containers
-                  const containers = [
-                    document.querySelector(".voicero-chat-messages"),
-                    document.querySelector(".chat-messages"),
-                    document.querySelector(".message-container"),
-                    document.getElementById("voicero-messages"),
-                    document.getElementById("chat-messages"),
-                  ].filter(Boolean);
-
-                  if (containers.length > 0) {
-                    // Create styled message element
-                    const messageEl = document.createElement("div");
-                    messageEl.className = "voicero-message voicero-ai-message";
-                    messageEl.style.cssText = `
-                      padding: 10px 15px;
-                      background-color: #f0f0f0;
-                      border-radius: 15px;
-                      margin-bottom: 10px;
-                      display: inline-block;
-                      max-width: 80%;
-                    `;
-                    messageEl.innerHTML = `<div class="voicero-message-content">${assistantMessage}</div>`;
-
-                    // Add to all found containers for redundancy
-                    containers.forEach((container) => {
-                      container.appendChild(messageEl.cloneNode(true));
-                      container.scrollTop = container.scrollHeight;
-                    });
-                  }
-
-                  // Ensure text chat container stays visible
-                  const textChatContainer = document.getElementById(
-                    "voicero-text-chat-container",
-                  );
-                  if (textChatContainer) {
-                    textChatContainer.style.display = "block";
-                    textChatContainer.style.visibility = "visible";
-                    textChatContainer.style.opacity = "1";
-                    textChatContainer.style.zIndex = "9999999"; // Ensure highest z-index
-                  }
-
-                  // Force update window state again to ensure chat stays open
-                  if (
-                    window.VoiceroCore &&
-                    window.VoiceroCore.updateWindowState
-                  ) {
-                    window.VoiceroCore.updateWindowState({
-                      textChat: true,
-                    });
-                  }
-
-                  // Set up a recurring check to keep chat visible
-                  const keepChatVisibleInterval = setInterval(() => {
-                    const textChatContainer = document.getElementById(
-                      "voicero-text-chat-container",
-                    );
-                    if (textChatContainer) {
-                      const style = window.getComputedStyle(textChatContainer);
-                      if (
-                        style.display === "none" ||
-                        style.visibility === "hidden" ||
-                        style.opacity === "0"
-                      ) {
-                        console.log(
-                          "VoiceroWelcome: Forcing chat to stay visible",
-                        );
-                        textChatContainer.style.display = "block";
-                        textChatContainer.style.visibility = "visible";
-                        textChatContainer.style.opacity = "1";
-                        textChatContainer.style.zIndex = "9999999";
-
-                        // Update window state
-                        if (
-                          window.VoiceroCore &&
-                          window.VoiceroCore.updateWindowState
-                        ) {
-                          window.VoiceroCore.updateWindowState({
-                            textChat: true,
-                          });
-                        }
-                      }
-                    } else {
-                      // If container is gone, stop checking
-                      clearInterval(keepChatVisibleInterval);
-                    }
-                  }, 500);
-
-                  // Store interval ID in window to prevent garbage collection
-                  window.voiceroChatVisibilityInterval =
-                    keepChatVisibleInterval;
-                }, 300);
-              }
-            }
-          }
-          // Fallback to global VoiceroText
-          else if (window.VoiceroText) {
-            // First reset welcome screen state
-            window.VoiceroText.isShowingWelcomeScreen = false;
-
-            // Reset the welcome screen and show chat interface
-            if (window.VoiceroText.resetWelcomeScreenAndShowChat) {
-              window.VoiceroText.resetWelcomeScreenAndShowChat();
-
-              // Display message in UI only without adding to backend thread
-              setTimeout(() => {
-                // Just use the original addMessage method but only render to UI without sending to backend
-                if (window.VoiceroText.addMessage) {
-                  console.log(
-                    "VoiceroWelcome: Force displaying message in UI (global):",
-                    assistantMessage,
-                  );
-                  // Force using the original method with UI-only flag if it has one
-                  try {
-                    // Try to call with UI-only flag if it accepts it
-                    window.VoiceroText.addMessage(assistantMessage, "ai", true);
-                  } catch (e) {
-                    // If error, fall back to standard call
-                    window.VoiceroText.addMessage(assistantMessage, "ai");
-                  }
-
-                  // Important: Prevent the message from being sent to backend
-                  // Find and remove from pending messages if that exists
-                  if (window.VoiceroText.pendingMessages) {
-                    window.VoiceroText.pendingMessages =
-                      window.VoiceroText.pendingMessages.filter(
-                        (msg) => msg.content !== assistantMessage,
-                      );
-                  }
-                }
-
-                // As a backup, also try DOM insertion
-                // Find all possible message containers
-                const containers = [
-                  document.querySelector(".voicero-chat-messages"),
-                  document.querySelector(".chat-messages"),
-                  document.querySelector(".message-container"),
-                  document.getElementById("voicero-messages"),
-                  document.getElementById("chat-messages"),
-                ].filter(Boolean);
-
-                if (containers.length > 0) {
-                  // Create styled message element
-                  const messageEl = document.createElement("div");
-                  messageEl.className = "voicero-message voicero-ai-message";
-                  messageEl.style.cssText = `
-                    padding: 10px 15px;
-                    background-color: #f0f0f0;
-                    border-radius: 15px;
-                    margin-bottom: 10px;
-                    display: inline-block;
-                    max-width: 80%;
-                  `;
-                  messageEl.innerHTML = `<div class="voicero-message-content">${assistantMessage}</div>`;
-
-                  // Add to all found containers for redundancy
-                  containers.forEach((container) => {
-                    container.appendChild(messageEl.cloneNode(true));
-                    container.scrollTop = container.scrollHeight;
-                  });
-                }
-              }, 300);
-            } else {
-              // If resetWelcomeScreenAndShowChat isn't available, try openTextChat
-              if (window.VoiceroText.openTextChat) {
-                window.VoiceroText.openTextChat();
-
-                // Display message in UI only without adding to backend thread
-                setTimeout(() => {
-                  // Just use the original addMessage method but only render to UI without sending to backend
-                  if (window.VoiceroText.addMessage) {
-                    console.log(
-                      "VoiceroWelcome: Force displaying message in UI (global):",
-                      assistantMessage,
-                    );
-                    // Force using the original method with UI-only flag if it has one
-                    try {
-                      // Try to call with UI-only flag if it accepts it
-                      window.VoiceroText.addMessage(
-                        assistantMessage,
-                        "ai",
-                        true,
-                      );
-                    } catch (e) {
-                      // If error, fall back to standard call
-                      window.VoiceroText.addMessage(assistantMessage, "ai");
-                    }
-
-                    // Important: Prevent the message from being sent to backend
-                    // Find and remove from pending messages if that exists
-                    if (window.VoiceroText.pendingMessages) {
-                      window.VoiceroText.pendingMessages =
-                        window.VoiceroText.pendingMessages.filter(
-                          (msg) => msg.content !== assistantMessage,
-                        );
-                    }
-                  }
-
-                  // As a backup, also try DOM insertion
-                  // Find all possible message containers
-                  const containers = [
-                    document.querySelector(".voicero-chat-messages"),
-                    document.querySelector(".chat-messages"),
-                    document.querySelector(".message-container"),
-                    document.getElementById("voicero-messages"),
-                    document.getElementById("chat-messages"),
-                  ].filter(Boolean);
-
-                  if (containers.length > 0) {
-                    // Create styled message element
-                    const messageEl = document.createElement("div");
-                    messageEl.className = "voicero-message voicero-ai-message";
-                    messageEl.style.cssText = `
-                      padding: 10px 15px;
-                      background-color: #f0f0f0;
-                      border-radius: 15px;
-                      margin-bottom: 10px;
-                      display: inline-block;
-                      max-width: 80%;
-                    `;
-                    messageEl.innerHTML = `<div class="voicero-message-content">${assistantMessage}</div>`;
-
-                    // Add to all found containers for redundancy
-                    containers.forEach((container) => {
-                      container.appendChild(messageEl.cloneNode(true));
-                      container.scrollTop = container.scrollHeight;
-                    });
-                  }
-                }, 300);
-              }
-            }
-          }
+          // Update window state
+          
         });
 
         buttonsContainer.appendChild(button);
@@ -1387,417 +692,19 @@
 
       console.log("VoiceroWelcome: Handling user input: " + text);
 
-      // Override VoiceroText close method again to be sure
-      overrideVoiceroTextClose();
-
       // Set default type for direct text input
       window.voiceroInteractionType = "noneSpecified";
 
-      // Store the text for later use
-      const userText = text;
-
-      // Store a reference to this for use in closures
-      const self = this;
-
-      // CRITICAL: Set up a MutationObserver to prevent the chat from being closed
-      const setupChatObserver = () => {
-        const textChatContainer = document.getElementById(
-          "voicero-text-chat-container",
-        );
-        if (textChatContainer) {
-          console.log(
-            "VoiceroWelcome: Setting up MutationObserver to prevent chat closing",
-          );
-
-          // Create an observer to watch for style or visibility changes
-          const observer = new MutationObserver((mutations) => {
-            mutations.forEach((mutation) => {
-              if (
-                mutation.type === "attributes" &&
-                (mutation.attributeName === "style" ||
-                  mutation.attributeName === "class" ||
-                  mutation.attributeName === "display" ||
-                  mutation.attributeName === "visibility")
-              ) {
-                // Check if the chat is being hidden
-                const style = window.getComputedStyle(textChatContainer);
-                if (
-                  style.display === "none" ||
-                  style.visibility === "hidden" ||
-                  style.opacity === "0"
-                ) {
-                  console.log(
-                    "VoiceroWelcome: Chat container being hidden, forcing display",
-                  );
-
-                  // Force it to stay visible
-                  textChatContainer.style.display = "block";
-                  textChatContainer.style.visibility = "visible";
-                  textChatContainer.style.opacity = "1";
-                  textChatContainer.style.zIndex = "9999999";
-
-                  // Also update window state
-                  if (
-                    window.VoiceroCore &&
-                    window.VoiceroCore.updateWindowState
-                  ) {
-                    window.VoiceroCore.updateWindowState({
-                      textChat: true,
-                    });
-                  }
-                }
-              }
-            });
-          });
-
-          // Start observing
-          observer.observe(textChatContainer, {
-            attributes: true,
-            attributeFilter: ["style", "class", "display", "visibility"],
-          });
-
-          // Store observer reference to prevent garbage collection
-          window.voiceroChatObserver = observer;
-        }
-      };
-
-      // IMPORTANT: Don't remove the welcome container immediately
-      // We'll do this after ensuring the text chat is open
-
-      // Update session state first to ensure text chat is active
-      if (window.VoiceroCore && window.VoiceroCore.updateWindowState) {
-        window.VoiceroCore.updateWindowState({
-          textChat: true, // Ensure text chat is active before removing welcome
-        });
-      }
-
-      // Override any VoiceroCore methods that might close the chat
-      if (window.VoiceroCore) {
-        // Save original methods
-        const originalUpdateWindowState = window.VoiceroCore.updateWindowState;
-
-        // Override updateWindowState to prevent closing chat
-        window.VoiceroCore.updateWindowState = function (state) {
-          // If attempting to close text chat, force it to stay open
-          if (state && state.textChat === false) {
-            console.log("VoiceroWelcome: Preventing chat from being closed");
-            state.textChat = true;
-          }
-
-          // Call original method with modified state
-          return originalUpdateWindowState.call(window.VoiceroCore, state);
-        };
-      }
-
-      // Force create text chat interface if it doesn't exist
-      const existingTextChat = document.getElementById(
-        "voicero-text-chat-container",
+      // SIMPLIFIED: Remove welcome container
+      const welcomeContainer = document.getElementById(
+        "voicero-welcome-container",
       );
-      if (!existingTextChat && window.VoiceroText) {
-        console.log("VoiceroWelcome: Creating text chat interface");
-        if (window.VoiceroText.createTextChatInterface) {
-          window.VoiceroText.createTextChatInterface();
-        } else if (window.VoiceroText.openTextChat) {
-          window.VoiceroText.openTextChat();
-        }
+      if (welcomeContainer) {
+        welcomeContainer.remove();
       }
 
-      // First try to use the direct instance reference
-      if (this.voiceroTextInstance) {
-        console.log(
-          "VoiceroWelcome: Using direct instance reference to handle input",
-        );
-
-        // Reset welcome screen state
-        this.voiceroTextInstance.isShowingWelcomeScreen = false;
-
-        // First explicitly make the text container visible
-        const textChatContainer = document.getElementById(
-          "voicero-text-chat-container",
-        );
-        if (textChatContainer) {
-          textChatContainer.style.cssText = "";
-          textChatContainer.style.display = "block";
-          textChatContainer.style.visibility = "visible";
-          textChatContainer.style.opacity = "1";
-          textChatContainer.style.pointerEvents = "auto";
-          textChatContainer.style.zIndex = "9999999"; // Ensure highest z-index
-        }
-
-        // Open the text chat interface
-        if (this.voiceroTextInstance.openTextChat) {
-          this.voiceroTextInstance.openTextChat();
-        }
-
-        // Prevent any automatic closing of the chat interface
-        if (this.voiceroTextInstance.preventAutoClose) {
-          this.voiceroTextInstance.preventAutoClose = true;
-        }
-
-        // Set up observer to prevent chat from being closed
-        setupChatObserver();
-
-        // Now we can safely remove the welcome container
-        const welcomeContainer = document.getElementById(
-          "voicero-welcome-container",
-        );
-        if (welcomeContainer) {
-          welcomeContainer.remove();
-        }
-
-        // Update window state to finalize
-        if (window.VoiceroCore && window.VoiceroCore.updateWindowState) {
-          window.VoiceroCore.updateWindowState({
-            textWelcome: false,
-            textChat: true,
-          });
-        }
-
-        // Send the message after a longer delay to ensure UI is ready
-        setTimeout(() => {
-          console.log(
-            "VoiceroWelcome: Sending message via direct instance: " + userText,
-          );
-
-          // Make sure text chat is still visible
-          const textChatContainer = document.getElementById(
-            "voicero-text-chat-container",
-          );
-          if (textChatContainer) {
-            textChatContainer.style.display = "block";
-            textChatContainer.style.visibility = "visible";
-            textChatContainer.style.opacity = "1";
-            textChatContainer.style.zIndex = "9999999";
-          }
-
-          // Try different ways to send the message
-          if (self.voiceroTextInstance.sendChatMessage) {
-            self.voiceroTextInstance.sendChatMessage(userText);
-          } else if (self.voiceroTextInstance.sendMessage) {
-            self.voiceroTextInstance.sendMessage(userText);
-          } else if (self.voiceroTextInstance.addMessage) {
-            self.voiceroTextInstance.addMessage(userText, "user");
-
-            // Simulate response
-            setTimeout(() => {
-              self.voiceroTextInstance.addMessage(
-                "I'm here to help! What would you like to know?",
-                "ai",
-              );
-            }, 1000);
-          }
-
-          // Ensure chat stays open after sending message
-          setTimeout(() => {
-            if (textChatContainer) {
-              textChatContainer.style.display = "block";
-              textChatContainer.style.visibility = "visible";
-              textChatContainer.style.opacity = "1";
-            }
-
-            // Force update window state again to ensure chat stays open
-            if (window.VoiceroCore && window.VoiceroCore.updateWindowState) {
-              window.VoiceroCore.updateWindowState({
-                textChat: true,
-              });
-            }
-          }, 300);
-
-          // Set up a recurring check to keep chat visible
-          const keepChatVisibleInterval = setInterval(() => {
-            const textChatContainer = document.getElementById(
-              "voicero-text-chat-container",
-            );
-            if (textChatContainer) {
-              const style = window.getComputedStyle(textChatContainer);
-              if (
-                style.display === "none" ||
-                style.visibility === "hidden" ||
-                style.opacity === "0"
-              ) {
-                console.log("VoiceroWelcome: Forcing chat to stay visible");
-                textChatContainer.style.display = "block";
-                textChatContainer.style.visibility = "visible";
-                textChatContainer.style.opacity = "1";
-                textChatContainer.style.zIndex = "9999999";
-
-                // Update window state
-                if (
-                  window.VoiceroCore &&
-                  window.VoiceroCore.updateWindowState
-                ) {
-                  window.VoiceroCore.updateWindowState({
-                    textChat: true,
-                  });
-                }
-              }
-            } else {
-              // If container is gone, stop checking
-              clearInterval(keepChatVisibleInterval);
-            }
-          }, 500);
-
-          // Store interval ID in window to prevent garbage collection
-          window.voiceroChatVisibilityInterval = keepChatVisibleInterval;
-        }, 500);
-      }
-      // Fallback to global VoiceroText
-      else if (window.VoiceroText) {
-        console.log("VoiceroWelcome: Using global VoiceroText to handle input");
-
-        // Reset welcome screen state
-        window.VoiceroText.isShowingWelcomeScreen = false;
-
-        // First explicitly make the text container visible
-        const textChatContainer = document.getElementById(
-          "voicero-text-chat-container",
-        );
-        if (textChatContainer) {
-          textChatContainer.style.cssText = "";
-          textChatContainer.style.display = "block";
-          textChatContainer.style.visibility = "visible";
-          textChatContainer.style.opacity = "1";
-          textChatContainer.style.pointerEvents = "auto";
-          textChatContainer.style.zIndex = "9999999"; // Ensure highest z-index
-        }
-
-        // Open the text chat interface
-        if (window.VoiceroText.openTextChat) {
-          window.VoiceroText.openTextChat();
-        }
-
-        // Prevent any automatic closing of the chat interface
-        if (window.VoiceroText.preventAutoClose) {
-          window.VoiceroText.preventAutoClose = true;
-        }
-
-        // Set up observer to prevent chat from being closed
-        setupChatObserver();
-
-        // Now we can safely remove the welcome container
-        const welcomeContainer = document.getElementById(
-          "voicero-welcome-container",
-        );
-        if (welcomeContainer) {
-          welcomeContainer.remove();
-        }
-
-        // Update window state to finalize
-        if (window.VoiceroCore && window.VoiceroCore.updateWindowState) {
-          window.VoiceroCore.updateWindowState({
-            textWelcome: false,
-            textChat: true,
-          });
-        }
-
-        // Send the message after a longer delay to ensure UI is ready
-        setTimeout(() => {
-          console.log(
-            "VoiceroWelcome: Sending message via global instance: " + userText,
-          );
-
-          // Make sure text chat is still visible
-          const textChatContainer = document.getElementById(
-            "voicero-text-chat-container",
-          );
-          if (textChatContainer) {
-            textChatContainer.style.display = "block";
-            textChatContainer.style.visibility = "visible";
-            textChatContainer.style.opacity = "1";
-            textChatContainer.style.zIndex = "9999999";
-          }
-
-          // Try different ways to send the message
-          if (window.VoiceroText.sendChatMessage) {
-            window.VoiceroText.sendChatMessage(userText);
-          } else if (window.VoiceroText.sendMessage) {
-            window.VoiceroText.sendMessage(userText);
-          } else if (window.VoiceroText.addMessage) {
-            window.VoiceroText.addMessage(userText, "user");
-
-            // Simulate response
-            setTimeout(() => {
-              window.VoiceroText.addMessage(
-                "I'm here to help! What would you like to know?",
-                "ai",
-              );
-            }, 1000);
-          }
-
-          // Ensure chat stays open after sending message
-          setTimeout(() => {
-            if (textChatContainer) {
-              textChatContainer.style.display = "block";
-              textChatContainer.style.visibility = "visible";
-              textChatContainer.style.opacity = "1";
-            }
-
-            // Force update window state again to ensure chat stays open
-            if (window.VoiceroCore && window.VoiceroCore.updateWindowState) {
-              window.VoiceroCore.updateWindowState({
-                textChat: true,
-              });
-            }
-          }, 300);
-
-          // Set up a recurring check to keep chat visible
-          const keepChatVisibleInterval = setInterval(() => {
-            const textChatContainer = document.getElementById(
-              "voicero-text-chat-container",
-            );
-            if (textChatContainer) {
-              const style = window.getComputedStyle(textChatContainer);
-              if (
-                style.display === "none" ||
-                style.visibility === "hidden" ||
-                style.opacity === "0"
-              ) {
-                console.log("VoiceroWelcome: Forcing chat to stay visible");
-                textChatContainer.style.display = "block";
-                textChatContainer.style.visibility = "visible";
-                textChatContainer.style.opacity = "1";
-                textChatContainer.style.zIndex = "9999999";
-
-                // Update window state
-                if (
-                  window.VoiceroCore &&
-                  window.VoiceroCore.updateWindowState
-                ) {
-                  window.VoiceroCore.updateWindowState({
-                    textChat: true,
-                  });
-                }
-              }
-            } else {
-              // If container is gone, stop checking
-              clearInterval(keepChatVisibleInterval);
-            }
-          }, 500);
-
-          // Store interval ID in window to prevent garbage collection
-          window.voiceroChatVisibilityInterval = keepChatVisibleInterval;
-        }, 500);
-      } else {
-        console.error(
-          "VoiceroWelcome: No VoiceroText instance available to handle input",
-        );
-
-        // Even if we can't find VoiceroText, still remove welcome container
-        const welcomeContainer = document.getElementById(
-          "voicero-welcome-container",
-        );
-        if (welcomeContainer) {
-          welcomeContainer.remove();
-        }
-
-        // Try to force open text chat via Core
-        if (window.VoiceroCore && window.VoiceroCore.updateWindowState) {
-          window.VoiceroCore.updateWindowState({
-            textWelcome: false,
-            textChat: true,
-          });
-        }
-      }
+      // Update window state
+      
     },
 
     // Handle reopening the welcome screen from core button
@@ -1840,7 +747,7 @@
     );
     setTimeout(function () {
       // First check for existing thread messages
-      if (!checkForThreadMessagesAndOpenChat()) {
+      if (!checkForThreadMessages()) {
         window.VoiceroWelcome.init();
       }
     }, 1000); // Slightly longer delay to ensure everything is ready
@@ -1851,7 +758,7 @@
     console.log("VoiceroWelcome: DOMContentLoaded fired, initializing");
     setTimeout(function () {
       // First check for existing thread messages
-      if (!checkForThreadMessagesAndOpenChat()) {
+      if (!checkForThreadMessages()) {
         window.VoiceroWelcome.init();
       }
     }, 1000);
@@ -1862,7 +769,7 @@
     console.log("VoiceroWelcome: Window load event fired, initializing");
     setTimeout(function () {
       // First check for existing thread messages
-      if (!checkForThreadMessagesAndOpenChat()) {
+      if (!checkForThreadMessages()) {
         window.VoiceroWelcome.init();
       }
     }, 1500);
@@ -1875,8 +782,8 @@
     console.log("VoiceroWelcome: Check attempt " + welcomeCheckAttempts);
 
     // First check for existing thread messages
-    if (checkForThreadMessagesAndOpenChat()) {
-      // If we opened chat, stop checking for welcome
+    if (checkForThreadMessages()) {
+      // If we found messages, stop checking for welcome
       clearInterval(welcomeCheckInterval);
       return;
     }
