@@ -8,11 +8,39 @@
   // Set up global variable to track interaction type
   window.voiceroInteractionType = "noneSpecified";
 
+  // Add global flag to prevent infinite recursion
+  window.voiceroWelcomeInProgress = false;
+
   // Check if VoiceroWelcome already exists to prevent redeclaration
   if (window.VoiceroWelcome) {
     console.log("VoiceroWelcome is already defined, not redefining");
     return;
   }
+
+  // Add global CSS to ensure welcome screen is always on top
+  const globalWelcomeStyle = document.createElement("style");
+  globalWelcomeStyle.innerHTML = `
+    #voicero-welcome-container {
+      z-index: 9999999 !important;
+      position: fixed !important;
+      bottom: 20px !important;
+      right: 20px !important;
+    }
+    #voice-toggle-container, #chat-website-button {
+      z-index: 999999 !important;
+    }
+    
+    /* Ensure the welcome screen always stays on top */
+    @keyframes forceOnTop {
+      0% { z-index: 9999999 !important; }
+      100% { z-index: 9999999 !important; }
+    }
+    
+    #voicero-welcome-container {
+      animation: forceOnTop 0.1s forwards !important;
+    }
+  `;
+  document.head.appendChild(globalWelcomeStyle);
 
   // Welcome interface variables
   window.VoiceroWelcome = {
@@ -64,6 +92,17 @@
     createWelcomeContainer: function () {
       console.log("VoiceroWelcome: Creating welcome container");
 
+      // CRITICAL: Check if welcome creation is already in progress
+      if (window.voiceroWelcomeInProgress) {
+        console.log(
+          "VoiceroWelcome: Welcome creation already in progress, skipping",
+        );
+        return;
+      }
+
+      // Set flag to prevent recursive calls
+      window.voiceroWelcomeInProgress = true;
+
       // CRITICAL: First remove any existing welcome container to prevent duplicates
       const existingWelcome = document.getElementById(
         "voicero-welcome-container",
@@ -87,13 +126,13 @@
       let welcomeContainer = document.createElement("div");
       welcomeContainer.id = "voicero-welcome-container";
       welcomeContainer.style.cssText = `
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
+        position: fixed !important;
+        bottom: 20px !important;
+        right: 20px !important;
         width: 375px;
         max-width: 90vw;
         max-height: 400px;
-        z-index: 2147483647 !important;
+        z-index: 9999999 !important;
         border-radius: 12px;
         overflow: hidden;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
@@ -102,10 +141,13 @@
         visibility: visible !important;
         opacity: 1 !important;
       `;
+
+      // Force the welcome container to stay on top by manually positioning it
+      // above all other elements in the DOM tree
       document.body.appendChild(welcomeContainer);
 
-      // Remove the pointer code - we want the welcome screen to cover the button
-      // No pointer needed anymore
+      // Re-append to body to ensure it's the last child (on top in the stacking order)
+      document.body.appendChild(welcomeContainer);
 
       // Create shadow root for welcome container
       let welcomeShadow = welcomeContainer.attachShadow({ mode: "open" });
@@ -168,6 +210,11 @@
         window.VoiceroText.isShowingWelcomeScreen = true;
       }
 
+      // Reset the flag after a short delay to allow future welcome screen creation
+      setTimeout(() => {
+        window.voiceroWelcomeInProgress = false;
+      }, 500);
+
       return welcomeContainer;
     },
 
@@ -184,6 +231,27 @@
         "VoiceroWelcome: Showing welcome screen in shadow root",
         shadowRoot,
       );
+
+      // Check if we're in an infinite loop
+      if (window.voiceroWelcomeRecursionCount === undefined) {
+        window.voiceroWelcomeRecursionCount = 1;
+      } else {
+        window.voiceroWelcomeRecursionCount++;
+
+        // If we've called this too many times in succession, break the loop
+        if (window.voiceroWelcomeRecursionCount > 3) {
+          console.warn(
+            "VoiceroWelcome: Detected potential infinite recursion, breaking loop",
+          );
+          window.voiceroWelcomeRecursionCount = 0;
+          return;
+        }
+      }
+
+      // Reset counter after a delay
+      setTimeout(() => {
+        window.voiceroWelcomeRecursionCount = 0;
+      }, 1000);
 
       // If there's no messages container, create one
       var messagesContainer = shadowRoot.getElementById("chat-messages");
@@ -970,6 +1038,32 @@
           "VoiceroWelcome: No VoiceroText instance available to handle input",
         );
       }
+    },
+
+    // Handle reopening the welcome screen from core button
+    reopenWelcomeScreen: function () {
+      console.log("VoiceroWelcome: Reopening welcome screen");
+
+      // Create the welcome container which will go on top
+      this.createWelcomeContainer();
+
+      // Force the core button to go behind by updating its z-index
+      setTimeout(() => {
+        const buttonContainer = document.getElementById(
+          "voice-toggle-container",
+        );
+        const mainButton = document.getElementById("chat-website-button");
+
+        if (buttonContainer) {
+          buttonContainer.style.zIndex = "999999";
+        }
+
+        if (mainButton) {
+          mainButton.style.zIndex = "999999";
+        }
+      }, 50);
+
+      return true;
     },
   };
 

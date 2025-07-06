@@ -419,7 +419,7 @@
           position: fixed !important;
           bottom: ${bottomOffset}px !important;
           right: 20px !important;
-          z-index: 2147483647 !important; /* Maximum z-index value to ensure it's always on top */
+          z-index: 999999 !important;
           display: block !important;
           visibility: visible !important;
           opacity: 1 !important;
@@ -428,6 +428,10 @@
           transform: none !important;
           top: auto !important;
           left: auto !important;
+          height: auto !important;
+          width: auto !important;
+          overflow: visible !important;
+          pointer-events: auto !important;
         `;
 
           // Always use message icon since we only have text interface now
@@ -495,7 +499,7 @@
               padding: 0 !important;
               margin: 0 !important;
               position: relative !important;
-              z-index: 2147483647 !important;
+              z-index: 999999 !important;
             `;
           }
 
@@ -668,6 +672,18 @@
                 console.log(
                   "VoiceroCore: Button click ignored - session operation in progress",
                 );
+                return;
+              }
+
+              // Check if the welcome screen should be reopened
+              if (
+                window.VoiceroWelcome &&
+                window.VoiceroWelcome.reopenWelcomeScreen
+              ) {
+                console.log(
+                  "VoiceroCore: Opening welcome screen from core button click",
+                );
+                window.VoiceroWelcome.reopenWelcomeScreen();
                 return;
               }
 
@@ -1185,16 +1201,19 @@
                 this.sessionId = parsedSession.id;
 
                 // Fetch latest session data from API
-                fetch(`http://localhost:3000/api/session?sessionId=${this.sessionId}`, {
-                  method: "GET",
-                  headers: {
-                    Accept: "application/json",
-                    "Content-Type": "application/json",
-                    ...(window.voiceroConfig?.getAuthHeaders
-                      ? window.voiceroConfig.getAuthHeaders()
-                      : {}),
+                fetch(
+                  `http://localhost:3000/api/session?sessionId=${this.sessionId}`,
+                  {
+                    method: "GET",
+                    headers: {
+                      Accept: "application/json",
+                      "Content-Type": "application/json",
+                      ...(window.voiceroConfig?.getAuthHeaders
+                        ? window.voiceroConfig.getAuthHeaders()
+                        : {}),
+                    },
                   },
-                })
+                )
                   .then((response) => {
                     if (!response.ok) {
                       throw new Error(
@@ -2044,7 +2063,7 @@
           position: fixed !important;
           bottom: ${bottomOffset}px !important;
           right: 20px !important;
-          z-index: 2147483646 !important;
+          z-index: 999999 !important;
           display: block !important;
           visibility: visible !important;
           opacity: 1 !important;
@@ -2085,7 +2104,7 @@
           padding: 0 !important;
           margin: 0 !important;
           position: relative !important;
-          z-index: 2147483646 !important;
+          z-index: 999999 !important;
           animation: pulse 2s infinite !important;
           transform: scale(1) !important;
           pointer-events: auto !important;

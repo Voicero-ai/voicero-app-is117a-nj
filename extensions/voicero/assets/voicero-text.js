@@ -793,12 +793,31 @@
         console.log(
           "VoiceroText: No messages loaded, checking if we should show welcome screen",
         );
+
+        // CRITICAL: Check if welcome creation is already in progress to prevent infinite loop
+        if (window.voiceroWelcomeInProgress) {
+          console.log(
+            "VoiceroText: Welcome creation already in progress, skipping",
+          );
+          return;
+        }
+
         // Always show the welcome screen if there are no AI messages
         if (!this.hasAiMessages()) {
           console.log(
             "VoiceroText: No AI messages found, showing welcome screen",
           );
+
+          // Set a flag to prevent multiple welcome screens
+          window.voiceroWelcomeInProgress = true;
+
+          // Show welcome screen
           this.showWelcomeScreen();
+
+          // Reset flag after a delay
+          setTimeout(() => {
+            window.voiceroWelcomeInProgress = false;
+          }, 1000);
         } else if (shouldShowWelcome) {
           console.log(
             "VoiceroText: Has AI messages but shouldShowWelcome flag is true",
@@ -4193,6 +4212,14 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
 
     // Check if there are any AI messages in the chat
     hasAiMessages: function () {
+      // CRITICAL: If welcome screen is already showing or in progress, don't trigger another check
+      if (window.voiceroWelcomeInProgress || this.isShowingWelcomeScreen) {
+        console.log(
+          "VoiceroText: Welcome already in progress, skipping AI message check",
+        );
+        return true; // Return true to prevent welcome screen from showing
+      }
+
       console.log("VoiceroText: Checking if there are any AI messages");
 
       // Check internal messages array
@@ -4355,6 +4382,14 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
     showWelcomeScreen: function () {
       console.log("VoiceroText: Showing welcome screen");
 
+      // CRITICAL: Check for infinite recursion prevention flag
+      if (window.voiceroWelcomeInProgress) {
+        console.log(
+          "VoiceroText: Welcome creation already in progress, skipping to prevent recursion",
+        );
+        return;
+      }
+
       // Check if VoiceroWelcome module is available
       if (
         window.VoiceroWelcome &&
@@ -4362,11 +4397,19 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
       ) {
         console.log("VoiceroText: Using VoiceroWelcome module");
 
+        // Set recursion prevention flag
+        window.voiceroWelcomeInProgress = true;
+
         // Call the welcome module with our shadow root
         window.VoiceroWelcome.showWelcomeScreen(this.shadowRoot);
 
         // Set our local flag to indicate welcome screen is showing
         this.isShowingWelcomeScreen = true;
+
+        // Reset prevention flag after a delay
+        setTimeout(() => {
+          window.voiceroWelcomeInProgress = false;
+        }, 500);
 
         return;
       }

@@ -243,15 +243,27 @@
     
     // Load core script first
     loadScript("{{ 'voicero-core.js' | asset_url }}", function() {
-      // Load welcome script right after core
+      console.log("VoiceroCore loaded - loading welcome module next");
+      
+      // Load welcome script immediately after core
       loadScript("{{ 'voicero-welcome.js' | asset_url }}", function() {
-        // Then load the text module
+        console.log("VoiceroWelcome loaded - initializing");
+        
+        // Load text module next
         loadScript("{{ 'voicero-text.js' | asset_url }}", function() {
-          console.log("VoiceroAI: Core, welcome and text modules loaded");
+          console.log("VoiceroText loaded");
+          
+          // Ensure welcome screen is created after text module is loaded
+          if (window.VoiceroWelcome && window.VoiceroWelcome.createWelcomeContainer) {
+            console.log("Ensuring welcome container is created");
+            setTimeout(function() {
+              window.VoiceroWelcome.createWelcomeContainer();
+            }, 200);
+          }
         });
       });
       
-      // Load other scripts in parallel after core is loaded
+      // Load other scripts in parallel after core and welcome are loaded
       loadScript("{{ 'voicero-orders.js' | asset_url }}", null);
       loadScript("{{ 'voicero-customer.js' | asset_url }}", null);
       loadScript("{{ 'voicero-auth-helper.js' | asset_url }}", null);
