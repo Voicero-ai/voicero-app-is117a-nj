@@ -33,8 +33,8 @@
       // Debug: Log VoiceroCore session data
       this.debugLogSessionData();
 
-      // Ensure VoiceroSupport is loaded
-      this.ensureVoiceroSupportLoaded();
+      // Ensure required modules are loaded
+      this.ensureRequiredModulesLoaded();
 
       // Get website color from VoiceroCore
       if (window.VoiceroCore && window.VoiceroCore.websiteColor) {
@@ -60,21 +60,45 @@
       this.createChatInterface();
     },
 
-    // Ensure VoiceroSupport is loaded
-    ensureVoiceroSupportLoaded: function () {
+    // Ensure required modules are loaded
+    ensureRequiredModulesLoaded: function () {
+      // Try to build the correct path for Shopify theme extension assets
+      var extensionUrl = "";
+      var scripts = document.querySelectorAll("script");
+      for (var i = 0; i < scripts.length; i++) {
+        var src = scripts[i].src || "";
+        if (src.includes("voicero-") || src.includes("voicero/")) {
+          extensionUrl = src.substring(0, src.lastIndexOf("/") + 1);
+          break;
+        }
+      }
+
+      // Load VoiceroActionHandler first (highest priority)
+      if (!window.VoiceroActionHandler) {
+        console.log("VoiceroText: Loading VoiceroActionHandler module");
+
+        // Create and append the script
+        var actionScript = document.createElement("script");
+        actionScript.src = extensionUrl
+          ? extensionUrl + "voicero-action-handler.js"
+          : "./voicero-action-handler.js";
+        document.head.appendChild(actionScript);
+
+        // Initialize immediately when loaded
+        actionScript.onload = function () {
+          if (
+            window.VoiceroActionHandler &&
+            typeof window.VoiceroActionHandler.init === "function"
+          ) {
+            console.log("VoiceroText: Initializing VoiceroActionHandler");
+            window.VoiceroActionHandler.init();
+          }
+        };
+      }
+
+      // Load VoiceroSupport
       if (!window.VoiceroSupport) {
         console.log("VoiceroText: Loading VoiceroSupport module");
-
-        // Try to build the correct path for Shopify theme extension assets
-        var extensionUrl = "";
-        var scripts = document.querySelectorAll("script");
-        for (var i = 0; i < scripts.length; i++) {
-          var src = scripts[i].src || "";
-          if (src.includes("voicero-") || src.includes("voicero/")) {
-            extensionUrl = src.substring(0, src.lastIndexOf("/") + 1);
-            break;
-          }
-        }
 
         // Create and append the script
         var supportScript = document.createElement("script");
@@ -82,14 +106,35 @@
           ? extensionUrl + "voicero-support.js"
           : "./voicero-support.js";
         document.head.appendChild(supportScript);
-
-        // Initialize after a short delay
-        setTimeout(() => {
-          if (window.VoiceroSupport) {
-            window.VoiceroSupport.init();
-          }
-        }, 1000);
       }
+
+      // Load VoiceroContact
+      if (!window.VoiceroContact) {
+        console.log("VoiceroText: Loading VoiceroContact module");
+
+        // Create and append the script
+        var contactScript = document.createElement("script");
+        contactScript.src = extensionUrl
+          ? extensionUrl + "voicero-contact.js"
+          : "./voicero-contact.js";
+        document.head.appendChild(contactScript);
+      }
+
+      // Initialize modules after a short delay
+      setTimeout(() => {
+        if (
+          window.VoiceroSupport &&
+          typeof window.VoiceroSupport.init === "function"
+        ) {
+          window.VoiceroSupport.init();
+        }
+        if (
+          window.VoiceroActionHandler &&
+          typeof window.VoiceroActionHandler.init === "function"
+        ) {
+          window.VoiceroActionHandler.init();
+        }
+      }, 500);
     },
 
     // Create the chat interface container
@@ -394,21 +439,116 @@
     addMessage: function (text, type) {
       if (!text || !type) return;
 
-      // Ensure text is a string
-      const messageText =
-        typeof text === "string"
-          ? text
-          : text
-            ? JSON.stringify(text)
-            : "No message content";
+      // Ensure text is a string and handle JSON objects/strings
+      let messageText = "";
+      let action = null;
+      let action_context = null;
 
+      // Case 1: If it's already a JSON object
+      if (typeof text === "object" && text !== null) {
+        // Extract the answer field if it exists
+        if (text.answer) {
+          messageText = text.answer;
+          action = text.action || "none";
+          action_context = text.action_context || {};
+        } else {
+          // Otherwise stringify the object
+          messageText = JSON.stringify(text);
+        }
+      }
+      // Case 2: If it's a string that looks like JSON
+      else if (
+        typeof text === "string" &&
+        (text.trim().startsWith("{") || text.includes('"action":'))
+      ) {
+        try {
+          const jsonObj = JSON.parse(text);
+          // Extract the answer field if it exists
+          if (jsonObj.answer) {
+            messageText = jsonObj.answer;
+            action = jsonObj.action || "none";
+            action_context = jsonObj.action_context || {};
+          } else {
+            messageText = text;
+          }
+        } catch (e) {
+          // If parsing fails, use the original text
+          console.log("VoiceroText: Failed to parse JSON string:", e);
+          messageText = text;
+        }
+      }
+      // Case 3: Regular string
+      else if (typeof text === "string") {
+        messageText = text;
+      }
+      // Case 4: Fallback for anything else
+      else {
+        messageText = String(text || "No message content");
+      }
+
+      // Add to messages array
       this.messages.push({
         text: messageText,
-        type: type, // 'ai' or 'user'
+        type: type,
         timestamp: new Date(),
       });
 
       console.log(`VoiceroText: Added ${type} message: ${messageText}`);
+
+      // Handle action if this is an AI message and we have an action
+      if (type === "ai" && action && action !== "none") {
+        console.log(
+          "VoiceroText: Handling action immediately:",
+          action,
+          action_context,
+        );
+
+        // Special case for redirect action - handle it directly for reliability
+        if (action === "redirect" && action_context && action_context.url) {
+          console.log(
+            "VoiceroText: Handling redirect action directly to:",
+            action_context.url,
+          );
+          setTimeout(() => {
+            window.location.href = action_context.url;
+          }, 1000); // Short delay to allow message to be displayed
+          return messageText;
+        }
+
+        // For other actions, use VoiceroActionHandler if available
+        if (window.VoiceroActionHandler) {
+          setTimeout(() => {
+            window.VoiceroActionHandler.handle({
+              answer: messageText,
+              action: action,
+              action_context: action_context,
+            });
+          }, 100);
+        } else {
+          // If VoiceroActionHandler is not available, try to load it
+          this.ensureRequiredModulesLoaded();
+
+          // And try again after a delay
+          setTimeout(() => {
+            if (window.VoiceroActionHandler) {
+              window.VoiceroActionHandler.handle({
+                answer: messageText,
+                action: action,
+                action_context: action_context,
+              });
+            } else if (
+              action === "redirect" &&
+              action_context &&
+              action_context.url
+            ) {
+              // Last resort for redirect action
+              window.location.href = action_context.url;
+            }
+          }, 500);
+        }
+      }
+
+      return messageText;
     },
 
     // Render all messages in the container
@@ -785,29 +925,21 @@
             this.typingIndicator.parentNode.removeChild(this.typingIndicator);
           }
           this.typingIndicator = null;
+        }
 
-          // Remove loading animation from send button
-          if (sendButton) {
-            window.VoiceroWait.removeLoadingAnimation(sendButton);
-          }
+        // Remove loading animation from send button
+        if (window.VoiceroWait && sendButton) {
+          window.VoiceroWait.removeLoadingAnimation(sendButton);
         }
 
         // Add error message
-        this.addMessage(
-          "Sorry, I couldn't connect to the server. Please try again later.",
-          "ai",
-        );
+        const errorMessage =
+          "Sorry, I couldn't connect to the server. Please try again later.";
+        this.addMessage(errorMessage, "ai");
         this.renderMessages(messagesContainer);
 
-        // Debug: Add a fallback response for testing
-        console.log("VoiceroText: Adding fallback response for testing");
-        setTimeout(() => {
-          this.addMessage(
-            "This is a fallback response since the API call failed. In production, this would come from the server.",
-            "ai",
-          );
-          this.renderMessages(messagesContainer);
-        }, 1000);
+        // Try to load the action handler if it's not already loaded
+        this.ensureRequiredModulesLoaded();
       });
     },
 
@@ -876,21 +1008,38 @@
             window.VoiceroWait.removeLoadingAnimation(sendButton);
           }
 
-          // Add AI response to messages
-          if (data && data.message) {
-            this.addMessage(data.message, "ai");
-          } else if (data && data.response) {
-            this.addMessage(data.response, "ai");
-          } else if (data && data.content) {
-            this.addMessage(data.content, "ai");
-          } else if (data && typeof data === "string") {
-            this.addMessage(data, "ai");
+          // Parse response and handle JSON object
+          let messageText = "";
+          let action = "none";
+          let action_context = {};
+
+          // Handle different response formats
+          if (typeof data === "object") {
+            // Handle JSON object response with answer and action fields
+            if (data.answer) {
+              messageText = data.answer;
+              action = data.action || "none";
+              action_context = data.action_context || {};
+            } else if (data.message) {
+              messageText = data.message;
+            } else if (data.response) {
+              messageText = data.response;
+            } else if (data.content) {
+              messageText = data.content;
+            } else {
+              messageText =
+                "I received your message, but I'm not sure how to respond.";
+            }
+          } else if (typeof data === "string") {
+            // Handle string response
+            messageText = data;
           } else {
-            this.addMessage(
-              "I received your message, but I'm not sure how to respond.",
-              "ai",
-            );
+            messageText =
+              "I received your message, but I'm not sure how to respond.";
           }
+
+          // Add AI response to messages
+          this.addMessage(messageText, "ai");
 
           // Store thread ID if returned
           if (data && data.threadId && window.VoiceroCore) {
@@ -904,6 +1053,22 @@
           // Ensure VoiceroSupport is initialized
           if (window.VoiceroSupport && !window.VoiceroSupport.initialized) {
             window.VoiceroSupport.init();
+          }
+
+          // Handle action with VoiceroActionHandler if available
+          if (window.VoiceroActionHandler && action !== "none" && action) {
+            console.log(
+              "VoiceroText: Handling action:",
+              action,
+              action_context,
+            );
+            setTimeout(() => {
+              window.VoiceroActionHandler.handle({
+                answer: messageText,
+                action: action,
+                action_context: action_context,
+              });
+            }, 100);
           }
         });
     },
