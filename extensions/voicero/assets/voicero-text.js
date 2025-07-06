@@ -33,6 +33,9 @@
       // Debug: Log VoiceroCore session data
       this.debugLogSessionData();
 
+      // Ensure VoiceroSupport is loaded
+      this.ensureVoiceroSupportLoaded();
+
       // Get website color from VoiceroCore
       if (window.VoiceroCore && window.VoiceroCore.websiteColor) {
         this.websiteColor = window.VoiceroCore.websiteColor;
@@ -55,6 +58,38 @@
 
       // Create the chat interface
       this.createChatInterface();
+    },
+
+    // Ensure VoiceroSupport is loaded
+    ensureVoiceroSupportLoaded: function () {
+      if (!window.VoiceroSupport) {
+        console.log("VoiceroText: Loading VoiceroSupport module");
+
+        // Try to build the correct path for Shopify theme extension assets
+        var extensionUrl = "";
+        var scripts = document.querySelectorAll("script");
+        for (var i = 0; i < scripts.length; i++) {
+          var src = scripts[i].src || "";
+          if (src.includes("voicero-") || src.includes("voicero/")) {
+            extensionUrl = src.substring(0, src.lastIndexOf("/") + 1);
+            break;
+          }
+        }
+
+        // Create and append the script
+        var supportScript = document.createElement("script");
+        supportScript.src = extensionUrl
+          ? extensionUrl + "voicero-support.js"
+          : "./voicero-support.js";
+        document.head.appendChild(supportScript);
+
+        // Initialize after a short delay
+        setTimeout(() => {
+          if (window.VoiceroSupport) {
+            window.VoiceroSupport.init();
+          }
+        }, 1000);
+      }
     },
 
     // Create the chat interface container
@@ -359,13 +394,21 @@
     addMessage: function (text, type) {
       if (!text || !type) return;
 
+      // Ensure text is a string
+      const messageText =
+        typeof text === "string"
+          ? text
+          : text
+            ? JSON.stringify(text)
+            : "No message content";
+
       this.messages.push({
-        text: text,
+        text: messageText,
         type: type, // 'ai' or 'user'
         timestamp: new Date(),
       });
 
-      console.log(`VoiceroText: Added ${type} message: ${text}`);
+      console.log(`VoiceroText: Added ${type} message: ${messageText}`);
     },
 
     // Render all messages in the container
@@ -387,9 +430,53 @@
           word-break: break-word;
         `;
 
-        // Regular message
-        messageEl.textContent = message.text;
-        container.appendChild(messageEl);
+        // Create a content wrapper for AI messages to allow for report button
+        if (message.type === "ai") {
+          // Create content wrapper
+          const contentWrapper = document.createElement("div");
+          contentWrapper.className = "message-content";
+
+          // Ensure message.text is a string
+          const messageText =
+            typeof message.text === "string"
+              ? message.text
+              : message.text
+                ? JSON.stringify(message.text)
+                : "No message content";
+
+          contentWrapper.textContent = messageText;
+          messageEl.appendChild(contentWrapper);
+
+          // Add a unique ID to the message for reporting
+          messageEl.dataset.messageId =
+            "msg_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
+          messageEl.dataset.messageContent = messageText.substring(0, 100);
+
+          // Add the message to the container
+          container.appendChild(messageEl);
+
+          // Process with VoiceroSupport if available
+          if (
+            window.VoiceroSupport &&
+            typeof window.VoiceroSupport.processAIMessage === "function"
+          ) {
+            setTimeout(() => {
+              window.VoiceroSupport.processAIMessage(messageEl, "text");
+            }, 100);
+          }
+        } else {
+          // Regular user message
+          // Ensure message.text is a string
+          const messageText =
+            typeof message.text === "string"
+              ? message.text
+              : message.text
+                ? JSON.stringify(message.text)
+                : "No message content";
+
+          messageEl.textContent = messageText;
+          container.appendChild(messageEl);
+        }
       });
 
       // Scroll to bottom
@@ -794,6 +881,10 @@
             this.addMessage(data.message, "ai");
           } else if (data && data.response) {
             this.addMessage(data.response, "ai");
+          } else if (data && data.content) {
+            this.addMessage(data.content, "ai");
+          } else if (data && typeof data === "string") {
+            this.addMessage(data, "ai");
           } else {
             this.addMessage(
               "I received your message, but I'm not sure how to respond.",
@@ -809,6 +900,11 @@
 
           // Render updated messages
           this.renderMessages(messagesContainer);
+
+          // Ensure VoiceroSupport is initialized
+          if (window.VoiceroSupport && !window.VoiceroSupport.initialized) {
+            window.VoiceroSupport.init();
+          }
         });
     },
   };
