@@ -21,6 +21,15 @@
   const checkForThreadMessages = function () {
     console.log("VoiceroWelcome: Checking for existing thread messages");
 
+    // Check if we're in chat mode - if so, don't show welcome screen
+    console.log("VoiceroWelcome: Chat mode flag =", window.voiceroInChatMode);
+    if (window.voiceroInChatMode === true) {
+      console.log(
+        "VoiceroWelcome: Already in chat mode, skipping welcome screen",
+      );
+      return true; // Pretend we have messages to prevent welcome screen
+    }
+
     // Check if VoiceroCore has thread messages
     if (
       window.VoiceroCore &&
@@ -142,6 +151,12 @@
     createWelcomeContainer: function () {
       console.log("VoiceroWelcome: Creating welcome container");
 
+      // Check if we're in chat mode - if so, don't show welcome screen
+      if (window.voiceroInChatMode === true) {
+        console.log("VoiceroWelcome: In chat mode, not showing welcome screen");
+        return;
+      }
+
       // CRITICAL: Check if welcome creation is already in progress
       if (window.voiceroWelcomeInProgress) {
         console.log(
@@ -162,7 +177,7 @@
       }
 
       // Mark session as showing welcome but don't hide the button
-    
+
       // Create fresh container for welcome screen
       let welcomeContainer = document.createElement("div");
       welcomeContainer.id = "voicero-welcome-container";
@@ -376,7 +391,6 @@
           setTimeout(() => welcomeContainer.remove(), 10);
         }
 
-
         // Set flag to indicate welcome is closed
         self.isShowingWelcomeScreen = false;
       });
@@ -585,8 +599,20 @@
             welcomeContainer.remove();
           }
 
-          // Update window state
-          
+          // Reset any existing VoiceroText state to ensure fresh start
+          if (window.VoiceroText) {
+            window.VoiceroText.initialized = false;
+            if (window.VoiceroText.messages) {
+              window.VoiceroText.messages = [];
+            }
+          }
+
+          // Open chat interface with the selected action
+          if (window.handleVoiceroWelcomeAction) {
+            // Make sure we're not in chat mode before transitioning
+            window.voiceroInChatMode = false;
+            window.handleVoiceroWelcomeAction(buttonData.action);
+          }
         });
 
         buttonsContainer.appendChild(button);
@@ -703,13 +729,31 @@
         welcomeContainer.remove();
       }
 
-      // Update window state
-      
+      // Reset any existing VoiceroText state to ensure fresh start
+      if (window.VoiceroText) {
+        window.VoiceroText.initialized = false;
+        if (window.VoiceroText.messages) {
+          window.VoiceroText.messages = [];
+        }
+      }
+
+      // Open chat interface with the user's text input
+      if (window.handleVoiceroWelcomeAction) {
+        // Make sure we're not in chat mode before transitioning
+        window.voiceroInChatMode = false;
+        window.handleVoiceroWelcomeAction(null, text);
+      }
     },
 
     // Handle reopening the welcome screen from core button
     reopenWelcomeScreen: function () {
       console.log("VoiceroWelcome: Reopening welcome screen");
+
+      // IMPORTANT: Reset chat mode flag to allow welcome screen to appear
+      window.voiceroInChatMode = false;
+
+      // Reset any other flags that might prevent welcome screen
+      window.voiceroWelcomeInProgress = false;
 
       // Create the welcome container which will go on top
       this.createWelcomeContainer();

@@ -369,7 +369,7 @@
         return;
       }
 
-      var proxyUrl = "http://localhost:3000/api/session";
+      var proxyUrl = "https://www.voicero.ai/api/session";
       var currentPageUrl = window.location.href;
       var shopifyCustomerId = window.__VoiceroCustomerId || null;
 

@@ -249,6 +249,11 @@
       loadScript("{{ 'voicero-welcome.js' | asset_url }}", function() {
         console.log("VoiceroWelcome loaded - initializing");
         
+        // Load text module right after welcome
+        loadScript("{{ 'voicero-text.js' | asset_url }}", function() {
+          console.log("VoiceroText loaded");
+        });
+        
         // Ensure welcome screen is created after modules are loaded
         if (window.VoiceroWelcome && window.VoiceroWelcome.createWelcomeContainer) {
           console.log("Ensuring welcome container is created");
