@@ -26,6 +26,84 @@
       // Store the initial page URL
       this.currentPageUrl = window.location.href;
 
+      // Check for existing session ID in localStorage
+      const savedSessionId = localStorage.getItem("voicero_session_id");
+      const savedSession = localStorage.getItem("voicero_session");
+
+      if (savedSessionId && savedSession) {
+        try {
+          // Parse saved session
+          this.session = JSON.parse(savedSession);
+          this.sessionId = savedSessionId;
+
+          console.log(
+            "VoiceroCore: Loaded existing session ID:",
+            savedSessionId,
+          );
+          console.log(
+            "VoiceroCore: Loaded existing session data:",
+            this.session,
+          );
+
+          // Get thread ID if available
+          const threadId = localStorage.getItem("voicero_thread_id");
+          if (threadId) {
+            console.log("VoiceroCore: Loaded existing thread ID:", threadId);
+            // Initialize thread object
+            this.thread = { id: threadId };
+          }
+
+          // Get website ID from session
+          if (this.session && this.session.websiteId) {
+            this.websiteId = this.session.websiteId;
+            console.log(
+              "VoiceroCore: Got websiteId from session:",
+              this.websiteId,
+            );
+
+            // Set website ID in config for other modules
+            if (window.voiceroConfig) {
+              window.voiceroConfig.websiteId = this.websiteId;
+            }
+          }
+        } catch (error) {
+          console.error("VoiceroCore: Error parsing saved session:", error);
+          // Clear invalid session data
+          localStorage.removeItem("voicero_session_id");
+          localStorage.removeItem("voicero_session");
+          localStorage.removeItem("voicero_thread_id");
+        }
+      } else {
+        console.log("VoiceroCore: No existing session found");
+      }
+
+      // Try to get website ID from config if not found in session
+      if (
+        !this.websiteId &&
+        window.voiceroConfig &&
+        window.voiceroConfig.websiteId
+      ) {
+        this.websiteId = window.voiceroConfig.websiteId;
+        console.log("VoiceroCore: Got websiteId from config:", this.websiteId);
+      }
+
+      // If we have a website ID but no session, create a new session
+      if (this.websiteId && !this.sessionId) {
+        console.log(
+          "VoiceroCore: Creating new session with website ID:",
+          this.websiteId,
+        );
+        this.createSession();
+      }
+      // If we have a session ID but want to ensure we have the latest data
+      else if (this.sessionId && this.websiteId) {
+        console.log(
+          "VoiceroCore: Fetching latest session data for ID:",
+          this.sessionId,
+        );
+        this.fetchExistingSession(this.sessionId);
+      }
+
       // Initialize the API connection
       console.log("VoiceroCore: Checking API connection");
       this.checkApiConnection();
@@ -312,6 +390,11 @@
             this.isWebsiteActive = data.websiteFound;
             this.websiteId = data.website?.id;
 
+            // Store website ID in voiceroConfig for other modules to access
+            if (window.voiceroConfig && data.website?.id) {
+              window.voiceroConfig.websiteId = data.website.id;
+            }
+
             // Set website color if provided by API
             if (data.website?.color) {
               this.websiteColor = data.website.color;
@@ -343,6 +426,18 @@
             if (savedSession) {
               try {
                 this.session = JSON.parse(savedSession);
+                console.log("VoiceroCore: Loaded saved session:", this.session);
+
+                // Force create a new session if we don't have a thread
+                if (
+                  !this.session.threads ||
+                  this.session.threads.length === 0
+                ) {
+                  console.log(
+                    "VoiceroCore: No threads in saved session, creating new session",
+                  );
+                  this.createSession();
+                }
               } catch (error) {
                 console.error(
                   "VoiceroCore: Error parsing saved session:",
@@ -351,11 +446,23 @@
                 this.createSession();
               }
             } else {
+              console.log(
+                "VoiceroCore: No saved session found, creating new session",
+              );
               this.createSession();
             }
           })
           .catch((error) => {
             console.error("VoiceroCore: API connection failed:", error);
+
+            // Try to create session anyway with default values
+            if (window.voiceroConfig && window.voiceroConfig.websiteId) {
+              console.log(
+                "VoiceroCore: Attempting to create session with default values",
+              );
+              this.websiteId = window.voiceroConfig.websiteId;
+              this.createSession();
+            }
           });
       });
     },
@@ -369,7 +476,7 @@
         return;
       }
 
-      var proxyUrl = "https://www.voicero.ai/api/session";
+      var proxyUrl = "http://localhost:3000/api/session";
       var currentPageUrl = window.location.href;
       var shopifyCustomerId = window.__VoiceroCustomerId || null;
 
@@ -380,7 +487,129 @@
         ...(shopifyCustomerId && { shopifyCustomerId }),
       });
 
-      fetch(proxyUrl, {
+      console.log("VoiceroCore: Creating session with data:", requestBody);
+
+      // Try to create session with fallback to production URL
+      this.callSessionAPI(proxyUrl, requestBody)
+        .catch((error) => {
+          console.log(
+            "VoiceroCore: Local session API failed, trying production:",
+            error,
+          );
+          return this.callSessionAPI(
+            "https://www.voicero.ai/api/session",
+            requestBody,
+          );
+        })
+        .catch((error) => {
+          console.error(
+            "VoiceroCore: Both session API endpoints failed:",
+            error,
+          );
+        });
+    },
+
+    // Fetch existing session by ID
+    fetchExistingSession: function (sessionId) {
+      if (!sessionId) {
+        console.error("VoiceroCore: Cannot fetch session - no session ID");
+        return;
+      }
+
+      console.log("VoiceroCore: Fetching existing session:", sessionId);
+
+      // Build the URL with query parameters
+      const baseUrl = "http://localhost:3000/api/session";
+      const url = `${baseUrl}?sessionId=${encodeURIComponent(sessionId)}&websiteId=${encodeURIComponent(this.websiteId)}&pageUrl=${encodeURIComponent(window.location.href)}`;
+
+      // Get auth headers
+      const headers = {
+        Accept: "application/json",
+        ...(window.voiceroConfig?.getAuthHeaders
+          ? window.voiceroConfig.getAuthHeaders()
+          : {}),
+      };
+
+      // Try local server first
+      this.callSessionGetAPI(url, headers)
+        .catch((error) => {
+          console.log(
+            "VoiceroCore: Local session GET failed, trying production:",
+            error,
+          );
+
+          // Try production URL as fallback
+          const prodUrl = `https://www.voicero.ai/api/session?sessionId=${encodeURIComponent(sessionId)}&websiteId=${encodeURIComponent(this.websiteId)}&pageUrl=${encodeURIComponent(window.location.href)}`;
+          return this.callSessionGetAPI(prodUrl, headers);
+        })
+        .catch((error) => {
+          console.error(
+            "VoiceroCore: Both session GET endpoints failed:",
+            error,
+          );
+        });
+    },
+
+    // Helper method to call session GET API
+    callSessionGetAPI: function (url, headers) {
+      return fetch(url, {
+        method: "GET",
+        headers: headers,
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error(`Get session failed: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then((data) => {
+          console.log("VoiceroCore: Session retrieved successfully:", data);
+
+          // Process session data the same way as in callSessionAPI
+          if (data.session) {
+            // Store the complete session object
+            this.session = data.session;
+            console.log("VoiceroCore: Updated session data:", this.session);
+
+            // Add our custom fields
+            this.session.botName = this.botName || "";
+            this.session.customWelcomeMessage = this.customWelcomeMessage || "";
+            this.session.clickMessage =
+              this.clickMessage || "Need Help Shopping?";
+            this.session.websiteColor = this.websiteColor || "#882be6";
+
+            // Store session in localStorage
+            if (data.session.id) {
+              this.sessionId = data.session.id;
+              localStorage.setItem("voicero_session_id", data.session.id);
+              localStorage.setItem(
+                "voicero_session",
+                JSON.stringify(this.session),
+              );
+            }
+          }
+
+          // Process thread data
+          if (data.thread) {
+            this.thread = data.thread;
+            console.log("VoiceroCore: Updated thread data:", this.thread);
+
+            // Get thread ID
+            const threadId = data.thread.id || data.thread.threadId;
+            if (threadId) {
+              console.log("VoiceroCore: Storing updated thread ID:", threadId);
+              localStorage.setItem("voicero_thread_id", threadId);
+              this.thread.id = threadId;
+            }
+          }
+
+          return data;
+        });
+    },
+
+    // Helper method to call session API
+    callSessionAPI: function (url, requestBody) {
+      return fetch(url, {
         method: "POST",
         headers: {
           Accept: "application/json",
@@ -402,14 +631,32 @@
 
           // Store session data
           if (data.session) {
-            this.session = {
-              id: data.session.id,
-              websiteId: data.session.websiteId,
-              botName: this.botName || "",
-              customWelcomeMessage: this.customWelcomeMessage || "",
-              clickMessage: this.clickMessage || "Need Help Shopping?",
-              websiteColor: this.websiteColor || "#882be6",
-            };
+            // Store the complete session object to preserve all fields
+            this.session = data.session;
+
+            console.log("VoiceroCore: Full session data:", this.session);
+
+            // Add our custom fields
+            this.session.botName = this.botName || "";
+            this.session.customWelcomeMessage = this.customWelcomeMessage || "";
+            this.session.clickMessage =
+              this.clickMessage || "Need Help Shopping?";
+            this.session.websiteColor = this.websiteColor || "#882be6";
+
+            // Log threads if present
+            if (data.session.threads && data.session.threads.length > 0) {
+              console.log(
+                "VoiceroCore: Session has threads:",
+                data.session.threads.length,
+              );
+
+              // Log the first thread ID
+              const firstThread = data.session.threads[0];
+              console.log(
+                "VoiceroCore: First thread ID:",
+                firstThread.id || firstThread.threadId,
+              );
+            }
 
             // Store session in localStorage
             if (data.session.id) {
@@ -422,12 +669,54 @@
             }
           }
 
+          // Store thread data if provided
           if (data.thread) {
             this.thread = data.thread;
+            console.log("VoiceroCore: Stored thread:", this.thread);
+
+            // Get the correct thread ID field
+            const threadId = data.thread.id || data.thread.threadId;
+
+            // Also store thread ID in localStorage
+            if (threadId) {
+              console.log(
+                "VoiceroCore: Storing thread ID in localStorage:",
+                threadId,
+              );
+              localStorage.setItem("voicero_thread_id", threadId);
+
+              // Make sure thread.id is set
+              this.thread.id = threadId;
+            }
+          } else if (
+            data.session &&
+            data.session.threads &&
+            data.session.threads.length > 0
+          ) {
+            // If no separate thread data but threads in session, use the first thread
+            this.thread = data.session.threads[0];
+            console.log(
+              "VoiceroCore: Using first thread from session:",
+              this.thread,
+            );
+
+            // Get the correct thread ID field
+            const threadId = this.thread.id || this.thread.threadId;
+
+            // Store thread ID in localStorage
+            if (threadId) {
+              console.log(
+                "VoiceroCore: Storing thread ID from session in localStorage:",
+                threadId,
+              );
+              localStorage.setItem("voicero_thread_id", threadId);
+
+              // Make sure thread.id is set
+              this.thread.id = threadId;
+            }
           }
-        })
-        .catch((error) => {
-          console.error("VoiceroCore: Session creation failed:", error);
+
+          return data;
         });
     },
 
