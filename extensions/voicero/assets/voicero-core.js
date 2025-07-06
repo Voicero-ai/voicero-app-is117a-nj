@@ -1555,11 +1555,11 @@
         });
     },
 
-    // New method to update the interface based on textOpen
+    // SIMPLIFIED: Just check for thread messages and ignore textOpen completely
     updateInterfaceFromTextOpen: function () {
       if (!this.session) return;
 
-      // CRITICAL FIX: Prevent infinite loop
+      // Prevent infinite loop
       if (this._updatingInterfaceFromTextOpen) {
         console.log("VoiceroCore: Already updating interface, preventing loop");
         return;
@@ -1568,14 +1568,55 @@
       // Set flag to prevent recursive calls
       this._updatingInterfaceFromTextOpen = true;
 
-      console.log(
-        "VoiceroCore: Updating interface from textOpen state:",
-        this.session.textOpen,
-      );
+      // SIMPLIFIED: Just check for messages in the thread
+      let hasThreadMessages = false;
+
+      // First check direct thread
+      if (
+        this.thread &&
+        this.thread.messages &&
+        this.thread.messages.length > 0
+      ) {
+        const realMessages = this.thread.messages.filter(
+          (msg) => msg.role !== "system" && msg.type !== "page_data",
+        );
+        hasThreadMessages = realMessages.length > 0;
+        console.log(
+          "VoiceroCore: Thread has",
+          realMessages.length,
+          "real messages",
+        );
+      }
+
+      // Fallback to session.threads if needed
+      if (
+        !hasThreadMessages &&
+        this.session.threads &&
+        this.session.threads.length > 0
+      ) {
+        const currentThread = this.session.threads[0];
+        if (
+          currentThread &&
+          currentThread.messages &&
+          currentThread.messages.length > 0
+        ) {
+          const realMessages = currentThread.messages.filter(
+            (msg) => msg.role !== "system" && msg.type !== "page_data",
+          );
+          hasThreadMessages = realMessages.length > 0;
+          console.log(
+            "VoiceroCore: Session thread has",
+            realMessages.length,
+            "real messages",
+          );
+        }
+      }
+
+      console.log("VoiceroCore: Has thread messages:", hasThreadMessages);
 
       try {
-        if (this.session.textOpen === true) {
-          // Text chat should be open - open it if not already
+        if (hasThreadMessages) {
+          // SIMPLIFIED: If there are messages, ALWAYS show the text chat
           var textInterface = document.getElementById(
             "voicero-text-chat-container",
           );
@@ -1584,13 +1625,16 @@
             // Hide the main button
             this.hideMainButton();
 
-            // Try to open the text chat
+            // Open the text chat
             if (window.VoiceroText && window.VoiceroText.openTextChat) {
+              console.log(
+                "VoiceroCore: Opening text chat because thread has messages",
+              );
               window.VoiceroText.openTextChat();
             }
           }
         } else {
-          // Text chat should be closed - close it if open
+          // No messages, show the main button
           var textInterface = document.getElementById(
             "voicero-text-chat-container",
           );
@@ -1617,12 +1661,80 @@
       }, 500);
     },
 
-    // Simplified restoreInterfaceState to focus only on textOpen
+    // SIMPLIFIED: Force open text chat if there are thread messages
+    forceOpenTextChat: function () {
+      console.log("VoiceroCore: Checking for thread messages");
+
+      // Check if there are messages in the thread
+      let hasThreadMessages = false;
+
+      // First check direct thread
+      if (
+        this.thread &&
+        this.thread.messages &&
+        this.thread.messages.length > 0
+      ) {
+        const realMessages = this.thread.messages.filter(
+          (msg) => msg.role !== "system" && msg.type !== "page_data",
+        );
+        hasThreadMessages = realMessages.length > 0;
+        console.log(
+          "VoiceroCore: Thread has",
+          realMessages.length,
+          "real messages",
+        );
+      }
+
+      // Fallback to session.threads if needed
+      if (
+        !hasThreadMessages &&
+        this.session &&
+        this.session.threads &&
+        this.session.threads.length > 0
+      ) {
+        const currentThread = this.session.threads[0];
+        if (
+          currentThread &&
+          currentThread.messages &&
+          currentThread.messages.length > 0
+        ) {
+          const realMessages = currentThread.messages.filter(
+            (msg) => msg.role !== "system" && msg.type !== "page_data",
+          );
+          hasThreadMessages = realMessages.length > 0;
+          console.log(
+            "VoiceroCore: Session thread has",
+            realMessages.length,
+            "real messages",
+          );
+        }
+      }
+
+      if (hasThreadMessages) {
+        console.log(
+          "VoiceroCore: Opening text chat because thread has messages",
+        );
+
+        // Hide the main button
+        this.hideMainButton();
+
+        // Open the text chat
+        if (window.VoiceroText && window.VoiceroText.openTextChat) {
+          window.VoiceroText.openTextChat();
+        }
+
+        return true;
+      }
+
+      return false;
+    },
+
+    // SUPER SIMPLIFIED: Just check for messages and show text chat if needed
     restoreInterfaceState: function () {
       if (!this.session) return;
 
-      // Simply use the new updateInterfaceFromTextOpen method
-      this.updateInterfaceFromTextOpen();
+      // Just call forceOpenTextChat which now handles all the logic
+      this.forceOpenTextChat();
 
       // Clear initialization flag
       setTimeout(() => {

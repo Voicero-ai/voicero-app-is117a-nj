@@ -249,8 +249,31 @@
           welcomeContainer.remove();
         }
 
-        // DO NOT check for textOpen in session - trust the caller
-        // DO NOT update the session state from here - let VoiceroCore handle it
+        // CRITICAL FIX: Force open regardless of textOpen state if there are messages
+        if (
+          window.VoiceroCore &&
+          window.VoiceroCore.thread &&
+          window.VoiceroCore.thread.messages &&
+          window.VoiceroCore.thread.messages.length > 0
+        ) {
+          // Check for real messages (not system or page_data)
+          const realMessages = window.VoiceroCore.thread.messages.filter(
+            (msg) => msg.role !== "system" && msg.type !== "page_data",
+          );
+
+          if (realMessages.length > 0) {
+            console.log(
+              "VoiceroText: FORCING open because thread has",
+              realMessages.length,
+              "real messages",
+            );
+
+            // Force update the session state
+            if (window.VoiceroCore && window.VoiceroCore.session) {
+              window.VoiceroCore.session.textOpen = true;
+            }
+          }
+        }
       } catch (e) {
         console.error("VoiceroText: Error in openTextChat:", e);
       }
@@ -421,8 +444,68 @@
       this._isChatVisible = true;
       this._lastChatToggle = Date.now();
 
-      // Show welcome screen if no AI messages
-      if (!this.hasAiMessages()) {
+      // CRITICAL FIX: Check for thread messages in VoiceroCore and show welcome if none exist
+      let hasThreadMessages = false;
+
+      console.log("VoiceroText: Checking for thread messages in VoiceroCore");
+
+      // IMPORTANT: First check thread directly in VoiceroCore.thread
+      if (window.VoiceroCore && window.VoiceroCore.thread) {
+        console.log(
+          "VoiceroText: Found direct thread in VoiceroCore:",
+          window.VoiceroCore.thread,
+        );
+
+        if (
+          window.VoiceroCore.thread.messages &&
+          window.VoiceroCore.thread.messages.length > 0
+        ) {
+          // Check if there are any non-system messages
+          const realMessages = window.VoiceroCore.thread.messages.filter(
+            (msg) => msg.role !== "system" && msg.type !== "page_data",
+          );
+
+          hasThreadMessages = realMessages.length > 0;
+          console.log(
+            "VoiceroText: Direct thread has",
+            realMessages.length,
+            "real messages",
+          );
+        }
+      }
+
+      // Fallback: Check in session.threads if no messages found yet
+      if (
+        !hasThreadMessages &&
+        window.VoiceroCore &&
+        window.VoiceroCore.session &&
+        window.VoiceroCore.session.threads &&
+        window.VoiceroCore.session.threads.length > 0
+      ) {
+        const currentThread = window.VoiceroCore.session.threads[0];
+        if (
+          currentThread &&
+          currentThread.messages &&
+          currentThread.messages.length > 0
+        ) {
+          // Check if there are any non-system messages
+          const realMessages = currentThread.messages.filter(
+            (msg) => msg.role !== "system" && msg.type !== "page_data",
+          );
+
+          hasThreadMessages = realMessages.length > 0;
+          console.log(
+            "VoiceroText: Session thread has",
+            realMessages.length,
+            "real messages",
+          );
+        }
+      }
+
+      // Show welcome screen if no messages in thread or no AI messages locally
+      if (!hasThreadMessages || !this.hasAiMessages()) {
+        console.log("VoiceroText: No messages found, showing welcome screen");
+
         // Hide control buttons when showing welcome screen
         var headerContainer = this.shadowRoot.getElementById(
           "chat-controls-header",
@@ -466,6 +549,38 @@
         }
 
         this.showWelcomeScreen();
+      } else {
+        console.log("VoiceroText: Thread messages found, showing text chat");
+
+        // IMPORTANT: Make sure the text interface is properly shown
+        // Show all controls since we have messages
+        var headerContainer = this.shadowRoot.getElementById(
+          "chat-controls-header",
+        );
+        if (headerContainer) {
+          headerContainer.style.display = "flex";
+
+          var clearBtn = headerContainer.querySelector("#clear-text-chat");
+          var closeBtn = headerContainer.querySelector("#close-text-chat");
+
+          if (clearBtn) {
+            clearBtn.style.display = "block";
+          }
+
+          if (closeBtn && closeBtn.parentNode) {
+            closeBtn.parentNode.style.display = "flex";
+          }
+        }
+
+        // Show the input area
+        var chatInputWrapper =
+          this.shadowRoot.getElementById("chat-input-wrapper");
+        if (chatInputWrapper) {
+          chatInputWrapper.style.display = "block";
+        }
+
+        // Make sure we load the messages from the session
+        this.loadMessagesFromSession();
       }
 
       // Process existing AI messages to ensure report buttons are present
@@ -776,81 +891,18 @@
       }
     },
 
-    // Helper function to display the welcome message
+    // Helper function to display the welcome message - SIMPLIFIED
     showWelcomeMessage: function () {
-      // If this welcome message has already been shown, don't show it again
-      if (this.hasShownWelcome) {
-        console.log("Welcome message already shown, skipping...");
-        return;
-      }
+      // This function is kept as a stub for backward compatibility
+      console.log(
+        "VoiceroText: showWelcomeMessage called - using showWelcomeScreen instead",
+      );
 
       // Set the flag to indicate we've shown the welcome
       this.hasShownWelcome = true;
 
-      // Prevent showing welcome message if an AI message already exists
-      var messagesContainer = this.shadowRoot
-        ? this.shadowRoot.getElementById("chat-messages")
-        : document.getElementById("chat-messages");
-
-      if (messagesContainer && messagesContainer.querySelector(".ai-message")) {
-        return;
-      }
-
-      // Get website name if available
-      let websiteName = "our website";
-      if (
-        window.VoiceroCore &&
-        window.VoiceroCore.session &&
-        window.VoiceroCore.session.website &&
-        window.VoiceroCore.session.website.name
-      ) {
-        websiteName = window.VoiceroCore.session.website.name;
-      } else {
-        // Try to get from document title as fallback
-        if (document.title) {
-          // Extract site name (before " - " or " | " if present)
-          var title = document.title;
-          var separatorIndex = Math.min(
-            title.indexOf(" - ") > -1 ? title.indexOf(" - ") : Infinity,
-            title.indexOf(" | ") > -1 ? title.indexOf(" | ") : Infinity,
-          );
-
-          if (separatorIndex !== Infinity) {
-            websiteName = title.substring(0, separatorIndex);
-          } else {
-            websiteName = title;
-          }
-        }
-      }
-
-
-      setTimeout(() => {
-        if (this.shadowRoot && welcomeMessageElement) {
-          // Use event delegation on the welcome message element instead of individual question elements
-          // This avoids duplicate handlers when switching between interfaces
-          if (!welcomeMessageElement.hasAttribute("data-question-handler")) {
-            welcomeMessageElement.setAttribute("data-question-handler", "true");
-
-            // Use event delegation - one handler for the entire message
-            welcomeMessageElement.addEventListener("click", (e) => {
-              // Find if the click was on a welcome-question element
-              let target = e.target;
-              while (target !== welcomeMessageElement) {
-                if (target.classList.contains("welcome-question")) {
-                  e.preventDefault();
-                  var questionText = target.getAttribute("data-question");
-                  if (questionText) {
-                    this.sendChatMessage(questionText);
-                  }
-                  break;
-                }
-                if (!target.parentElement) break; // Safety check
-                target = target.parentElement;
-              }
-            });
-          }
-        }
-      }, 100);
+      // Just show the welcome screen instead
+      this.showWelcomeScreen();
 
       // Update state to prevent showing welcome again
       if (window.VoiceroCore && window.VoiceroCore.updateWindowState) {
@@ -4009,7 +4061,25 @@
 
       console.log("VoiceroText: Checking if there are any AI messages");
 
-      // Check internal messages array
+      // IMPORTANT: First check VoiceroCore.thread for messages
+      if (
+        window.VoiceroCore &&
+        window.VoiceroCore.thread &&
+        window.VoiceroCore.thread.messages &&
+        window.VoiceroCore.thread.messages.length > 0
+      ) {
+        const hasAiMsg = window.VoiceroCore.thread.messages.some(
+          (msg) => msg.role === "assistant" || msg.role === "ai",
+        );
+
+        console.log(
+          "VoiceroText: VoiceroCore.thread has AI messages:",
+          hasAiMsg,
+        );
+        if (hasAiMsg) return true;
+      }
+
+      // Check internal messages array as fallback
       if (this.messages && this.messages.length > 0) {
         const hasAiMsg = this.messages.some(
           (msg) => msg.role === "assistant" || msg.role === "ai",
