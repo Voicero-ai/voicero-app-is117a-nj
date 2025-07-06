@@ -292,6 +292,18 @@
                 createdAt: message.createdAt, // Store original timestamp
               });
 
+              // Force scroll to bottom after each message is added
+              const chatContainer = document.getElementById(
+                "voicero-chat-container",
+              );
+              if (chatContainer && chatContainer.shadowRoot) {
+                const messagesContainer =
+                  chatContainer.shadowRoot.querySelector(".messages-container");
+                if (messagesContainer) {
+                  window.VoiceroText.scrollToBottom(messagesContainer);
+                }
+              }
+
               console.log(
                 `Added ${type} message from ${message.createdAt}: ${displayText.substring(0, 30)}...`,
               );
@@ -311,11 +323,9 @@
               this.renderMessages(messagesContainer);
               console.log("Rendered messages in container");
 
-              // Force scroll to bottom after a short delay
-              setTimeout(() => {
-                messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                console.log("Forced scroll to bottom");
-              }, 100);
+              // Use the scrollToBottom helper method
+              this.scrollToBottom(messagesContainer);
+              console.log("Using scrollToBottom helper for reliable scrolling");
             } else {
               console.log("Messages container not found in shadow DOM");
             }
@@ -773,6 +783,29 @@
       }, 300);
     },
 
+    // Helper method to ensure scrolling to the bottom of the messages container
+    scrollToBottom: function (container) {
+      if (!container) return;
+
+      // Immediate scroll
+      container.scrollTop = container.scrollHeight;
+
+      // Multiple delayed scrolls to ensure it works even with dynamic content
+      setTimeout(() => {
+        container.scrollTop = container.scrollHeight;
+
+        // Try again after images might have loaded
+        setTimeout(() => {
+          container.scrollTop = container.scrollHeight;
+
+          // Final attempt after all possible content has rendered
+          setTimeout(() => {
+            container.scrollTop = container.scrollHeight;
+          }, 500);
+        }, 200);
+      }, 50);
+    },
+
     // Add a message to the messages array
     addMessage: function (text, type) {
       if (!text || !type) return;
@@ -1039,9 +1072,11 @@
         }
       });
 
-      // Scroll to bottom
-      container.scrollTop = container.scrollHeight;
-      console.log("VoiceroText: Scrolled to bottom of messages");
+      // Use the scrollToBottom helper method
+      this.scrollToBottom(container);
+      console.log(
+        "VoiceroText: Using scrollToBottom helper for reliable scrolling",
+      );
     },
 
     // Send message to API
@@ -1112,8 +1147,8 @@
       // Store reference for later removal
       this.typingIndicator = typingWrapper;
 
-      // Scroll to bottom
-      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      // Use the scrollToBottom helper method
+      this.scrollToBottom(messagesContainer);
 
       // Add loading animation to send button if VoiceroWait is available
       if (window.VoiceroWait && sendButton) {
@@ -1587,6 +1622,9 @@
           // Render updated messages
           this.renderMessages(messagesContainer);
 
+          // Make sure we scroll to the bottom after rendering
+          this.scrollToBottom(messagesContainer);
+
           // Ensure VoiceroSupport is initialized
           if (window.VoiceroSupport && !window.VoiceroSupport.initialized) {
             window.VoiceroSupport.init();
@@ -1830,6 +1868,9 @@
         .shadowRoot.querySelector(".messages-container");
       if (container) {
         window.VoiceroText.renderMessages(container);
+
+        // Make sure we scroll to the bottom
+        window.VoiceroText.scrollToBottom(container);
 
         // Get the send button for animation
         const sendButton = document
