@@ -1222,7 +1222,8 @@
         // Make sure pageData has the expected structure
         const pageData = {
           url: window.location.href,
-          full_text: window.VoiceroCore.pageData.fullText || "",
+          full_text:
+            window.VoiceroCore.pageData.fullText || this.collectFullPageText(),
           buttons: window.VoiceroCore.pageData.buttons || [],
           forms: window.VoiceroCore.pageData.forms || [],
           sections: window.VoiceroCore.pageData.sections || [],
@@ -1230,17 +1231,25 @@
         };
 
         requestData.pageData = pageData;
-        console.log("VoiceroText: Added page data:", pageData);
+        console.log(
+          "VoiceroText: Added page data with full text length:",
+          pageData.full_text.length,
+        );
       } else {
-        // Create minimal page data
+        // Create more comprehensive page data
+        const fullText = this.collectFullPageText();
         requestData.pageData = {
           url: window.location.href,
-          full_text: document.body.innerText.substring(0, 1000), // First 1000 chars
+          full_text: fullText,
           buttons: [],
           forms: [],
           sections: [],
           images: [],
         };
+        console.log(
+          "VoiceroText: Created page data with full text length:",
+          fullText.length,
+        );
       }
 
       // Add past context from messages - format as expected by the API
@@ -1305,6 +1314,22 @@
       }
 
       // Try localhost first, then fallback to production
+
+      // Make sure we're sending the full page content for better context
+      if (
+        requestData.pageData &&
+        (!requestData.pageData.full_text ||
+          requestData.pageData.full_text.length < 1000)
+      ) {
+        console.log(
+          "VoiceroText: Page content is missing or too short, collecting full page text",
+        );
+        requestData.pageData.full_text = this.collectFullPageText();
+        console.log(
+          `VoiceroText: Updated page content length: ${requestData.pageData.full_text.length} characters`,
+        );
+      }
+
       console.log("VoiceroText: Request data:", JSON.stringify(requestData));
       console.log("VoiceroText: Headers:", JSON.stringify(headers));
 
@@ -1395,6 +1420,69 @@
         }
       } else {
         console.log("VoiceroCore not found");
+      }
+    },
+
+    // Collect all text content from the page
+    collectFullPageText: function () {
+      console.log("VoiceroText: Collecting full page text content");
+
+      try {
+        // Get all visible text elements
+        const textElements = document.querySelectorAll(
+          "p, h1, h2, h3, h4, h5, h6, span, div, li, td, th, a, button, label",
+        );
+
+        // Create an array to store all text content
+        let textContent = [];
+
+        // Function to check if an element is visible
+        const isVisible = (element) => {
+          if (
+            !element.offsetParent &&
+            element.offsetHeight === 0 &&
+            element.offsetWidth === 0
+          )
+            return false;
+          const style = window.getComputedStyle(element);
+          return style.display !== "none" && style.visibility !== "hidden";
+        };
+
+        // Process each element
+        textElements.forEach((element) => {
+          // Skip script and style elements
+          if (element.tagName === "SCRIPT" || element.tagName === "STYLE")
+            return;
+
+          // Skip hidden elements
+          if (!isVisible(element)) return;
+
+          // Get the direct text content of this element (not including children)
+          let directText = "";
+          for (let node of element.childNodes) {
+            if (node.nodeType === Node.TEXT_NODE) {
+              const text = node.textContent.trim();
+              if (text) directText += text + " ";
+            }
+          }
+
+          // If this element has direct text content, add it to our collection
+          if (directText.trim()) {
+            textContent.push(directText.trim());
+          }
+        });
+
+        // Join all text with newlines to preserve structure
+        const fullText = textContent.join("\n");
+        console.log(
+          `VoiceroText: Collected ${fullText.length} characters of text from ${textContent.length} elements`,
+        );
+
+        return fullText;
+      } catch (error) {
+        console.error("VoiceroText: Error collecting page text:", error);
+        // Fallback to basic method
+        return document.body.innerText;
       }
     },
 

@@ -100,7 +100,7 @@ var VoiceroActionHandler = {
 
   handle: function (response) {
     if (!response || typeof response !== "object") {
-      // console.warn('Invalid response object');
+      console.warn("Invalid response object");
       return;
     }
 
@@ -110,10 +110,6 @@ var VoiceroActionHandler = {
       action,
       action_context,
     });
-
-    if (answer) {
-      // console.debug("AI Response:", { answer, action, action_context });
-    }
 
     if (!action) {
       console.warn("VoiceroActionHandler: No action specified in response");
@@ -128,6 +124,43 @@ var VoiceroActionHandler = {
         );
       }
       window.VoiceroText.typingIndicator = null;
+    }
+
+    // Special case for handling nested content_targets in action_context
+    if (action_context && action_context.content_targets) {
+      console.log(
+        "VoiceroActionHandler: Found nested content_targets in action_context",
+        action_context.content_targets,
+      );
+
+      // For scroll and highlight actions, we want to handle the nested structure
+      if (action === "scroll" || action === "highlight_text") {
+        // If content_targets has exact_text, move it up to the main level
+        if (action_context.content_targets.exact_text) {
+          console.log(
+            "VoiceroActionHandler: Moving exact_text from content_targets to main level",
+          );
+          action_context.exact_text = action_context.content_targets.exact_text;
+        }
+
+        // If content_targets has css_selector, move it up to the main level
+        if (action_context.content_targets.css_selector) {
+          console.log(
+            "VoiceroActionHandler: Moving css_selector from content_targets to main level",
+          );
+          action_context.css_selector =
+            action_context.content_targets.css_selector;
+        }
+      }
+    }
+
+    // Special case for highlight_text action - make sure it's handled properly
+    if (action === "highlight_text") {
+      console.log(
+        "VoiceroActionHandler: Handling highlight_text action directly",
+      );
+      this.handleHighlight_text(action_context || {});
+      return;
     }
 
     // Special case for contact action - handle directly for increased reliability
@@ -331,6 +364,7 @@ var VoiceroActionHandler = {
       for (let el of interactiveElements) {
         // Changed from exact match to includes for more flexibility
         if (
+          el.textContent &&
           el.textContent
             .trim()
             .toLowerCase()
@@ -363,10 +397,53 @@ var VoiceroActionHandler = {
     }
 
     if (exact_text) {
-      var elements = document.querySelectorAll(tagName || "*");
+      // First try exact match
+      var elements = document.querySelectorAll(
+        tagName ||
+          "p, div, span, h1, h2, h3, h4, h5, h6, li, td, th, a, button, label",
+      );
+
+      console.log(
+        `VoiceroActionHandler: Searching for text "${exact_text}" in ${elements.length} elements`,
+      );
+
+      // First pass: Try exact match
       for (let el of elements) {
-        if (el.textContent.trim() === exact_text) return el;
+        if (el.textContent && el.textContent.trim() === exact_text) {
+          console.log(
+            `VoiceroActionHandler: Found exact match for "${exact_text}"`,
+          );
+          return el;
+        }
       }
+
+      // Second pass: Try contains match
+      for (let el of elements) {
+        if (el.textContent && el.textContent.includes(exact_text)) {
+          console.log(
+            `VoiceroActionHandler: Found contains match for "${exact_text}"`,
+          );
+          return el;
+        }
+      }
+
+      // Third pass: Try case-insensitive contains match
+      const lowerText = exact_text.toLowerCase();
+      for (let el of elements) {
+        if (
+          el.textContent &&
+          el.textContent.toLowerCase().includes(lowerText)
+        ) {
+          console.log(
+            `VoiceroActionHandler: Found case-insensitive match for "${exact_text}"`,
+          );
+          return el;
+        }
+      }
+
+      console.log(
+        `VoiceroActionHandler: No element found containing "${exact_text}"`,
+      );
     }
 
     if (role) {
@@ -399,19 +476,113 @@ var VoiceroActionHandler = {
   },
 
   handleScroll: function (target) {
-    var { exact_text, css_selector, offset = 0 } = target || {};
+    var {
+      exact_text,
+      css_selector,
+      offset = 0,
+      content_targets,
+    } = target || {};
+
+    // Handle content_targets structure if present
+    if (content_targets && content_targets.exact_text) {
+      exact_text = content_targets.exact_text;
+    }
+
+    console.log(
+      `VoiceroActionHandler: Scrolling to text: "${exact_text || css_selector || "none provided"}"`,
+    );
 
     if (exact_text) {
+      // Try to find the element using our enhanced findElement function
       var element = this.findElement({ exact_text });
+
+      if (!element) {
+        // If not found, try a more aggressive search using substring matching
+        console.log("VoiceroActionHandler: Trying aggressive text search");
+
+        // Split the search text into words for partial matching
+        const searchWords = exact_text
+          .toLowerCase()
+          .split(/\s+/)
+          .filter((word) => word.length > 3);
+        console.log(
+          "VoiceroActionHandler: Searching for key words:",
+          searchWords,
+        );
+
+        // Get all text-containing elements
+        const allElements = document.querySelectorAll(
+          "p, div, span, h1, h2, h3, h4, h5, h6, li, td, a, button",
+        );
+
+        // Find elements containing the most matching words
+        let bestMatch = null;
+        let bestMatchCount = 0;
+
+        allElements.forEach((el) => {
+          if (!el.textContent) return;
+
+          const elText = el.textContent.toLowerCase();
+          let matchCount = 0;
+
+          // Count how many search words are in this element
+          searchWords.forEach((word) => {
+            if (elText.includes(word)) matchCount++;
+          });
+
+          // If this element has more matches than our current best, update it
+          if (matchCount > bestMatchCount) {
+            bestMatchCount = matchCount;
+            bestMatch = el;
+          }
+        });
+
+        // Use the best match if we found one
+        if (bestMatch && bestMatchCount > 0) {
+          console.log(
+            `VoiceroActionHandler: Found best match with ${bestMatchCount} matching words`,
+          );
+          element = bestMatch;
+        }
+      }
+
       if (element) {
+        console.log(
+          "VoiceroActionHandler: Found element for text, scrolling to it",
+        );
+
+        // Scroll to the element
         element.scrollIntoView({ behavior: "smooth", block: "center" });
+
+        // Highlight the element for better visibility
+        try {
+          element.style.backgroundColor = "#f9f900";
+
+          // Reset the highlight after a few seconds
+          setTimeout(() => {
+            element.style.backgroundColor = "";
+          }, 5000);
+
+          // Also try the regular highlight function for more precise highlighting
+          this.handleHighlight_text({
+            exact_text: exact_text,
+            scroll: false, // We're already scrolling
+          });
+        } catch (e) {
+          console.error("VoiceroActionHandler: Error highlighting element:", e);
+        }
+
         return;
       }
-      // console.warn(`Text not found: "${exact_text}"`, element);
+
+      console.warn(`VoiceroActionHandler: Text not found: "${exact_text}"`);
       return;
     }
 
     if (css_selector) {
+      console.log(
+        `VoiceroActionHandler: Scrolling to selector: "${css_selector}"`,
+      );
       var element = document.querySelector(css_selector);
       if (element) {
         var elementPosition =
@@ -422,11 +593,11 @@ var VoiceroActionHandler = {
         });
         return;
       }
-      // console.warn(`Element not found with selector: ${css_selector}`);
+      console.warn(`Element not found with selector: ${css_selector}`);
       return;
     }
 
-    // console.warn("No selector or text provided for scroll", target);
+    console.warn("No selector or text provided for scroll", target);
   },
 
   handleClick: function (target) {
@@ -589,23 +760,39 @@ var VoiceroActionHandler = {
       color = "#f9f900",
       scroll = true,
       offset = 50,
+      content_targets,
     } = target || {};
 
+    // Handle content_targets structure if present
+    if (content_targets && content_targets.exact_text) {
+      exact_text = content_targets.exact_text;
+    }
+
+    console.log(
+      `VoiceroActionHandler: Highlighting text: "${exact_text || selector || "none provided"}"`,
+    );
+
     // 1. Remove all previous highlights first
+    // First, remove any span-based highlights we've added
+    document
+      .querySelectorAll('span[style*="background-color"]')
+      .forEach((el) => {
+        if (
+          el.style.backgroundColor === color ||
+          el.style.backgroundColor === "rgb(249, 249, 0)"
+        ) {
+          // Replace the span with its text content
+          el.replaceWith(el.textContent);
+        }
+      });
+
+    // Then, remove any element-level background colors (legacy approach)
     document.querySelectorAll('[style*="background-color"]').forEach((el) => {
       if (
         el.style.backgroundColor === color ||
         el.style.backgroundColor === "rgb(249, 249, 0)"
       ) {
         el.style.backgroundColor = "";
-        // Remove span wrappers we added
-        if (
-          el.tagName === "SPAN" &&
-          el.hasAttribute("style") &&
-          el.parentNode
-        ) {
-          el.replaceWith(el.textContent);
-        }
       }
     });
 
@@ -614,6 +801,9 @@ var VoiceroActionHandler = {
     // 2. Handle selector-based highlighting
     if (selector) {
       var elements = document.querySelectorAll(selector);
+      console.log(
+        `VoiceroActionHandler: Found ${elements.length} elements matching selector`,
+      );
       elements.forEach((el) => {
         el.style.backgroundColor = color;
         if (!firstHighlightedElement) firstHighlightedElement = el;
@@ -621,81 +811,308 @@ var VoiceroActionHandler = {
     }
     // 3. Handle exact text highlighting (case-insensitive)
     else if (exact_text) {
-      var regex = new RegExp(this.escapeRegExp(exact_text), "gi");
-      // Select all elements that might contain text nodes
-      var elements = document.querySelectorAll(
-        "p, span, div, li, td, h1, h2, h3, h4, h5, h6",
-      );
+      // First try to find the element with exact text
+      var exactElement = this.findElement({ exact_text });
+      if (exactElement) {
+        console.log(`VoiceroActionHandler: Found exact element to highlight`);
 
-      // Function to process text nodes
-      var highlightTextNodes = (node) => {
-        if (node.nodeType === Node.TEXT_NODE && node.nodeValue.trim()) {
-          var text = node.nodeValue;
-          let match;
-          let lastIndex = 0;
-          var fragment = document.createDocumentFragment();
+        // Highlight only the specific text, not the whole element
+        const originalText = exactElement.innerHTML;
+        const textToHighlight = this.escapeRegExp(exact_text);
+        const regex = new RegExp(`(${textToHighlight})`, "gi");
 
-          while ((match = regex.exec(text)) !== null) {
-            // Add text before the match
-            if (match.index > lastIndex) {
-              fragment.appendChild(
-                document.createTextNode(text.substring(lastIndex, match.index)),
+        // Replace the text with a highlighted version
+        exactElement.innerHTML = originalText.replace(
+          regex,
+          `<span style="background-color:${color}">$1</span>`,
+        );
+
+        firstHighlightedElement = exactElement;
+      } else {
+        console.log(
+          `VoiceroActionHandler: No exact element found, trying partial match highlighting`,
+        );
+
+        // Try a more aggressive search using substring matching
+        const searchWords = exact_text
+          .toLowerCase()
+          .split(/\s+/)
+          .filter((word) => word.length > 3);
+        console.log(
+          "VoiceroActionHandler: Searching for key words:",
+          searchWords,
+        );
+
+        // Get all text-containing elements
+        const allElements = document.querySelectorAll(
+          "p, span, div, li, td, h1, h2, h3, h4, h5, h6, a, button, label",
+        );
+
+        // Find elements containing the most matching words
+        let bestMatch = null;
+        let bestMatchCount = 0;
+
+        allElements.forEach((el) => {
+          if (!el.textContent) return;
+
+          const elText = el.textContent.toLowerCase();
+          let matchCount = 0;
+
+          // Count how many search words are in this element
+          searchWords.forEach((word) => {
+            if (elText.includes(word)) matchCount++;
+          });
+
+          // If this element has more matches than our current best, update it
+          if (matchCount > bestMatchCount) {
+            bestMatchCount = matchCount;
+            bestMatch = el;
+          }
+        });
+
+        // Use the best match if we found one
+        if (bestMatch && bestMatchCount > 0) {
+          console.log(
+            `VoiceroActionHandler: Found best match with ${bestMatchCount} matching words`,
+          );
+
+          // Instead of highlighting the whole element, highlight just the matching words
+          const originalText = bestMatch.innerHTML;
+          const lowerText = originalText.toLowerCase();
+          let newHtml = originalText;
+
+          // Highlight each matching word individually
+          searchWords.forEach((word) => {
+            if (lowerText.includes(word)) {
+              const regex = new RegExp(
+                `(\\b${this.escapeRegExp(word)}\\b)`,
+                "gi",
+              );
+              newHtml = newHtml.replace(
+                regex,
+                `<span style="background-color:${color}">$1</span>`,
               );
             }
+          });
 
-            // Add highlighted match
-            var span = document.createElement("span");
-            span.style.backgroundColor = color;
-            span.appendChild(document.createTextNode(match[0]));
-            fragment.appendChild(span);
+          // Apply the modified HTML with highlighted words
+          bestMatch.innerHTML = newHtml;
+          firstHighlightedElement = bestMatch;
+        } else {
+          // If no partial match found, try regex highlighting as a last resort
+          console.log(
+            `VoiceroActionHandler: No partial match found, using regex highlighting`,
+          );
+          var regex = new RegExp(this.escapeRegExp(exact_text), "gi");
+          // Select all elements that might contain text nodes
+          var elements = document.querySelectorAll(
+            "p, span, div, li, td, h1, h2, h3, h4, h5, h6, a, button, label",
+          );
 
-            lastIndex = regex.lastIndex;
+          console.log(
+            `VoiceroActionHandler: Searching in ${elements.length} elements for text to highlight`,
+          );
 
-            // Track first highlighted element for scrolling
+          // Function to process text nodes
+          var highlightTextNodes = (node) => {
+            if (
+              node.nodeType === Node.TEXT_NODE &&
+              node.nodeValue &&
+              node.nodeValue.trim()
+            ) {
+              var text = node.nodeValue;
+              let match;
+              let lastIndex = 0;
+              var fragment = document.createDocumentFragment();
+
+              // Reset regex lastIndex
+              regex.lastIndex = 0;
+
+              while ((match = regex.exec(text)) !== null) {
+                console.log(
+                  `VoiceroActionHandler: Found match: "${match[0]}" at index ${match.index}`,
+                );
+
+                // Add text before the match
+                if (match.index > lastIndex) {
+                  fragment.appendChild(
+                    document.createTextNode(
+                      text.substring(lastIndex, match.index),
+                    ),
+                  );
+                }
+
+                // Add highlighted match
+                var span = document.createElement("span");
+                span.style.backgroundColor = color;
+                span.appendChild(document.createTextNode(match[0]));
+                fragment.appendChild(span);
+
+                lastIndex = regex.lastIndex;
+
+                // Track first highlighted element for scrolling
+                if (!firstHighlightedElement) {
+                  firstHighlightedElement = span;
+                }
+              }
+
+              // Add remaining text after last match
+              if (lastIndex < text.length) {
+                fragment.appendChild(
+                  document.createTextNode(text.substring(lastIndex)),
+                );
+              }
+
+              // Replace the original text node with our fragment
+              if (fragment.childNodes.length > 0) {
+                node.parentNode.replaceChild(fragment, node);
+                return true; // Indicate we found and highlighted something
+              }
+            } else if (
+              node.nodeType === Node.ELEMENT_NODE &&
+              node.offsetParent !== null &&
+              getComputedStyle(node).display !== "none" &&
+              !["SCRIPT", "STYLE", "TITLE", "LINK"].includes(node.tagName)
+            ) {
+              // Process child nodes recursively
+              let found = false;
+              Array.from(node.childNodes).forEach((child) => {
+                if (highlightTextNodes(child)) found = true;
+              });
+              return found;
+            }
+            return false;
+          };
+
+          // Process each element
+          let highlightFound = false;
+          elements.forEach((el) => {
+            if (
+              el.offsetParent === null ||
+              getComputedStyle(el).display === "none"
+            ) {
+              return;
+            }
+            if (highlightTextNodes(el)) {
+              highlightFound = true;
+            }
+          });
+
+          if (!highlightFound) {
+            console.log(
+              `VoiceroActionHandler: No text found to highlight with regex`,
+            );
+
+            // Last resort: Try to find any element containing any part of the text
+            const words = exact_text.toLowerCase().split(/\s+/);
+            const significantWords = words.filter((word) => word.length > 3);
+
+            if (significantWords.length > 0) {
+              console.log(
+                "VoiceroActionHandler: Trying to find elements with any significant word",
+              );
+
+              // Try each significant word
+              for (const word of significantWords) {
+                let found = false;
+
+                elements.forEach((el) => {
+                  if (
+                    el.textContent &&
+                    el.textContent.toLowerCase().includes(word) &&
+                    !firstHighlightedElement
+                  ) {
+                    console.log(
+                      `VoiceroActionHandler: Found element with word "${word}"`,
+                    );
+
+                    // Highlight just the matching word, not the whole element
+                    const originalText = el.innerHTML;
+                    const regex = new RegExp(
+                      `(\\b${this.escapeRegExp(word)}\\b)`,
+                      "gi",
+                    );
+                    el.innerHTML = originalText.replace(
+                      regex,
+                      `<span style="background-color:${color}">$1</span>`,
+                    );
+
+                    firstHighlightedElement = el;
+                    found = true;
+                    return; // Break the forEach
+                  }
+                });
+
+                if (found) break; // Break the for loop if we found something
+              }
+            }
+
+            // If still nothing found, just highlight the first paragraph as a fallback
             if (!firstHighlightedElement) {
-              firstHighlightedElement = span;
+              const paragraphs = document.querySelectorAll("p");
+              if (paragraphs.length > 0) {
+                console.log(
+                  "VoiceroActionHandler: No matching text found, highlighting any relevant word in first paragraph as fallback",
+                );
+
+                const paragraph = paragraphs[0];
+                const originalText = paragraph.innerHTML;
+                let newHtml = originalText;
+                let wordHighlighted = false;
+
+                // Try to highlight at least one word from the search text
+                const allWords = exact_text
+                  .toLowerCase()
+                  .split(/\s+/)
+                  .filter((w) => w.length > 2);
+                for (const word of allWords) {
+                  if (paragraph.textContent.toLowerCase().includes(word)) {
+                    const regex = new RegExp(
+                      `(\\b${this.escapeRegExp(word)}\\b)`,
+                      "gi",
+                    );
+                    newHtml = newHtml.replace(
+                      regex,
+                      `<span style="background-color:${color}">$1</span>`,
+                    );
+                    wordHighlighted = true;
+                    break;
+                  }
+                }
+
+                // If no word was highlighted, just highlight the first few words
+                if (!wordHighlighted) {
+                  const firstFewWords = paragraph.textContent
+                    .split(/\s+/)
+                    .slice(0, 3)
+                    .join(" ");
+                  if (firstFewWords) {
+                    const regex = new RegExp(
+                      `(${this.escapeRegExp(firstFewWords)})`,
+                      "i",
+                    );
+                    newHtml = newHtml.replace(
+                      regex,
+                      `<span style="background-color:${color}">$1</span>`,
+                    );
+                  }
+                }
+
+                paragraph.innerHTML = newHtml;
+                firstHighlightedElement = paragraph;
+              }
             }
           }
-
-          // Add remaining text after last match
-          if (lastIndex < text.length) {
-            fragment.appendChild(
-              document.createTextNode(text.substring(lastIndex)),
-            );
-          }
-
-          // Replace the original text node with our fragment
-          if (fragment.childNodes.length > 0) {
-            node.parentNode.replaceChild(fragment, node);
-          }
-        } else if (
-          node.nodeType === Node.ELEMENT_NODE &&
-          node.offsetParent !== null &&
-          getComputedStyle(node).display !== "none" &&
-          !["SCRIPT", "STYLE", "TITLE", "A", "LINK"].includes(node.tagName)
-        ) {
-          // Process child nodes recursively
-          Array.from(node.childNodes).forEach(highlightTextNodes);
         }
-      };
-
-      // Process each element
-      elements.forEach((el) => {
-        if (
-          el.offsetParent === null ||
-          getComputedStyle(el).display === "none"
-        ) {
-          return;
-        }
-        highlightTextNodes(el);
-      });
+      }
     } else {
-      // console.warn("No selector or text provided for highlight");
+      console.warn("No selector or text provided for highlight");
       return;
     }
 
     // 4. Scroll to first highlighted element if requested
     if (scroll && firstHighlightedElement) {
+      console.log(`VoiceroActionHandler: Scrolling to highlighted element`);
       var elementPosition =
         firstHighlightedElement.getBoundingClientRect().top +
         window.pageYOffset;
@@ -703,6 +1120,12 @@ var VoiceroActionHandler = {
         top: elementPosition - offset,
         behavior: "smooth",
       });
+    } else if (firstHighlightedElement) {
+      console.log(
+        `VoiceroActionHandler: Highlight found but not scrolling (scroll=${scroll})`,
+      );
+    } else {
+      console.log(`VoiceroActionHandler: No element was highlighted`);
     }
   },
 
