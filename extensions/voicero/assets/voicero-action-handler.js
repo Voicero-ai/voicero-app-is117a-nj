@@ -1503,6 +1503,10 @@ To make changes, please specify what you'd like to update.
     var { order_id, email, order_number } = target || {};
     var orderNumberToFind = order_number || order_id;
 
+    console.log(
+      `VoiceroActionHandler: Tracking order #${orderNumberToFind} with email ${email}`,
+    );
+
     // Check if email is missing
     if (!email) {
       var emailRequiredMessage =
@@ -1510,7 +1514,26 @@ To make changes, please specify what you'd like to update.
 
       // Display the message
       if (window.VoiceroText?.addMessage) {
-        window.VoiceroText.addMessage(emailRequiredMessage, "ai");
+        // Clear any existing typing indicator to prevent message overlap
+        if (window.VoiceroText.typingIndicator) {
+          if (window.VoiceroText.typingIndicator.parentNode) {
+            window.VoiceroText.typingIndicator.parentNode.removeChild(
+              window.VoiceroText.typingIndicator,
+            );
+          }
+          window.VoiceroText.typingIndicator = null;
+        }
+
+        // Find the messages container and force a re-render if possible
+        const messagesContainer = document
+          .querySelector("#voicero-chat-container")
+          ?.shadowRoot?.querySelector(".messages-container");
+        if (messagesContainer) {
+          window.VoiceroText.addMessage(emailRequiredMessage, "ai");
+          window.VoiceroText.renderMessages(messagesContainer);
+        } else {
+          window.VoiceroText.addMessage(emailRequiredMessage, "ai");
+        }
       }
 
       // Save message to session
@@ -1524,36 +1547,26 @@ To make changes, please specify what you'd like to update.
       window.__VoiceroCustomerData &&
       window.__VoiceroCustomerData.recent_orders
     ) {
-      // Verify email matches the customer's email if customer is logged in
-      if (
-        window.__VoiceroCustomerData.email &&
-        email.toLowerCase() !== window.__VoiceroCustomerData.email.toLowerCase()
-      ) {
-        var emailMismatchMessage =
-          "The email you provided doesn't match the email associated with your account. Please use the email address that was used to place the order.";
-
-        // Display the message
-        if (window.VoiceroText?.addMessage) {
-          window.VoiceroText.addMessage(emailMismatchMessage, "ai");
-        }
-
-        // Save message to session
-        this.saveMessageToSession(emailMismatchMessage, "assistant");
-
-        return;
-      }
+      // REMOVED EMAIL VERIFICATION - Skip email check to avoid false rejections
+      // Just proceed with order lookup directly
 
       var orders = window.__VoiceroCustomerData.recent_orders;
+      console.log(
+        `VoiceroActionHandler: Found ${orders.length} orders in customer data`,
+      );
 
       // Find the order with the matching order number
       var order = orders.find(
         (o) =>
           o.order_number === orderNumberToFind ||
           o.name === orderNumberToFind ||
-          o.name === `#${orderNumberToFind}`,
+          o.name === `#${orderNumberToFind}` ||
+          (o.name && o.name.includes(orderNumberToFind)),
       );
 
       if (order) {
+        console.log(`VoiceroActionHandler: Found matching order:`, order);
+
         // Build a formatted message with detailed order information
         var date = new Date(order.created_at).toLocaleDateString();
         var status =
@@ -1564,19 +1577,21 @@ To make changes, please specify what you'd like to update.
               : "⏳ " + (order.financial_status || "Processing");
 
         let message = `## Order Details for #${order.order_number}\n\n`;
-        message += `Order Date: ${date} - $${(parseFloat(order.total_price || 0) / 100).toFixed(2)} - ${order.line_items_count} ${order.line_items_count === 1 ? "item" : "items"}\n`;
-        message += `Order Status\n\n`;
+        message += `**Order Date:** ${date}\n`;
+        message += `**Total:** $${(parseFloat(order.total_price || 0) / 100).toFixed(2)}\n`;
+        message += `**Items:** ${order.line_items_count} ${order.line_items_count === 1 ? "item" : "items"}\n`;
+        message += `**Status:** ${status}\n\n`;
 
         // Add detailed tracking information if available
         if (order.has_tracking) {
           message += `Your order has been shipped! You can track it below:\n\n`;
 
           if (order.tracking_company) {
-            message += `Carrier: ${order.tracking_company}\n`;
+            message += `**Carrier:** ${order.tracking_company}\n`;
           }
 
           if (order.tracking_number) {
-            message += `Tracking Number: ${order.tracking_number}\n`;
+            message += `**Tracking Number:** ${order.tracking_number}\n`;
           }
 
           if (order.tracking_url) {
@@ -1593,7 +1608,26 @@ To make changes, please specify what you'd like to update.
 
         // Display the message using VoiceroText
         if (window.VoiceroText?.addMessage) {
-          window.VoiceroText.addMessage(message, "ai");
+          // Clear any existing typing indicator to prevent message overlap
+          if (window.VoiceroText.typingIndicator) {
+            if (window.VoiceroText.typingIndicator.parentNode) {
+              window.VoiceroText.typingIndicator.parentNode.removeChild(
+                window.VoiceroText.typingIndicator,
+              );
+            }
+            window.VoiceroText.typingIndicator = null;
+          }
+
+          // Find the messages container and force a re-render if possible
+          const messagesContainer = document
+            .querySelector("#voicero-chat-container")
+            ?.shadowRoot?.querySelector(".messages-container");
+          if (messagesContainer) {
+            window.VoiceroText.addMessage(message, "ai");
+            window.VoiceroText.renderMessages(messagesContainer);
+          } else {
+            window.VoiceroText.addMessage(message, "ai");
+          }
         }
 
         // Save message to session if VoiceroCore is available
@@ -1601,12 +1635,35 @@ To make changes, please specify what you'd like to update.
 
         return;
       } else {
+        console.log(
+          `VoiceroActionHandler: Order #${orderNumberToFind} not found in customer data`,
+        );
+
         // No matching order found - provide feedback
         var notFoundMessage = `I couldn't find order #${orderNumberToFind} in your order history. Please check the order number and try again, or view all your orders in your [account page](/account).`;
 
         // Display the not found message
         if (window.VoiceroText?.addMessage) {
-          window.VoiceroText.addMessage(notFoundMessage, "ai");
+          // Clear any existing typing indicator to prevent message overlap
+          if (window.VoiceroText.typingIndicator) {
+            if (window.VoiceroText.typingIndicator.parentNode) {
+              window.VoiceroText.typingIndicator.parentNode.removeChild(
+                window.VoiceroText.typingIndicator,
+              );
+            }
+            window.VoiceroText.typingIndicator = null;
+          }
+
+          // Find the messages container and force a re-render if possible
+          const messagesContainer = document
+            .querySelector("#voicero-chat-container")
+            ?.shadowRoot?.querySelector(".messages-container");
+          if (messagesContainer) {
+            window.VoiceroText.addMessage(notFoundMessage, "ai");
+            window.VoiceroText.renderMessages(messagesContainer);
+          } else {
+            window.VoiceroText.addMessage(notFoundMessage, "ai");
+          }
         }
 
         // Save message to session
@@ -1617,11 +1674,30 @@ To make changes, please specify what you'd like to update.
     }
 
     // If we couldn't find the order or user isn't logged in
-    var loginMessage = `To track order #${orderNumberToFind}, please make sure you're logged in to your account first or provide a valid email address.`;
+    var loginMessage = `I'm looking up order #${orderNumberToFind}. If you're logged in, I'll show you the details. If not, please log in to your account to view your order details.`;
 
     // Display the login message
     if (window.VoiceroText?.addMessage) {
-      window.VoiceroText.addMessage(loginMessage, "ai");
+      // Clear any existing typing indicator to prevent message overlap
+      if (window.VoiceroText.typingIndicator) {
+        if (window.VoiceroText.typingIndicator.parentNode) {
+          window.VoiceroText.typingIndicator.parentNode.removeChild(
+            window.VoiceroText.typingIndicator,
+          );
+        }
+        window.VoiceroText.typingIndicator = null;
+      }
+
+      // Find the messages container and force a re-render if possible
+      const messagesContainer = document
+        .querySelector("#voicero-chat-container")
+        ?.shadowRoot?.querySelector(".messages-container");
+      if (messagesContainer) {
+        window.VoiceroText.addMessage(loginMessage, "ai");
+        window.VoiceroText.renderMessages(messagesContainer);
+      } else {
+        window.VoiceroText.addMessage(loginMessage, "ai");
+      }
     }
 
     // Save message to session
@@ -1822,11 +1898,14 @@ To make changes, please specify what you'd like to update.
     // Check for email in the target object if provided
     var { email } = target || {};
 
+    console.log("VoiceroActionHandler: Getting orders, email provided:", email);
+
     // Check if we have customer data available from the Liquid template
     if (
       window.__VoiceroCustomerData &&
       window.__VoiceroCustomerData.recent_orders
     ) {
+      console.log("VoiceroActionHandler: Found customer data with orders");
       var orders = window.__VoiceroCustomerData.recent_orders;
 
       if (orders.length === 0) {
@@ -1926,9 +2005,31 @@ To make changes, please specify what you'd like to update.
 
       // Show a loading message
       var loadingMessage = `Looking up orders associated with ${email}...`;
-      if (window.VoiceroText?.addMessage) {
-        window.VoiceroText.addMessage(loadingMessage, "ai");
+
+      // Clear any existing typing indicator to prevent message overlap
+      if (window.VoiceroText && window.VoiceroText.typingIndicator) {
+        if (window.VoiceroText.typingIndicator.parentNode) {
+          window.VoiceroText.typingIndicator.parentNode.removeChild(
+            window.VoiceroText.typingIndicator,
+          );
+        }
+        window.VoiceroText.typingIndicator = null;
       }
+
+      // Find the messages container and force a re-render if possible
+      const messagesContainer = document
+        .querySelector("#voicero-chat-container")
+        ?.shadowRoot?.querySelector(".messages-container");
+
+      if (window.VoiceroText?.addMessage) {
+        if (messagesContainer) {
+          window.VoiceroText.addMessage(loadingMessage, "ai");
+          window.VoiceroText.renderMessages(messagesContainer);
+        } else {
+          window.VoiceroText.addMessage(loadingMessage, "ai");
+        }
+      }
+
       if (window.VoiceroVoice?.addMessage) {
         window.VoiceroVoice.addMessage(loadingMessage, "ai");
       }

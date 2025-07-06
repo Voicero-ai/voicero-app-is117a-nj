@@ -777,6 +777,14 @@
     addMessage: function (text, type) {
       if (!text || !type) return;
 
+      // Clear any existing typing indicator to prevent message overlap
+      if (this.typingIndicator) {
+        if (this.typingIndicator.parentNode) {
+          this.typingIndicator.parentNode.removeChild(this.typingIndicator);
+        }
+        this.typingIndicator = null;
+      }
+
       // Ensure text is a string and handle JSON objects/strings
       let messageText = "";
       let action = null;
@@ -1456,17 +1464,25 @@
           if (action === "get_orders" || action === "track_order") {
             // Store the action and context for processing, but don't display the initial message
             console.log(
-              `VoiceroText: Skipping initial message display for ${action} action`,
+              `VoiceroText: Skipping initial message display for ${action} action with context:`,
+              action_context,
             );
 
             // Handle action with VoiceroActionHandler if available
             if (window.VoiceroActionHandler && action !== "none") {
+              // Use a small delay to ensure typing indicators are cleared
               setTimeout(() => {
-                window.VoiceroActionHandler.handle({
-                  answer: messageText,
-                  action: action,
-                  action_context: action_context,
-                });
+                try {
+                  window.VoiceroActionHandler.handle({
+                    answer: messageText,
+                    action: action,
+                    action_context: action_context,
+                  });
+                } catch (error) {
+                  console.error(`Error handling ${action} action:`, error);
+                  // Fallback to showing the original message if handler fails
+                  this.addMessage(messageText, "ai");
+                }
               }, 100);
             }
           } else {
