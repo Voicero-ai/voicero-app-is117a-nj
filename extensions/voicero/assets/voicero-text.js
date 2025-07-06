@@ -401,6 +401,37 @@
       const themeColor = this.websiteColor || "#882be6";
       console.log("VoiceroText: Using color for styles:", themeColor);
 
+      // Create RGB values from hex color for the animation
+      let r = 136,
+        g = 43,
+        b = 230; // Default purple RGB
+
+      // Try to convert the theme color to RGB
+      if (
+        themeColor.startsWith("#") &&
+        (themeColor.length === 7 || themeColor.length === 4)
+      ) {
+        try {
+          if (themeColor.length === 7) {
+            r = parseInt(themeColor.substring(1, 3), 16);
+            g = parseInt(themeColor.substring(3, 5), 16);
+            b = parseInt(themeColor.substring(5, 7), 16);
+          } else {
+            // For #RGB format
+            r = parseInt(themeColor.charAt(1) + themeColor.charAt(1), 16);
+            g = parseInt(themeColor.charAt(2) + themeColor.charAt(2), 16);
+            b = parseInt(themeColor.charAt(3) + themeColor.charAt(3), 16);
+          }
+          console.log(
+            `VoiceroText: Converted theme color to RGB: ${r}, ${g}, ${b}`,
+          );
+        } catch (e) {
+          console.log(
+            "VoiceroText: Error converting theme color to RGB, using default",
+          );
+        }
+      }
+
       styleEl.textContent = `
         :host {
           display: block;
@@ -527,9 +558,9 @@
           animation: siri-pulse 1.5s infinite;
         }
         @keyframes siri-pulse {
-          0% { box-shadow: 0 0 0 0 rgba(136, 43, 230, 0.4); }
-          70% { box-shadow: 0 0 0 10px rgba(136, 43, 230, 0); }
-          100% { box-shadow: 0 0 0 0 rgba(136, 43, 230, 0); }
+          0% { box-shadow: 0 0 0 0 rgba(${r}, ${g}, ${b}, 0.4); }
+          70% { box-shadow: 0 0 0 10px rgba(${r}, ${g}, ${b}, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(${r}, ${g}, ${b}, 0); }
         }
       `;
       chatShadow.appendChild(styleEl);
@@ -580,33 +611,48 @@
       headerLeft.appendChild(avatar);
       headerLeft.appendChild(nameContainer);
 
-      // Close button
-      const closeButton = document.createElement("div");
+      // Header right side (close button)
+      const headerRight = document.createElement("div");
+      headerRight.className = "header-right"; // Added class for styling
+
+      // Add close button
+      var closeButton = document.createElement("div");
       closeButton.className = "close-button";
       closeButton.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round">
         <path d="M18 6L6 18M6 6l12 12"></path>
       </svg>`;
 
+      // Add click handler for close button
       closeButton.addEventListener("click", () => {
-        console.log("VoiceroText: Chat closed by user");
+        console.log("VoiceroText: Close button clicked");
 
-        // Remove the chat container
-        chatContainer.remove();
+        // Call session clear API
+        this.clearSession()
+          .then(() => {
+            console.log("VoiceroText: Session cleared successfully");
+          })
+          .catch((error) => {
+            console.error("VoiceroText: Error clearing session:", error);
+          })
+          .finally(() => {
+            // Remove the chat container regardless of API success/failure
+            const chatContainer = document.getElementById(
+              "voicero-chat-container",
+            );
+            if (chatContainer) {
+              chatContainer.remove();
+            }
 
-        // IMPORTANT: Reset all flags to ensure welcome screen can reappear
-        window.voiceroInChatMode = false;
-        window.voiceroWelcomeInProgress = false;
-
-        // Reset the initialized state to allow reopening
-        window.VoiceroText.initialized = false;
-        window.VoiceroText.messages = [];
-
-        console.log("VoiceroText: Reset all flags for welcome screen");
+            // Reset chat mode flag
+            window.voiceroInChatMode = false;
+          });
       });
 
-      // Assemble header
+      headerRight.appendChild(closeButton);
+
+      // Add header to chat container
       header.appendChild(headerLeft);
-      header.appendChild(closeButton);
+      header.appendChild(headerRight);
       chatShadow.appendChild(header);
 
       // Messages container
@@ -1304,6 +1350,148 @@
               });
             }, 100);
           }
+        });
+    },
+
+    // Clear session and create a new thread
+    clearSession: function () {
+      console.log("VoiceroText: Clearing session");
+
+      // Get session ID from VoiceroCore
+      const sessionId =
+        window.VoiceroCore?.sessionId ||
+        localStorage.getItem("voicero_session_id");
+
+      if (!sessionId) {
+        console.error("VoiceroText: No session ID found for clearing");
+        return Promise.reject("No session ID found");
+      }
+
+      // Try local API endpoint first
+      const localApiUrl = "http://localhost:3000/api/session/clear";
+      const prodApiUrl = "https://www.voicero.ai/api/session/clear";
+
+      // Get auth headers if available
+      const headers = {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        ...(window.voiceroConfig?.getAuthHeaders
+          ? window.voiceroConfig.getAuthHeaders()
+          : {}),
+      };
+
+      // Call the API
+      return fetch(localApiUrl, {
+        method: "POST",
+        headers: headers,
+        body: JSON.stringify({ sessionId }),
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error(`Local API failed with status: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then((data) => {
+          console.log("VoiceroText: Session cleared successfully:", data);
+
+          // Update local storage with new thread if provided
+          if (
+            data.session &&
+            data.session.threads &&
+            data.session.threads.length > 0
+          ) {
+            const newThread = data.session.threads[0];
+            const newThreadId = newThread.id || newThread.threadId;
+
+            if (newThreadId) {
+              console.log("VoiceroText: Updating thread ID to:", newThreadId);
+              localStorage.setItem("voicero_thread_id", newThreadId);
+
+              // Update VoiceroCore thread data
+              if (window.VoiceroCore) {
+                window.VoiceroCore.thread = newThread;
+                window.VoiceroCore.thread.id = newThreadId;
+              }
+            }
+
+            // Update session in local storage
+            localStorage.setItem(
+              "voicero_session",
+              JSON.stringify(data.session),
+            );
+
+            // Update VoiceroCore session
+            if (window.VoiceroCore) {
+              window.VoiceroCore.session = data.session;
+            }
+          }
+
+          return data;
+        })
+        .catch((error) => {
+          console.log(
+            "VoiceroText: Local API failed, trying production:",
+            error,
+          );
+
+          // Try production API as fallback
+          return fetch(prodApiUrl, {
+            method: "POST",
+            headers: headers,
+            body: JSON.stringify({ sessionId }),
+          })
+            .then((response) => {
+              if (!response.ok) {
+                throw new Error(
+                  `Production API failed with status: ${response.status}`,
+                );
+              }
+              return response.json();
+            })
+            .then((data) => {
+              console.log(
+                "VoiceroText: Session cleared successfully (production):",
+                data,
+              );
+
+              // Update local storage with new thread if provided
+              if (
+                data.session &&
+                data.session.threads &&
+                data.session.threads.length > 0
+              ) {
+                const newThread = data.session.threads[0];
+                const newThreadId = newThread.id || newThread.threadId;
+
+                if (newThreadId) {
+                  console.log(
+                    "VoiceroText: Updating thread ID to:",
+                    newThreadId,
+                  );
+                  localStorage.setItem("voicero_thread_id", newThreadId);
+
+                  // Update VoiceroCore thread data
+                  if (window.VoiceroCore) {
+                    window.VoiceroCore.thread = newThread;
+                    window.VoiceroCore.thread.id = newThreadId;
+                  }
+                }
+
+                // Update session in local storage
+                localStorage.setItem(
+                  "voicero_session",
+                  JSON.stringify(data.session),
+                );
+
+                // Update VoiceroCore session
+                if (window.VoiceroCore) {
+                  window.VoiceroCore.session = data.session;
+                }
+              }
+
+              return data;
+            });
         });
     },
   };
