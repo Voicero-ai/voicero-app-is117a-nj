@@ -39,6 +39,20 @@
       // Get website color from VoiceroCore
       if (window.VoiceroCore && window.VoiceroCore.websiteColor) {
         this.websiteColor = window.VoiceroCore.websiteColor;
+        console.log(
+          "VoiceroText: Using color from VoiceroCore:",
+          this.websiteColor,
+        );
+      } else if (
+        window.VoiceroCore &&
+        window.VoiceroCore.session &&
+        window.VoiceroCore.session.websiteColor
+      ) {
+        this.websiteColor = window.VoiceroCore.session.websiteColor;
+        console.log(
+          "VoiceroText: Using color from session:",
+          this.websiteColor,
+        );
       } else if (
         window.VoiceroCore &&
         window.VoiceroCore.session &&
@@ -46,9 +60,14 @@
         window.VoiceroCore.session.website.color
       ) {
         this.websiteColor = window.VoiceroCore.session.website.color;
+        console.log(
+          "VoiceroText: Using color from session.website:",
+          this.websiteColor,
+        );
       } else {
         // Fallback to default purple
         this.websiteColor = "#882be6";
+        console.log("VoiceroText: Using default color:", this.websiteColor);
       }
 
       // Initialize with a message if provided
@@ -138,6 +157,184 @@
     },
 
     // Create the chat interface container
+    createChatContainer: function () {
+      console.log("VoiceroText: Creating chat container");
+
+      // Wait for VoiceroCore to be fully initialized
+      if (window.VoiceroCore && !window.VoiceroCore.coreInitialized) {
+        console.log(
+          "VoiceroText: Waiting for VoiceroCore to be fully initialized",
+        );
+
+        // Try again after a delay
+        setTimeout(() => {
+          console.log(
+            "VoiceroText: Retrying creating chat container after delay",
+          );
+          this.createChatContainer();
+        }, 800);
+
+        return;
+      }
+
+      // Initialize if not already done
+      if (!this.initialized) {
+        this.init();
+      }
+
+      // Remove any existing chat container first
+      const existingChat = document.getElementById("voicero-chat-container");
+      if (existingChat) {
+        console.log("VoiceroText: Removing existing chat container");
+        existingChat.remove();
+      }
+
+      // Create the chat interface
+      this.createChatInterface();
+
+      // Load existing messages immediately
+      console.log("VoiceroText: Loading existing messages immediately");
+      this.loadExistingMessages();
+
+      // Make sure the chat container is visible
+      const chatContainer = document.getElementById("voicero-chat-container");
+      if (chatContainer) {
+        console.log("VoiceroText: Ensuring chat container is visible");
+        chatContainer.style.display = "flex";
+        chatContainer.style.visibility = "visible";
+        chatContainer.style.opacity = "1";
+        chatContainer.style.zIndex = "9999999";
+      }
+    },
+
+    // Load existing messages from VoiceroCore session
+    loadExistingMessages: function () {
+      console.log("VoiceroText: Loading existing messages from session");
+
+      // Wait for VoiceroCore to be fully initialized
+      if (window.VoiceroCore && !window.VoiceroCore.coreInitialized) {
+        console.log(
+          "VoiceroText: Waiting for VoiceroCore to be fully initialized",
+        );
+
+        // Try again after a delay
+        setTimeout(() => {
+          console.log("VoiceroText: Retrying loading messages after delay");
+          this.loadExistingMessages();
+        }, 800);
+
+        return false;
+      }
+
+      // Check if VoiceroCore has thread messages
+      if (
+        window.VoiceroCore &&
+        window.VoiceroCore.session &&
+        window.VoiceroCore.session.threads &&
+        window.VoiceroCore.session.threads.length > 0
+      ) {
+        const threads = window.VoiceroCore.session.threads;
+        console.log(`VoiceroText: Found ${threads.length} threads in session`);
+
+        // Get the most recent thread
+        const latestThread = threads[0];
+
+        if (
+          latestThread &&
+          latestThread.messages &&
+          latestThread.messages.length > 0
+        ) {
+          // Sort messages by createdAt timestamp
+          const messages = [...latestThread.messages].sort((a, b) => {
+            return new Date(a.createdAt) - new Date(b.createdAt);
+          });
+
+          console.log(
+            `VoiceroText: Latest thread has ${messages.length} messages, sorted by timestamp`,
+          );
+
+          // Clear existing messages
+          this.messages = [];
+
+          // Simple loop to add messages
+          for (let i = 0; i < messages.length; i++) {
+            const message = messages[i];
+            if (message && message.role && message.content) {
+              // Map role to our message type
+              const type = message.role === "user" ? "user" : "ai";
+
+              // Just extract the text for display
+              let displayText = message.content;
+
+              // If content is JSON with answer field, extract it
+              if (
+                typeof displayText === "string" &&
+                displayText.includes('"answer"')
+              ) {
+                try {
+                  const parsed = JSON.parse(displayText);
+                  if (parsed && parsed.answer) {
+                    displayText = parsed.answer;
+                    console.log("Extracted answer:", displayText);
+                  }
+                } catch (e) {
+                  // Just use the original text if parsing fails
+                  console.log("Failed to parse JSON:", e);
+                }
+              }
+
+              // Add to our messages array
+              this.messages.push({
+                text: displayText,
+                type: type,
+                timestamp: new Date(message.createdAt || Date.now()),
+                isHistorical: true, // Flag to prevent action processing
+                createdAt: message.createdAt, // Store original timestamp
+              });
+
+              console.log(
+                `Added ${type} message from ${message.createdAt}: ${displayText.substring(0, 30)}...`,
+              );
+            }
+          }
+
+          // Find the messages container and render messages
+          const chatContainer = document.getElementById(
+            "voicero-chat-container",
+          );
+          if (chatContainer && chatContainer.shadowRoot) {
+            const messagesContainer = chatContainer.shadowRoot.querySelector(
+              ".messages-container",
+            );
+            if (messagesContainer) {
+              // Render the loaded messages
+              this.renderMessages(messagesContainer);
+              console.log("Rendered messages in container");
+
+              // Force scroll to bottom after a short delay
+              setTimeout(() => {
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                console.log("Forced scroll to bottom");
+              }, 100);
+            } else {
+              console.log("Messages container not found in shadow DOM");
+            }
+          } else {
+            console.log("Chat container or shadow root not found");
+          }
+
+          console.log(
+            `VoiceroText: Loaded ${this.messages.length} messages from session`,
+          );
+          return true;
+        }
+      }
+
+      console.log("No messages found in session");
+      return false;
+    },
+
+    // Create the chat interface
     createChatInterface: function () {
       console.log("VoiceroText: Creating chat interface");
 
@@ -146,7 +343,28 @@
         "voicero-welcome-container",
       );
       if (existingWelcome) {
+        console.log("VoiceroText: Removing welcome container");
         existingWelcome.remove();
+      }
+
+      // Also remove any existing chat container to prevent duplicates
+      const existingChat = document.getElementById("voicero-chat-container");
+      if (existingChat) {
+        console.log("VoiceroText: Removing existing chat container");
+        existingChat.remove();
+      }
+
+      // Make sure we have the latest website color
+      if (
+        window.VoiceroCore &&
+        window.VoiceroCore.session &&
+        window.VoiceroCore.session.websiteColor
+      ) {
+        this.websiteColor = window.VoiceroCore.session.websiteColor;
+        console.log(
+          "VoiceroText: Updated color from session:",
+          this.websiteColor,
+        );
       }
 
       // Create fresh container for chat interface
@@ -165,7 +383,7 @@
         overflow: hidden;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
         background: white;
-        display: flex;
+        display: flex !important;
         flex-direction: column;
         visibility: visible !important;
         opacity: 1 !important;
@@ -178,6 +396,11 @@
 
       // Add basic styles to the shadow root
       const styleEl = document.createElement("style");
+
+      // Get the current website color
+      const themeColor = this.websiteColor || "#882be6";
+      console.log("VoiceroText: Using color for styles:", themeColor);
+
       styleEl.textContent = `
         :host {
           display: block;
@@ -238,7 +461,17 @@
           display: flex;
           flex-direction: column;
           gap: 10px;
+          
+          /* Hide scrollbar but keep scrolling functionality */
+          scrollbar-width: none; /* Firefox */
+          -ms-overflow-style: none; /* IE and Edge */
         }
+        
+        /* Hide scrollbar for Chrome, Safari and Opera */
+        .messages-container::-webkit-scrollbar {
+          display: none;
+        }
+        
         .message {
           max-width: 80%;
           padding: 10px 15px;
@@ -255,7 +488,7 @@
         }
         .user-message {
           align-self: flex-end;
-          background-color: ${this.websiteColor || "#882be6"};
+          background-color: ${themeColor};
           color: white; /* User message text is white for contrast */
           border-bottom-right-radius: 4px;
         }
@@ -398,7 +631,11 @@
 
       const sendButton = document.createElement("div");
       sendButton.className = "send-button";
-      sendButton.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${this.websiteColor || "#882be6"}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+      // Use the current website color for the send button
+      const buttonColor = this.websiteColor || "#882be6";
+
+      sendButton.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${buttonColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"></path>
       </svg>`;
 
@@ -446,6 +683,7 @@
 
       // Case 1: If it's already a JSON object
       if (typeof text === "object" && text !== null) {
+        console.log("VoiceroText: Processing JSON object message:", text);
         // Extract the answer field if it exists
         if (text.answer) {
           messageText = text.answer;
@@ -459,8 +697,11 @@
       // Case 2: If it's a string that looks like JSON
       else if (
         typeof text === "string" &&
-        (text.trim().startsWith("{") || text.includes('"action":'))
+        ((text.trim().startsWith("{") && text.trim().endsWith("}")) ||
+          text.includes('"answer":') ||
+          text.includes('"action":'))
       ) {
+        console.log("VoiceroText: Processing JSON string message:", text);
         try {
           const jsonObj = JSON.parse(text);
           // Extract the answer field if it exists
@@ -468,6 +709,10 @@
             messageText = jsonObj.answer;
             action = jsonObj.action || "none";
             action_context = jsonObj.action_context || {};
+            console.log(
+              "VoiceroText: Extracted answer from JSON:",
+              messageText,
+            );
           } else {
             messageText = text;
           }
@@ -486,17 +731,32 @@
         messageText = String(text || "No message content");
       }
 
+      // Create timestamp for the message
+      const now = new Date();
+      const timestamp = now.toISOString();
+
       // Add to messages array
       this.messages.push({
         text: messageText,
         type: type,
-        timestamp: new Date(),
+        timestamp: now,
+        action: action,
+        action_context: action_context,
+        createdAt: timestamp, // Store ISO string timestamp for sorting
       });
 
-      console.log(`VoiceroText: Added ${type} message: ${messageText}`);
+      console.log(
+        `VoiceroText: Added ${type} message at ${timestamp}: ${messageText}`,
+      );
 
       // Handle action if this is an AI message and we have an action
-      if (type === "ai" && action && action !== "none") {
+      // IMPORTANT: Skip action processing for historical messages
+      if (
+        type === "ai" &&
+        action &&
+        action !== "none" &&
+        !this.messages[this.messages.length - 1].isHistorical
+      ) {
         console.log(
           "VoiceroText: Handling action immediately:",
           action,
@@ -553,74 +813,37 @@
 
     // Render all messages in the container
     renderMessages: function (container) {
-      if (!container) return;
+      if (!container) {
+        console.log(
+          "VoiceroText: No container provided for rendering messages",
+        );
+        return;
+      }
 
       // Clear existing messages
       container.innerHTML = "";
+      console.log(`VoiceroText: Rendering ${this.messages.length} messages`);
 
-      // Add each message
-      this.messages.forEach((message) => {
+      // Add each message in chronological order
+      this.messages.forEach((message, index) => {
+        console.log(
+          `Rendering message ${index}: ${message.type} - ${typeof message.text === "string" ? message.text.substring(0, 30) : "non-string"}`,
+        );
+
+        // Create message element with class based on type
         const messageEl = document.createElement("div");
         messageEl.className = `message ${message.type}-message`;
 
-        // Set text with proper styling to ensure visibility
-        messageEl.style.cssText = `
-          color: ${message.type === "ai" ? "#333" : "white"};
-          font-weight: normal;
-          word-break: break-word;
-        `;
+        // Set message text content
+        messageEl.textContent = message.text;
 
-        // Create a content wrapper for AI messages to allow for report button
-        if (message.type === "ai") {
-          // Create content wrapper
-          const contentWrapper = document.createElement("div");
-          contentWrapper.className = "message-content";
-
-          // Ensure message.text is a string
-          const messageText =
-            typeof message.text === "string"
-              ? message.text
-              : message.text
-                ? JSON.stringify(message.text)
-                : "No message content";
-
-          contentWrapper.textContent = messageText;
-          messageEl.appendChild(contentWrapper);
-
-          // Add a unique ID to the message for reporting
-          messageEl.dataset.messageId =
-            "msg_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
-          messageEl.dataset.messageContent = messageText.substring(0, 100);
-
-          // Add the message to the container
-          container.appendChild(messageEl);
-
-          // Process with VoiceroSupport if available
-          if (
-            window.VoiceroSupport &&
-            typeof window.VoiceroSupport.processAIMessage === "function"
-          ) {
-            setTimeout(() => {
-              window.VoiceroSupport.processAIMessage(messageEl, "text");
-            }, 100);
-          }
-        } else {
-          // Regular user message
-          // Ensure message.text is a string
-          const messageText =
-            typeof message.text === "string"
-              ? message.text
-              : message.text
-                ? JSON.stringify(message.text)
-                : "No message content";
-
-          messageEl.textContent = messageText;
-          container.appendChild(messageEl);
-        }
+        // Add to container
+        container.appendChild(messageEl);
       });
 
       // Scroll to bottom
       container.scrollTop = container.scrollHeight;
+      console.log("VoiceroText: Scrolled to bottom of messages");
     },
 
     // Send message to API
@@ -1057,6 +1280,17 @@
 
           // Handle action with VoiceroActionHandler if available
           if (window.VoiceroActionHandler && action !== "none" && action) {
+            // Get the last message we just added
+            const lastMessage = this.messages[this.messages.length - 1];
+
+            // Skip action processing for historical messages
+            if (lastMessage && lastMessage.isHistorical) {
+              console.log(
+                "VoiceroText: Skipping action for historical message",
+              );
+              return data;
+            }
+
             console.log(
               "VoiceroText: Handling action:",
               action,
@@ -1105,6 +1339,21 @@
         text: "Hello! I'm Voicero from customer support. How can I assist you today?",
         type: "ai",
       };
+    } else if (action === "load-existing-chat") {
+      // Special case for loading existing chat - don't add initial message
+      console.log("VoiceroText: Loading existing chat from session");
+      initialMessage = null;
+
+      // Initialize without initial message
+      if (!window.VoiceroText.initialized) {
+        window.VoiceroText.init();
+      }
+
+      // Create chat container which will load messages
+      window.VoiceroText.createChatContainer();
+
+      // Skip the rest of the function since we're handling loading separately
+      return;
     } else if (text) {
       // If it's a direct text input from user, don't add an automatic greeting
       initialMessage = null; // Skip the initial AI greeting

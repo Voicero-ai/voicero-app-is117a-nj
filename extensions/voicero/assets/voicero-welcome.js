@@ -30,45 +30,71 @@
       return true; // Pretend we have messages to prevent welcome screen
     }
 
+    // Check if chat container already exists
+    const chatContainer = document.getElementById("voicero-chat-container");
+    if (chatContainer) {
+      console.log(
+        "VoiceroWelcome: Chat container already exists, skipping welcome screen",
+      );
+      return true;
+    }
+
     // Check if VoiceroCore has thread messages
     if (
       window.VoiceroCore &&
       window.VoiceroCore.session &&
-      window.VoiceroCore.session.threads
+      window.VoiceroCore.session.threads &&
+      window.VoiceroCore.session.threads.length > 0 &&
+      window.VoiceroCore.session.threads[0].messages &&
+      window.VoiceroCore.session.threads[0].messages.length > 0
     ) {
-      const threads = window.VoiceroCore.session.threads;
-      console.log(`VoiceroWelcome: Found ${threads.length} threads`);
-
-      if (threads.length > 0) {
-        // Get the most recent thread
-        const latestThread = threads[0];
-
-        if (
-          latestThread &&
-          latestThread.messages &&
-          latestThread.messages.length > 0
-        ) {
-          console.log(
-            `VoiceroWelcome: Latest thread has ${latestThread.messages.length} messages`,
-          );
-          return true; // Indicate we found messages
-        }
-      }
-    } else if (
-      window.VoiceroCore &&
-      window.VoiceroCore.thread &&
-      window.VoiceroCore.thread.messages
-    ) {
-      // Alternative way to check for messages
-      const messages = window.VoiceroCore.thread.messages;
       console.log(
-        `VoiceroWelcome: Found ${messages.length} messages in current thread`,
+        `VoiceroWelcome: Found ${window.VoiceroCore.session.threads[0].messages.length} messages in thread`,
       );
 
-      if (messages.length > 0) {
-        console.log("VoiceroWelcome: Current thread has messages");
-        return true; // Indicate we found messages
+      // DIRECT APPROACH: Open chat immediately
+      console.log("VoiceroWelcome: Opening chat directly with VoiceroText");
+
+      // Set flag to prevent welcome screen
+      window.voiceroInChatMode = true;
+
+      // Hide any existing welcome container
+      const welcomeContainer = document.getElementById(
+        "voicero-welcome-container",
+      );
+      if (welcomeContainer) {
+        console.log("VoiceroWelcome: Removing existing welcome container");
+        welcomeContainer.remove();
       }
+
+      // Make sure the website color is properly set before initializing VoiceroText
+      if (
+        window.VoiceroCore &&
+        window.VoiceroCore.session &&
+        window.VoiceroCore.session.websiteColor
+      ) {
+        console.log(
+          "VoiceroWelcome: Found session color:",
+          window.VoiceroCore.session.websiteColor,
+        );
+
+        // Set the color in VoiceroCore
+        window.VoiceroCore.websiteColor =
+          window.VoiceroCore.session.websiteColor;
+      }
+
+      // Initialize VoiceroText if available - with a slight delay to ensure everything is loaded
+      setTimeout(() => {
+        if (window.VoiceroText) {
+          console.log("VoiceroWelcome: Initializing VoiceroText after delay");
+          if (!window.VoiceroText.initialized) {
+            window.VoiceroText.init();
+          }
+          window.VoiceroText.createChatContainer();
+        }
+      }, 500);
+
+      return true; // Indicate we found messages
     }
 
     return false; // Indicate we didn't find messages
@@ -776,6 +802,35 @@
 
       return true;
     },
+
+    // Handle loading existing chat data from session
+    loadExistingChat: function () {
+      console.log("VoiceroWelcome: Loading existing chat data");
+
+      // Set chat mode flag to true
+      window.voiceroInChatMode = true;
+
+      // Hide welcome screen if it exists
+      const welcomeContainer = document.getElementById(
+        "voicero-welcome-container",
+      );
+      if (welcomeContainer) {
+        welcomeContainer.remove();
+      }
+
+      // Initialize VoiceroText if available
+      if (window.VoiceroText && window.VoiceroText.createChatContainer) {
+        console.log("VoiceroWelcome: Opening chat with VoiceroText");
+        window.VoiceroText.createChatContainer();
+
+        // Make sure VoiceroText loads the existing messages
+        if (window.VoiceroText.loadExistingMessages) {
+          setTimeout(() => {
+            window.VoiceroText.loadExistingMessages();
+          }, 200);
+        }
+      }
+    },
   };
 
   // CRITICAL: Ensure the welcome screen is always shown on page load
@@ -828,6 +883,9 @@
     // First check for existing thread messages
     if (checkForThreadMessages()) {
       // If we found messages, stop checking for welcome
+      console.log(
+        "VoiceroWelcome: Found existing messages, stopping welcome check",
+      );
       clearInterval(welcomeCheckInterval);
       return;
     }
@@ -836,8 +894,21 @@
     const welcomeContainer = document.getElementById(
       "voicero-welcome-container",
     );
+
+    // Also check if chat container exists - don't show welcome if chat is open
+    const chatContainer = document.getElementById("voicero-chat-container");
+
+    if (chatContainer) {
+      console.log(
+        "VoiceroWelcome: Chat container found, not showing welcome screen",
+      );
+      clearInterval(welcomeCheckInterval);
+      return;
+    }
+
     if (
       !welcomeContainer &&
+      !chatContainer &&
       window.VoiceroWelcome &&
       window.VoiceroWelcome.initialized
     ) {

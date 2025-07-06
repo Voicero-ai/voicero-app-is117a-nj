@@ -421,36 +421,46 @@
             // Create the button now that we have API connection
             this.createButton();
 
-            // Check for existing session
-            var savedSession = localStorage.getItem("voicero_session");
-            if (savedSession) {
-              try {
-                this.session = JSON.parse(savedSession);
-                console.log("VoiceroCore: Loaded saved session:", this.session);
-
-                // Force create a new session if we don't have a thread
-                if (
-                  !this.session.threads ||
-                  this.session.threads.length === 0
-                ) {
+            // Check for existing session with a delay to ensure everything is loaded
+            setTimeout(() => {
+              var savedSession = localStorage.getItem("voicero_session");
+              if (savedSession) {
+                try {
+                  this.session = JSON.parse(savedSession);
                   console.log(
-                    "VoiceroCore: No threads in saved session, creating new session",
+                    "VoiceroCore: Loaded saved session after delay:",
+                    this.session,
+                  );
+
+                  // Force create a new session if we don't have a thread
+                  if (
+                    !this.session.threads ||
+                    this.session.threads.length === 0
+                  ) {
+                    console.log(
+                      "VoiceroCore: No threads in saved session, creating new session",
+                    );
+                    this.createSession();
+                  }
+                } catch (error) {
+                  console.error(
+                    "VoiceroCore: Error parsing saved session:",
+                    error,
                   );
                   this.createSession();
                 }
-              } catch (error) {
-                console.error(
-                  "VoiceroCore: Error parsing saved session:",
-                  error,
+              } else {
+                console.log(
+                  "VoiceroCore: No saved session found, creating new session",
                 );
                 this.createSession();
               }
-            } else {
-              console.log(
-                "VoiceroCore: No saved session found, creating new session",
-              );
-              this.createSession();
-            }
+
+              // Signal that core initialization is complete
+              this.coreInitialized = true;
+              window.dispatchEvent(new CustomEvent("voicero-core-initialized"));
+              console.log("VoiceroCore: Core initialization complete");
+            }, 500);
           })
           .catch((error) => {
             console.error("VoiceroCore: API connection failed:", error);
