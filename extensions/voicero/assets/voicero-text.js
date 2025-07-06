@@ -209,6 +209,15 @@
           width: 30px;
           height: 30px;
         }
+        /* Add Siri-like animation for the send button */
+        .siri-active {
+          animation: siri-pulse 1.5s infinite;
+        }
+        @keyframes siri-pulse {
+          0% { box-shadow: 0 0 0 0 rgba(136, 43, 230, 0.4); }
+          70% { box-shadow: 0 0 0 10px rgba(136, 43, 230, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(136, 43, 230, 0); }
+        }
       `;
       chatShadow.appendChild(styleEl);
 
@@ -246,7 +255,7 @@
 
       const name = document.createElement("div");
       name.className = "name";
-      name.textContent = "Suvi";
+      name.textContent = "Voicero";
 
       const role = document.createElement("div");
       role.className = "role";
@@ -323,7 +332,7 @@
           this.renderMessages(messagesContainer);
 
           // Send message to API
-          this.sendMessageToAPI(text, messagesContainer);
+          this.sendMessageToAPI(text, messagesContainer, sendButton);
         }
       };
 
@@ -378,51 +387,8 @@
           word-break: break-word;
         `;
 
-        // Special handling for loading messages
-        if (message.isLoading) {
-          // Create loading animation
-          messageEl.innerHTML = `
-            <div class="loading-indicator">
-              <span class="dot">.</span>
-              <span class="dot">.</span>
-              <span class="dot">.</span>
-            </div>
-          `;
-
-          // Add animation style
-          const style = document.createElement("style");
-          style.textContent = `
-            .loading-indicator {
-              display: inline-block;
-            }
-            .dot {
-              display: inline-block;
-              animation: pulse 1.4s infinite;
-              animation-fill-mode: both;
-              margin-right: 2px;
-              font-weight: bold;
-            }
-            .dot:nth-child(2) {
-              animation-delay: 0.2s;
-            }
-            .dot:nth-child(3) {
-              animation-delay: 0.4s;
-            }
-            @keyframes pulse {
-              0%, 80%, 100% {
-                opacity: 0;
-              }
-              40% {
-                opacity: 1;
-              }
-            }
-          `;
-          container.appendChild(style);
-        } else {
-          // Regular message
-          messageEl.textContent = message.text;
-        }
-
+        // Regular message
+        messageEl.textContent = message.text;
         container.appendChild(messageEl);
       });
 
@@ -431,7 +397,7 @@
     },
 
     // Send message to API
-    sendMessageToAPI: function (text, messagesContainer) {
+    sendMessageToAPI: function (text, messagesContainer, sendButton) {
       console.log("VoiceroText: Sending message to API:", text);
       console.log("VoiceroText: messagesContainer:", messagesContainer);
 
@@ -441,15 +407,70 @@
         return;
       }
 
-      // Show loading indicator
-      const loadingMessage = {
-        text: "Thinking...",
-        type: "ai",
-        isLoading: true,
-        timestamp: new Date(), // Add timestamp for consistency
-      };
-      this.messages.push(loadingMessage);
-      this.renderMessages(messagesContainer);
+      // Create and show typing indicator directly in the shadow DOM
+      const typingWrapper = document.createElement("div");
+      typingWrapper.className = "ai-message";
+      typingWrapper.style.cssText = `
+        align-self: flex-start;
+        display: flex;
+        justify-content: flex-start;
+        margin: 8px 0;
+        padding: 0;
+        border-radius: 50px;
+      `;
+
+      const typingIndicator = document.createElement("div");
+      typingIndicator.id = "voicero-typing-indicator";
+      typingIndicator.style.cssText = `
+        background-color: transparent;
+        padding: 8px 12px;
+        border-radius: 50px;
+        margin: 5px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      `;
+
+      // Create the three bouncing dots
+      for (let i = 0; i < 3; i++) {
+        const dot = document.createElement("span");
+        dot.className = "typing-dot";
+        dot.style.cssText = `
+          width: 8px;
+          height: 8px;
+          background: #999999;
+          border-radius: 50%;
+          display: inline-block;
+          animation: typingBounce 1s infinite;
+          animation-delay: ${i * 0.2}s;
+        `;
+        typingIndicator.appendChild(dot);
+      }
+
+      // Add the animation keyframes to the shadow DOM
+      const styleEl = document.createElement("style");
+      styleEl.textContent = `
+        @keyframes typingBounce {
+          0%, 60%, 100% { transform: translateY(0); }
+          30% { transform: translateY(-6px); }
+        }
+      `;
+
+      // Append everything to the messages container
+      typingWrapper.appendChild(typingIndicator);
+      messagesContainer.appendChild(styleEl);
+      messagesContainer.appendChild(typingWrapper);
+
+      // Store reference for later removal
+      this.typingIndicator = typingWrapper;
+
+      // Scroll to bottom
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+      // Add loading animation to send button if VoiceroWait is available
+      if (window.VoiceroWait && sendButton) {
+        window.VoiceroWait.addLoadingAnimation(sendButton);
+      }
 
       // Prepare request data - following the exact structure expected by the API
       const requestData = {
@@ -576,11 +597,9 @@
 
       // Add past context from messages - format as expected by the API
       if (this.messages && this.messages.length > 0) {
-        // Filter out loading messages and the current message being sent
+        // Filter out the current message being sent
         const validMessages = this.messages.filter(
-          (msg) =>
-            !msg.isLoading && // Filter out loading messages
-            !(msg.type === "user" && msg.text === text), // Filter out the current message
+          (msg) => !(msg.type === "user" && msg.text === text), // Filter out the current message
         );
 
         // Only add past context if there are valid previous messages
@@ -651,6 +670,7 @@
           requestData,
           headers,
           messagesContainer,
+          sendButton,
         ).catch((error) => {
           console.log(
             "VoiceroText: Localhost API failed, trying production:",
@@ -661,6 +681,7 @@
             requestData,
             headers,
             messagesContainer,
+            sendButton,
           );
         });
       } catch (e) {
@@ -671,8 +692,18 @@
       apiPromise.catch((error) => {
         console.error("VoiceroText: Both API endpoints failed:", error);
 
-        // Remove loading message
-        this.messages = this.messages.filter((m) => !m.isLoading);
+        // Hide typing indicator
+        if (this.typingIndicator) {
+          if (this.typingIndicator.parentNode) {
+            this.typingIndicator.parentNode.removeChild(this.typingIndicator);
+          }
+          this.typingIndicator = null;
+
+          // Remove loading animation from send button
+          if (sendButton) {
+            window.VoiceroWait.removeLoadingAnimation(sendButton);
+          }
+        }
 
         // Add error message
         this.addMessage(
@@ -728,7 +759,7 @@
     },
 
     // Helper method to call API
-    callAPI: function (url, data, headers, messagesContainer) {
+    callAPI: function (url, data, headers, messagesContainer, sendButton) {
       return fetch(url, {
         method: "POST",
         headers: headers,
@@ -745,8 +776,18 @@
         .then((data) => {
           console.log("VoiceroText: API response:", data);
 
-          // Remove loading message
-          this.messages = this.messages.filter((m) => !m.isLoading);
+          // Hide typing indicator
+          if (this.typingIndicator) {
+            if (this.typingIndicator.parentNode) {
+              this.typingIndicator.parentNode.removeChild(this.typingIndicator);
+            }
+            this.typingIndicator = null;
+          }
+
+          // Remove loading animation from send button
+          if (window.VoiceroWait && sendButton) {
+            window.VoiceroWait.removeLoadingAnimation(sendButton);
+          }
 
           // Add AI response to messages
           if (data && data.message) {
@@ -790,7 +831,7 @@
     // Handle different button actions
     if (action === "talk-to-sales") {
       initialMessage = {
-        text: "Hi there! I'm Suvi, your AI Sales Rep. How can I help you today?",
+        text: "Hi there! I'm Voicero, your AI Sales Rep. How can I help you today?",
         type: "ai",
       };
     } else if (action === "get-started") {
@@ -800,7 +841,7 @@
       };
     } else if (action === "customer-support") {
       initialMessage = {
-        text: "Hello! I'm Suvi from customer support. How can I assist you today?",
+        text: "Hello! I'm Voicero from customer support. How can I assist you today?",
         type: "ai",
       };
     } else if (text) {
@@ -824,8 +865,13 @@
       if (container) {
         window.VoiceroText.renderMessages(container);
 
+        // Get the send button for animation
+        const sendButton = document
+          .querySelector("#voicero-chat-container")
+          .shadowRoot.querySelector(".send-button");
+
         // Send message to API
-        window.VoiceroText.sendMessageToAPI(text, container);
+        window.VoiceroText.sendMessageToAPI(text, container, sendButton);
       }
     }
   };

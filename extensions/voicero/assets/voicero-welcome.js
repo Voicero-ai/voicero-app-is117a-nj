@@ -245,7 +245,7 @@
         // Fallback to simple HTML
         welcomeShadow.innerHTML += `
           <div id="chat-messages" style="padding: 20px; text-align: center;">
-            <h3>Hi there! I'm Suvi, an AI Sales Rep.</h3>
+            <h3>Hi there! I'm Voicero, an AI Sales Rep.</h3>
             <p>How can I help you today?</p>
             <div style="margin-top: 20px;">
               <button style="background: #882be6; color: white; border: none; padding: 10px 15px; border-radius: 20px; margin: 5px; cursor: pointer;">Talk to Sales</button>
@@ -454,7 +454,7 @@
       `;
 
       var name = document.createElement("div");
-      name.textContent = "Suvi";
+      name.textContent = "Voicero";
       name.style.cssText = `
         font-weight: bold;
         color: black;
@@ -511,7 +511,7 @@
       }
 
       welcomeMessage.innerHTML = `
-        <p style="margin-top: 0;">Hi there! I'm Suvi, an AI Sales Rep. Looking for AI email responder info? Feel free to ask!</p>
+        <p style="margin-top: 0;">Hi there! I'm Voicero, an AI Sales Rep. Looking for AI email responder info? Feel free to ask!</p>
         <p>I see you're exploring ${websiteName}. I'm available if you have questions or want to talk more!</p>
       `;
       messageContainer.appendChild(welcomeMessage);
