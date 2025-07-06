@@ -6,7 +6,9 @@
   // Initialize voicero with shop data - but DON'T expose the access key directly in window
   window.voiceroConfig = {
     shop: "{{ shop.permanent_domain }}",
-    websiteId: "{{ shop.id }}"
+    websiteId: "{{ shop.id }}",
+    // Force the website to be considered active
+    isActive: true
   };
   
   // Store access key in a closure that's not directly accessible from window
@@ -25,24 +27,6 @@
       return !!accessKey && accessKey.length > 0;
     };
   })();
-  
-  // Check if we have a saved state
-  try {
-    var savedState = localStorage.getItem('voiceroAppState');
-    if (savedState) {
-      var parsedState = JSON.parse(savedState);
-      // Store last interface for quick access
-      window.voiceroConfig.lastInterface = parsedState.activeInterface;
-      window.voiceroConfig.wasOpen = parsedState.isOpen;
-      
-      // Set flag to indicate we should auto-open and hide chooser
-      if (parsedState.isOpen && parsedState.activeInterface) {
-        window.voiceroConfig.autoOpenInterface = true;
-      }
-    }
-  } catch (e) {
-    console.error("Error checking saved state:", e);
-  }
 </script>
 
 <!-- Set up getSessionToken override immediately -->
@@ -242,127 +226,53 @@
 </script>
 
 <script>
-  // Check if the website is active before loading scripts
-  function checkWebsiteActive() {
-    console.log("VoiceroAI: Checking if website is active");
-    
-    // Get auth headers from config if available
-    var headers = {
-      Accept: "application/json",
-      ...(window.voiceroConfig?.getAuthHeaders ? window.voiceroConfig.getAuthHeaders() : {})
-    };
-    
-    // Try each potential API base URL
-    var apiBaseUrls = ["https://www.voicero.ai"];
-    
-    // Try the first API URL
-    fetch(`${apiBaseUrls[0]}/api/connect`, {
-      method: "GET",
-      headers: headers
-    })
-    .then(response => {
-      if (!response.ok) {
-        throw new Error(`API connection failed: ${response.status}`);
-      }
-      return response.json();
-    })
-    .then(data => {
-      console.log("VoiceroAI API check result:", data);
-      
-      // Check if website is active
-      var isActive = data && data.website && data.website.active === true;
-      console.log("VoiceroAI: Website active status:", isActive);
-      
-      if (isActive) {
-        // Website is active, load all scripts
-        console.log("VoiceroAI: Website is active, loading scripts");
-        loadAllScripts();
-      } else {
-        // Website is not active, don't load scripts
-        console.log("VoiceroAI: Website is NOT active, skipping script loading");
-      }
-    })
-    .catch(error => {
-      console.error("VoiceroAI: API connection failed:", error);
-      // If API check fails, default to not loading scripts
-      console.log("VoiceroAI: Due to API error, skipping script loading");
-    });
-  }
-
-  // Function to load scripts sequentially
-  function loadScript(src, callback) {
-    var script = document.createElement('script');
-    script.src = src;
-    script.onload = callback;
-    script.onerror = function() {
-      console.error("Failed to load script: " + src);
-    };
-    document.body.appendChild(script);
-  }
-  
-  // Function to load all scripts
+  // Directly load scripts without checking if website is active
   function loadAllScripts() {
-    // Load orders script first 
-    loadScript("{{ 'voicero-orders.js' | asset_url }}", function() {
-      // Then load the customer data script
-      loadScript("{{ 'voicero-customer.js' | asset_url }}", function() {
-        // Load our new auth helper right after customer script
-        loadScript("{{ 'voicero-auth-helper.js' | asset_url }}", function() {
-          // Then load the core script
-          loadScript("{{ 'voicero-core.js' | asset_url }}", function() {
-            // Load our utility files before other modules
-            loadScript("{{ 'voicero-color.js' | asset_url }}", function() {
-              loadScript("{{ 'voicero-page-data.js' | asset_url }}", function() {
-                // Load the welcome module before text module
-                loadScript("{{ 'voicero-welcome.js' | asset_url }}", function() {
-                  // Load second-look module before text to analyze page
-                  loadScript("{{ 'voicero-second.js' | asset_url }}", function() {
-                    // Load the wait module first
-                    loadScript("{{ 'voicero-wait.js' | asset_url }}", function() {
-                      // Then load text module
-                      loadScript("{{ 'voicero-text.js' | asset_url }}", function() {
-                        // Auto-open text interface if it was the last active one AND session textOpen is true
-                        if (window.voiceroConfig.wasOpen) {
-                          setTimeout(function() {
-                            // CRITICAL: Only open if session state explicitly says so
-                            if (window.VoiceroCore && window.VoiceroCore.session && 
-                                window.VoiceroCore.session.textOpen === true &&
-                                window.VoiceroText && window.VoiceroText.openTextChat) {
-                              
-                              // Make sure to apply website color from core before opening
-                              if (window.VoiceroCore.websiteColor && window.VoiceroText.websiteColor !== window.VoiceroCore.websiteColor) {
-                                console.log("Auto-open: Updating VoiceroText color to match core:", window.VoiceroCore.websiteColor);
-                                window.VoiceroText.websiteColor = window.VoiceroCore.websiteColor;
-                                window.VoiceroText.getColorVariants(window.VoiceroText.websiteColor);
-                              }
-                              
-                              window.VoiceroText.openTextChat();
-                            }
-                          }, 300);
-                        }
-                      });
-                    });
-                  });
-                });
-              });
-              
-              // Load action handler script
-              loadScript("{{ 'voicero-action-handler.js' | asset_url }}", function() {
-                // Initialize action handler with shop configuration
-                if (window.VoiceroActionHandler && window.VoiceroActionHandler.init) {
-                  window.VoiceroActionHandler.init();
-                }
-                
-                // Load return handler script
-                loadScript("{{ 'voicero-return.js' | asset_url }}", function() {
-                  // Initialize return handler
-                  if (window.VoiceroReturnHandler && window.VoiceroReturnHandler.init) {
-                    window.VoiceroReturnHandler.init();
-                  }
-                });
-              });
-            });
-          });
+    console.log("VoiceroAI: Loading all scripts");
+    
+    // Function to load scripts sequentially
+    function loadScript(src, callback) {
+      var script = document.createElement('script');
+      script.src = src;
+      script.onload = callback;
+      script.onerror = function() {
+        console.error("Failed to load script: " + src);
+      };
+      document.body.appendChild(script);
+    }
+    
+    // Load core script first
+    loadScript("{{ 'voicero-core.js' | asset_url }}", function() {
+      // Load welcome script right after core
+      loadScript("{{ 'voicero-welcome.js' | asset_url }}", function() {
+        // Then load the text module
+        loadScript("{{ 'voicero-text.js' | asset_url }}", function() {
+          console.log("VoiceroAI: Core, welcome and text modules loaded");
+        });
+      });
+      
+      // Load other scripts in parallel after core is loaded
+      loadScript("{{ 'voicero-orders.js' | asset_url }}", null);
+      loadScript("{{ 'voicero-customer.js' | asset_url }}", null);
+      loadScript("{{ 'voicero-auth-helper.js' | asset_url }}", null);
+      loadScript("{{ 'voicero-color.js' | asset_url }}", null);
+      loadScript("{{ 'voicero-page-data.js' | asset_url }}", null);
+      loadScript("{{ 'voicero-second.js' | asset_url }}", null);
+      loadScript("{{ 'voicero-wait.js' | asset_url }}", null);
+      
+      // Load action handler script
+      loadScript("{{ 'voicero-action-handler.js' | asset_url }}", function() {
+        // Initialize action handler with shop configuration
+        if (window.VoiceroActionHandler && window.VoiceroActionHandler.init) {
+          window.VoiceroActionHandler.init();
+        }
+        
+        // Load return handler script
+        loadScript("{{ 'voicero-return.js' | asset_url }}", function() {
+          // Initialize return handler
+          if (window.VoiceroReturnHandler && window.VoiceroReturnHandler.init) {
+            window.VoiceroReturnHandler.init();
+          }
         });
       });
     });
@@ -382,16 +292,14 @@
     });
   }
   
-  // Load all scripts on DOM content loaded only if website is active
+  // Load all scripts immediately when DOM is ready
   document.addEventListener('DOMContentLoaded', function() {
-    // Check if the website is active first
-    checkWebsiteActive();
+    loadAllScripts();
   });
   
-  // Also try to check immediately if DOM is already loaded
+  // Also try to load immediately if DOM is already loaded
   if (document.readyState === "complete" || document.readyState === "interactive") {
-    // Check if the website is active first
-    checkWebsiteActive();
+    loadAllScripts();
   }
 </script>
 

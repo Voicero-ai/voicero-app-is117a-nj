@@ -53,6 +53,11 @@
         // Fallback to default purple if nothing else available
         this.websiteColor = "#882be6";
       }
+
+      // Always show the welcome screen on initialization
+      setTimeout(() => {
+        this.createWelcomeContainer();
+      }, 500);
     },
 
     // Create the welcome container and show the welcome screen
@@ -67,20 +72,14 @@
         existingWelcome.remove();
       }
 
-      // Hide the main button when welcome is shown
+      // Mark session as showing welcome but don't hide the button
       if (window.VoiceroCore) {
         // Update session state to show welcome
         if (window.VoiceroCore.updateWindowState) {
           console.log("VoiceroWelcome: Setting textWelcome=true");
           window.VoiceroCore.updateWindowState({
             textWelcome: true,
-            coreOpen: false,
           });
-        }
-
-        // Hide button directly
-        if (window.VoiceroCore.hideMainButton) {
-          window.VoiceroCore.hideMainButton();
         }
       }
 
@@ -94,7 +93,7 @@
         width: 375px;
         max-width: 90vw;
         max-height: 400px;
-        z-index: 9999999;
+        z-index: 2147483647 !important;
         border-radius: 12px;
         overflow: hidden;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
@@ -104,6 +103,9 @@
         opacity: 1 !important;
       `;
       document.body.appendChild(welcomeContainer);
+
+      // Remove the pointer code - we want the welcome screen to cover the button
+      // No pointer needed anymore
 
       // Create shadow root for welcome container
       let welcomeShadow = welcomeContainer.attachShadow({ mode: "open" });
@@ -159,6 +161,12 @@
       welcomeContainer.style.display = "block";
       welcomeContainer.style.visibility = "visible";
       welcomeContainer.style.opacity = "1";
+
+      // Set flag that we're showing welcome screen
+      this.isShowingWelcomeScreen = true;
+      if (window.VoiceroText) {
+        window.VoiceroText.isShowingWelcomeScreen = true;
+      }
 
       return welcomeContainer;
     },
@@ -262,92 +270,18 @@
           setTimeout(() => welcomeContainer.remove(), 10);
         }
 
-        // CRITICAL: Force hide any text container that might be visible
-        const textContainer = document.getElementById(
-          "voicero-text-chat-container",
-        );
-        if (textContainer) {
-          textContainer.style.display = "none";
-          textContainer.style.visibility = "hidden";
-          textContainer.style.opacity = "0";
+        // Update session state - only one call needed
+        if (window.VoiceroCore && window.VoiceroCore.updateWindowState) {
+          window.VoiceroCore.updateWindowState({
+            textWelcome: false,
+          });
         }
 
-        // Simplified function to show core button - consolidate all the calls
-        if (window.VoiceroCore) {
-          console.log(
-            "VoiceroWelcome: Showing core button - single consolidated call",
-          );
-
-          // Update window state only once
-          if (window.VoiceroCore.updateWindowState) {
-            window.VoiceroCore.updateWindowState({
-              textOpen: false,
-              textOpenWindowUp: false,
-              coreOpen: true,
-              voiceOpen: false,
-              voiceOpenWindowUp: false,
-              textWelcome: false,
-              chooserOpen: false,
-            });
-          }
-
-          // Reset the button hidden flag
-          if (window.VoiceroCore._buttonHidden !== undefined) {
-            window.VoiceroCore._buttonHidden = false;
-          }
-
-          // Just use one single approach to show button - avoid multiple redundant calls
-          if (window.VoiceroCore.createFailsafeButton) {
-            window.VoiceroCore.createFailsafeButton();
-          } else if (window.VoiceroCore.ensureMainButtonVisible) {
-            window.VoiceroCore.ensureMainButtonVisible();
-          }
+        // Set flag to indicate welcome is closed
+        self.isShowingWelcomeScreen = false;
+        if (window.VoiceroText) {
+          window.VoiceroText.isShowingWelcomeScreen = false;
         }
-
-        // Quick direct DOM manipulation as a final fallback
-        // This avoids making too many separate calls
-        setTimeout(() => {
-          // Get all the elements we might need to touch
-          const appContainer = document.getElementById("voicero-app-container");
-          const toggleContainer = document.getElementById(
-            "voice-toggle-container",
-          );
-          const mainButton = document.getElementById("chat-website-button");
-
-          // Quick one-time setup without repeated calls
-          if (toggleContainer) {
-            toggleContainer.classList.remove("voicero-hidden-element");
-            toggleContainer.style.cssText = `
-              position: fixed !important;
-              bottom: 20px !important;
-              right: 20px !important;
-              z-index: 2147483647 !important;
-              display: block !important;
-              visibility: visible !important;
-              opacity: 1 !important;
-            `;
-          }
-
-          if (mainButton) {
-            mainButton.classList.remove("voicero-hidden-element");
-            const themeColor = window.VoiceroCore?.websiteColor || "#882be6";
-            mainButton.style.cssText = `
-              background-color: ${themeColor};
-              display: flex !important;
-              visibility: visible !important;
-              opacity: 1 !important;
-              width: 50px !important;
-              height: 50px !important;
-              border-radius: 50% !important;
-              justify-content: center !important;
-              align-items: center !important;
-              color: white !important;
-              border: none !important;
-              cursor: pointer !important;
-              z-index: 2147483647 !important;
-            `;
-          }
-        }, 50);
       });
 
       welcomeScreen.appendChild(closeButton);
@@ -937,12 +871,6 @@
 
       // Add to container
       messagesContainer.appendChild(welcomeScreen);
-
-      // Store flag that we're showing welcome screen
-      if (window.VoiceroText) {
-        window.VoiceroText.isShowingWelcomeScreen = true;
-      }
-
       return welcomeScreen;
     },
 
@@ -967,6 +895,13 @@
       );
       if (welcomeContainer) {
         welcomeContainer.remove();
+      }
+
+      // Update session state
+      if (window.VoiceroCore && window.VoiceroCore.updateWindowState) {
+        window.VoiceroCore.updateWindowState({
+          textWelcome: false,
+        });
       }
 
       // First try to use the direct instance reference
@@ -1044,76 +979,12 @@
     document.readyState === "interactive"
   ) {
     setTimeout(function () {
-      // Check if text interface is already visible before initializing welcome
-      const textChatContainer = document.getElementById(
-        "voicero-text-chat-container",
-      );
-      const existingWelcome = document.getElementById(
-        "voicero-welcome-container",
-      );
-
-      // Don't initialize welcome if text chat is already visible or another welcome exists
-      if (
-        (textChatContainer &&
-          (textChatContainer.style.display === "block" ||
-            textChatContainer.style.visibility === "visible")) ||
-        existingWelcome
-      ) {
-        console.log(
-          "VoiceroWelcome: Text chat or welcome already visible, skipping welcome init",
-        );
-        return;
-      }
-
-      // Only initialize welcome if VoiceroCore indicates it should be shown
-      if (window.VoiceroCore && window.VoiceroCore.session) {
-        if (
-          !window.VoiceroCore.session.textWelcome &&
-          window.VoiceroCore.session.textOpen
-        ) {
-          console.log(
-            "VoiceroWelcome: Session indicates text should be shown instead of welcome",
-          );
-          return;
-        }
-      }
-
+      // Always initialize welcome
       window.VoiceroWelcome.init();
     }, 100); // Slight delay to ensure DOM is ready
   } else {
     document.addEventListener("DOMContentLoaded", function () {
-      // Same checks for DOMContentLoaded case
-      const textChatContainer = document.getElementById(
-        "voicero-text-chat-container",
-      );
-      const existingWelcome = document.getElementById(
-        "voicero-welcome-container",
-      );
-
-      if (
-        (textChatContainer &&
-          (textChatContainer.style.display === "block" ||
-            textChatContainer.style.visibility === "visible")) ||
-        existingWelcome
-      ) {
-        console.log(
-          "VoiceroWelcome: Text chat or welcome already visible, skipping welcome init",
-        );
-        return;
-      }
-
-      if (window.VoiceroCore && window.VoiceroCore.session) {
-        if (
-          !window.VoiceroCore.session.textWelcome &&
-          window.VoiceroCore.session.textOpen
-        ) {
-          console.log(
-            "VoiceroWelcome: Session indicates text should be shown instead of welcome",
-          );
-          return;
-        }
-      }
-
+      // Always initialize welcome
       window.VoiceroWelcome.init();
     });
   }

@@ -2429,7 +2429,7 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
       // Call the session/clear API endpoint
       if (window.VoiceroCore && window.VoiceroCore.sessionId) {
         // Use direct API endpoint
-        fetch("https://www.voicero.ai/api/session/clear", {
+        fetch("http://localhost:3000/api/session/clear", {
           method: "POST",
           headers: {
             Accept: "application/json",
