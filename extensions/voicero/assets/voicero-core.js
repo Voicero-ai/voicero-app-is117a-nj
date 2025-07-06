@@ -1559,51 +1559,62 @@
     updateInterfaceFromTextOpen: function () {
       if (!this.session) return;
 
+      // CRITICAL FIX: Prevent infinite loop
+      if (this._updatingInterfaceFromTextOpen) {
+        console.log("VoiceroCore: Already updating interface, preventing loop");
+        return;
+      }
+
+      // Set flag to prevent recursive calls
+      this._updatingInterfaceFromTextOpen = true;
+
       console.log(
         "VoiceroCore: Updating interface from textOpen state:",
         this.session.textOpen,
       );
 
-      if (this.session.textOpen === true) {
-        // Text chat should be open - open it if not already
-        var textInterface = document.getElementById(
-          "voicero-text-chat-container",
-        );
+      try {
+        if (this.session.textOpen === true) {
+          // Text chat should be open - open it if not already
+          var textInterface = document.getElementById(
+            "voicero-text-chat-container",
+          );
 
-        if (!textInterface || textInterface.style.display !== "block") {
-          // Hide the main button
-          this.hideMainButton();
+          if (!textInterface || textInterface.style.display !== "block") {
+            // Hide the main button
+            this.hideMainButton();
 
-          // Try to open the text chat
-          if (window.VoiceroText && window.VoiceroText.openTextChat) {
-            window.VoiceroText.openTextChat();
-
-            // Force maximize
-            setTimeout(() => {
-              if (window.VoiceroText && window.VoiceroText.maximizeChat) {
-                window.VoiceroText.maximizeChat();
-              }
-            }, 100);
+            // Try to open the text chat
+            if (window.VoiceroText && window.VoiceroText.openTextChat) {
+              window.VoiceroText.openTextChat();
+            }
           }
-        }
-      } else {
-        // Text chat should be closed - close it if open
-        var textInterface = document.getElementById(
-          "voicero-text-chat-container",
-        );
+        } else {
+          // Text chat should be closed - close it if open
+          var textInterface = document.getElementById(
+            "voicero-text-chat-container",
+          );
 
-        if (textInterface && textInterface.style.display === "block") {
-          // Close text chat
-          if (window.VoiceroText && window.VoiceroText.closeTextChat) {
-            window.VoiceroText.closeTextChat();
-          } else {
-            textInterface.style.display = "none";
+          if (textInterface && textInterface.style.display === "block") {
+            // Close text chat
+            if (window.VoiceroText && window.VoiceroText.closeTextChat) {
+              window.VoiceroText.closeTextChat();
+            } else {
+              textInterface.style.display = "none";
+            }
           }
-        }
 
-        // Make sure button is visible
-        this.ensureMainButtonVisible();
+          // Make sure button is visible
+          this.ensureMainButtonVisible();
+        }
+      } catch (e) {
+        console.error("VoiceroCore: Error updating interface:", e);
       }
+
+      // Reset the flag after a delay
+      setTimeout(() => {
+        this._updatingInterfaceFromTextOpen = false;
+      }, 500);
     },
 
     // Simplified restoreInterfaceState to focus only on textOpen

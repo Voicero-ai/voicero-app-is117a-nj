@@ -228,38 +228,31 @@
 
     // Open text chat interface
     openTextChat: function () {
-      // CRITICAL: First remove any welcome container that might be causing floating elements
-      const welcomeContainer = document.getElementById(
-        "voicero-welcome-container",
-      );
-      if (welcomeContainer) {
-        console.log(
-          "VoiceroText: Removing existing welcome container before opening text chat",
-        );
-        welcomeContainer.remove();
-      }
-
-      // CRITICAL CHECK: Only proceed if textOpen is explicitly set to true in the session
-      // This prevents the interface from showing up when it shouldn't
-
-      // Double check session state to ensure text interface should be opened
-      if (
-        window.VoiceroCore &&
-        window.VoiceroCore.session &&
-        window.VoiceroCore.session.textOpen !== true
-      ) {
-        console.log(
-          "VoiceroText: Not opening text interface as textOpen is not true in session",
-        );
+      // CRITICAL: Stop infinite loop by adding flag
+      if (this._isOpeningTextChat === true) {
+        console.log("VoiceroText: Already opening text chat, preventing loop");
         return;
       }
 
-      // Additional safety check - don't open if the session is being initialized
-      if (window.VoiceroCore && window.VoiceroCore.isInitializingSession) {
-        console.log(
-          "VoiceroText: Not opening text interface during session initialization",
+      // Set flag to prevent recursive calls
+      this._isOpeningTextChat = true;
+
+      try {
+        // CRITICAL: First remove any welcome container that might be causing floating elements
+        const welcomeContainer = document.getElementById(
+          "voicero-welcome-container",
         );
-        return;
+        if (welcomeContainer) {
+          console.log(
+            "VoiceroText: Removing existing welcome container before opening text chat",
+          );
+          welcomeContainer.remove();
+        }
+
+        // DO NOT check for textOpen in session - trust the caller
+        // DO NOT update the session state from here - let VoiceroCore handle it
+      } catch (e) {
+        console.error("VoiceroText: Error in openTextChat:", e);
       }
 
       // IMPORTANT: Check for dynamic website color before opening
@@ -314,17 +307,8 @@
         }
       }
 
-      // Update window state if it hasn't been done already - SIMPLIFIED to only use textOpen
-      if (window.VoiceroCore && window.VoiceroCore.updateWindowState) {
-        window.VoiceroCore.updateWindowState({
-          textOpen: true,
-        });
-      }
-
-      // Also update the session object directly to ensure consistency
-      if (window.VoiceroCore && window.VoiceroCore.session) {
-        window.VoiceroCore.session.textOpen = true;
-      }
+      // DO NOT update session state from here - VoiceroCore already handles this
+      // This prevents infinite loops between components
 
       // Hide the toggle container when opening the chat interface
       var toggleContainer = document.getElementById("voice-toggle-container");
@@ -536,6 +520,11 @@
 
       // Force visible state
       this._isChatVisible = true;
+
+      // CRITICAL: Reset the opening flag so we can open again later
+      setTimeout(() => {
+        this._isOpeningTextChat = false;
+      }, 500);
     },
 
     // Check for welcome back message and display it if found
@@ -834,128 +823,7 @@
         }
       }
 
-      // Create welcome message with website name and bot name if available
-      var botName =
-        window.VoiceroCore &&
-        window.VoiceroCore.session &&
-        window.VoiceroCore.session.botName
-          ? window.VoiceroCore.session.botName
-          : window.voiceroBotName || window.VoiceroCore?.botName || "Voicero";
 
-      let welcomeMessageContent = "";
-
-      // Check if there's a custom welcome message from the API
-      if (
-        window.VoiceroCore &&
-        window.VoiceroCore.session &&
-        window.VoiceroCore.session.customWelcomeMessage
-      ) {
-        welcomeMessageContent = window.VoiceroCore.session.customWelcomeMessage;
-      } else if (
-        window.voiceroCustomWelcomeMessage ||
-        window.VoiceroCore?.customWelcomeMessage
-      ) {
-        welcomeMessageContent =
-          window.voiceroCustomWelcomeMessage ||
-          window.VoiceroCore.customWelcomeMessage;
-      } else {
-        welcomeMessageContent = `I'm your AI assistant powered by VoiceroAI. I'm here to help answer your questions about products, services, or anything else related to ${websiteName}.
-
-Feel free to ask me anything, and I'll do my best to assist you!`;
-      }
-
-      let welcomeMessage = `Hi, I'm ${botName}! ${welcomeMessageContent}
-
-**Start Typing to Chat**
-`;
-
-      // Check if we have custom pop-up questions to add to the welcome message
-      let customPopUpQuestions = [];
-      let popUpQuestionsSource = "none";
-
-      // Try to get questions from website data
-      if (
-        this.websiteData &&
-        this.websiteData.website &&
-        this.websiteData.website.popUpQuestions &&
-        this.websiteData.website.popUpQuestions.length > 0
-      ) {
-        customPopUpQuestions = this.websiteData.website.popUpQuestions;
-        popUpQuestionsSource = "websiteData";
-      }
-      // Try to get questions from VoiceroCore session
-      else if (
-        window.VoiceroCore &&
-        window.VoiceroCore.session &&
-        window.VoiceroCore.session.popUpQuestions &&
-        window.VoiceroCore.session.popUpQuestions.length > 0
-      ) {
-        customPopUpQuestions = window.VoiceroCore.session.popUpQuestions;
-        popUpQuestionsSource = "VoiceroCore.session.popUpQuestions";
-      }
-      // Try to get questions directly from VoiceroCore
-      else if (
-        window.VoiceroCore &&
-        window.VoiceroCore.popUpQuestions &&
-        window.VoiceroCore.popUpQuestions.length > 0
-      ) {
-        customPopUpQuestions = window.VoiceroCore.popUpQuestions;
-        popUpQuestionsSource = "VoiceroCore.popUpQuestions";
-      }
-      // Check for website property directly in VoiceroCore
-      else if (
-        window.VoiceroCore &&
-        window.VoiceroCore.session &&
-        window.VoiceroCore.session.website &&
-        window.VoiceroCore.session.website.popUpQuestions &&
-        window.VoiceroCore.session.website.popUpQuestions.length > 0
-      ) {
-        customPopUpQuestions =
-          window.VoiceroCore.session.website.popUpQuestions;
-        popUpQuestionsSource = "VoiceroCore.session.website.popUpQuestions";
-      }
-      // Direct access to VoiceroCore's website object
-      else if (
-        window.VoiceroCore &&
-        window.VoiceroCore.website &&
-        window.VoiceroCore.website.popUpQuestions &&
-        window.VoiceroCore.website.popUpQuestions.length > 0
-      ) {
-        customPopUpQuestions = window.VoiceroCore.website.popUpQuestions;
-        popUpQuestionsSource = "VoiceroCore.website.popUpQuestions";
-      }
-      // Fallback to window global
-      else if (
-        window.voiceroPopUpQuestions &&
-        window.voiceroPopUpQuestions.length > 0
-      ) {
-        customPopUpQuestions = window.voiceroPopUpQuestions;
-        popUpQuestionsSource = "window.voiceroPopUpQuestions";
-      }
-
-      console.log(
-        "VoiceroText: Found popup questions from",
-        popUpQuestionsSource,
-        customPopUpQuestions,
-      );
-
-      // Add questions to welcome message if available
-      if (customPopUpQuestions.length > 0) {
-        welcomeMessage +=
-          "\n\nHere are some questions you might want to ask:\n";
-
-        customPopUpQuestions.forEach((item, index) => {
-          var questionText = item.question || item;
-          if (questionText && typeof questionText === "string") {
-            welcomeMessage += `\n- <span class="welcome-question" style="text-decoration: underline; color: ${this.websiteColor || "#882be6"}; cursor: pointer;" data-question="${questionText.replace(/"/g, "&quot;")}">${questionText}</span>`;
-          }
-        });
-      }
-
-      // Add the welcome message to the interface
-      var welcomeMessageElement = this.addMessage(welcomeMessage, "ai");
-
-      // Add click handlers to the welcome questions
       setTimeout(() => {
         if (this.shadowRoot && welcomeMessageElement) {
           // Use event delegation on the welcome message element instead of individual question elements
@@ -3134,7 +3002,14 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
     closeTextChat: function () {
       console.log("VoiceroText: Closing text chat");
 
-      // Set closing flag first to allow operations to proceed even if busy
+      // CRITICAL: Prevent infinite loop with core
+      if (this._isClosingTextChat === true) {
+        console.log("VoiceroText: Already closing text chat, preventing loop");
+        return;
+      }
+
+      // Set closing flags
+      this._isClosingTextChat = true;
       this.isClosingTextChat = true;
 
       // CRITICAL: Don't block close operations
@@ -3146,8 +3021,6 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
         // Continue with closing
       }
 
-      // Set closing flag
-      this.isClosingTextChat = true;
       this.isSessionOperationInProgress = true;
       this.lastSessionOperationTime = Date.now();
 
@@ -3158,46 +3031,21 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
       var textInterface = document.getElementById("text-chat-interface");
       var shadowHost = document.getElementById("voicero-text-chat-container");
 
-      // Update window state first - this is critical - SIMPLIFIED to only set textOpen
-      if (window.VoiceroCore && window.VoiceroCore.updateWindowState) {
-        // First update to close text chat - only send textOpen: false
-        var updateResult = window.VoiceroCore.updateWindowState({
-          textOpen: false,
-        });
+      // Do NOT update window state from here - VoiceroCore should handle it
+      // This prevents infinite loops between components
 
-        // Check if updateResult is a Promise
-        if (updateResult && typeof updateResult.finally === "function") {
-          updateResult.finally(() => {
-            // Reset busy flags after operation completes
-            self.isSessionOperationInProgress = false;
-            self.isClosingTextChat = false;
+      // Reset flags after a small delay
+      setTimeout(() => {
+        // Reset all flags
+        self.isSessionOperationInProgress = false;
+        self.isClosingTextChat = false;
+        self._isClosingTextChat = false;
 
-            // Small delay to ensure state updates are processed
-            setTimeout(() => {
-              // Then ensure core is visible
-              if (window.VoiceroCore) {
-                window.VoiceroCore.ensureMainButtonVisible();
-              }
-            }, 100);
-          });
-        } else {
-          // If not a Promise, just reset the flags
-          self.isSessionOperationInProgress = false;
-          self.isClosingTextChat = false;
-
-          // Small delay to ensure state updates are processed
-          setTimeout(() => {
-            // Then ensure core is visible
-            if (window.VoiceroCore) {
-              window.VoiceroCore.ensureMainButtonVisible();
-            }
-          }, 100);
+        // Then ensure core button is visible
+        if (window.VoiceroCore && window.VoiceroCore.ensureMainButtonVisible) {
+          window.VoiceroCore.ensureMainButtonVisible();
         }
-      } else {
-        // Reset busy flags if VoiceroCore isn't available
-        this.isSessionOperationInProgress = false;
-        this.isClosingTextChat = false;
-      }
+      }, 300);
 
       // IMPORTANT: Store the shadow DOM reference to avoid it being garbage collected
       if (!this._cachedShadowRoot && this.shadowRoot) {
