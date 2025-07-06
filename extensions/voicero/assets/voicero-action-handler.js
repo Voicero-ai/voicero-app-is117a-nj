@@ -120,6 +120,16 @@ var VoiceroActionHandler = {
       return;
     }
 
+    // Clear any existing typing indicator to prevent message overlap
+    if (window.VoiceroText && window.VoiceroText.typingIndicator) {
+      if (window.VoiceroText.typingIndicator.parentNode) {
+        window.VoiceroText.typingIndicator.parentNode.removeChild(
+          window.VoiceroText.typingIndicator,
+        );
+      }
+      window.VoiceroText.typingIndicator = null;
+    }
+
     // Special case for contact action - handle directly for increased reliability
     if (action === "contact") {
       console.log(
@@ -1877,10 +1887,31 @@ To make changes, please specify what you'd like to update.
       message +=
         "\n\nIs there a specific order you'd like more information about?";
 
-      // Display the message using VoiceroText
-      if (window.VoiceroText?.addMessage) {
-        window.VoiceroText.addMessage(message, "ai");
+      // Clear any existing typing indicator to prevent message overlap
+      if (window.VoiceroText && window.VoiceroText.typingIndicator) {
+        if (window.VoiceroText.typingIndicator.parentNode) {
+          window.VoiceroText.typingIndicator.parentNode.removeChild(
+            window.VoiceroText.typingIndicator,
+          );
+        }
+        window.VoiceroText.typingIndicator = null;
       }
+
+      // Display the message using VoiceroText - ensure this replaces any existing message
+      if (window.VoiceroText?.addMessage) {
+        // Remove any previous "loading" or temporary message
+        const messagesContainer = document
+          .querySelector("#voicero-chat-container")
+          ?.shadowRoot?.querySelector(".messages-container");
+        if (messagesContainer) {
+          // Force re-render of messages to ensure clean display
+          window.VoiceroText.addMessage(message, "ai");
+          window.VoiceroText.renderMessages(messagesContainer);
+        } else {
+          window.VoiceroText.addMessage(message, "ai");
+        }
+      }
+
       // Add to VoiceroVoice as well
       if (window.VoiceroVoice?.addMessage) {
         window.VoiceroVoice.addMessage(message, "ai");

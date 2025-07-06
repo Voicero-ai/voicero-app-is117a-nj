@@ -523,6 +523,61 @@
           color: white; /* User message text is white for contrast */
           border-bottom-right-radius: 4px;
         }
+        
+        /* Markdown styling */
+        .ai-message a {
+          color: ${themeColor};
+          text-decoration: underline;
+        }
+        .ai-message a:hover {
+          opacity: 0.8;
+        }
+        .ai-message p {
+          margin: 0 0 8px 0;
+        }
+        .ai-message p:last-child {
+          margin-bottom: 0;
+        }
+        .ai-message h1, .ai-message h2, .ai-message h3 {
+          margin: 10px 0 5px 0;
+          font-weight: bold;
+        }
+        .ai-message h1 {
+          font-size: 18px;
+        }
+        .ai-message h2 {
+          font-size: 16px;
+        }
+        .ai-message h3 {
+          font-size: 15px;
+        }
+        .ai-message ul, .ai-message ol {
+          margin: 5px 0;
+          padding-left: 20px;
+        }
+        .ai-message li {
+          margin: 3px 0;
+        }
+        .ai-message code {
+          background-color: rgba(0,0,0,0.05);
+          padding: 2px 4px;
+          border-radius: 3px;
+          font-family: monospace;
+          font-size: 0.9em;
+        }
+        .ai-message hr {
+          border: 0;
+          height: 1px;
+          background-color: rgba(0,0,0,0.1);
+          margin: 10px 0;
+        }
+        .ai-message strong {
+          font-weight: bold;
+        }
+        .ai-message em {
+          font-style: italic;
+        }
+        
         .input-container {
           padding: 10px 15px;
           border-top: 1px solid rgba(0, 0, 0, 0.1);
@@ -857,6 +912,65 @@
       return messageText;
     },
 
+    // Format markdown text to HTML
+    formatMarkdown: function (text) {
+      if (!text) return "";
+
+      let formattedText = text;
+
+      // Handle bold text with **text**
+      formattedText = formattedText.replace(
+        /\*\*(.*?)\*\*/g,
+        "<strong>$1</strong>",
+      );
+
+      // Handle italic text with *text*
+      formattedText = formattedText.replace(/\*(.*?)\*/g, "<em>$1</em>");
+
+      // Handle links with [text](url)
+      formattedText = formattedText.replace(
+        /\[(.*?)\]\((.*?)\)/g,
+        '<a href="$2">$1</a>',
+      );
+
+      // Handle headers
+      formattedText = formattedText.replace(/^### (.*?)$/gm, "<h3>$1</h3>");
+      formattedText = formattedText.replace(/^## (.*?)$/gm, "<h2>$1</h2>");
+      formattedText = formattedText.replace(/^# (.*?)$/gm, "<h1>$1</h1>");
+
+      // Handle lists
+      formattedText = formattedText.replace(/^\s*[-*] (.*?)$/gm, "<li>$1</li>");
+
+      // Wrap lists in <ul> tags
+      if (formattedText.includes("<li>")) {
+        formattedText = formattedText.replace(
+          /(<li>.*?<\/li>)/gs,
+          "<ul>$1</ul>",
+        );
+        // Fix nested lists
+        formattedText = formattedText.replace(/<\/ul>\s*<ul>/g, "");
+      }
+
+      // Handle horizontal rules with ---
+      formattedText = formattedText.replace(/^---$/gm, "<hr>");
+
+      // Handle code blocks
+      formattedText = formattedText.replace(/`([^`]+)`/g, "<code>$1</code>");
+
+      // Handle paragraphs - convert double newlines to paragraph breaks
+      formattedText = formattedText.replace(/\n\n/g, "</p><p>");
+
+      // Handle single newlines
+      formattedText = formattedText.replace(/\n/g, "<br>");
+
+      // Wrap in paragraphs if not already wrapped
+      if (!formattedText.includes("<p>")) {
+        formattedText = "<p>" + formattedText + "</p>";
+      }
+
+      return formattedText;
+    },
+
     // Render all messages in the container
     renderMessages: function (container) {
       if (!container) {
@@ -880,11 +994,41 @@
         const messageEl = document.createElement("div");
         messageEl.className = `message ${message.type}-message`;
 
-        // Set message text content
-        messageEl.textContent = message.text;
+        // Handle AI messages with markdown/HTML formatting
+        if (message.type === "ai") {
+          // Process message text to handle markdown
+          const formattedText = this.formatMarkdown(message.text);
+
+          // Set innerHTML instead of textContent to preserve formatting
+          messageEl.innerHTML = formattedText;
+
+          // Add links to all anchor tags
+          const links = messageEl.querySelectorAll("a");
+          links.forEach((link) => {
+            if (!link.getAttribute("target")) {
+              link.setAttribute("target", "_blank");
+            }
+            // Style links to match theme color
+            link.style.color = this.websiteColor || "#882be6";
+          });
+        } else {
+          // For user messages, just use text content
+          messageEl.textContent = message.text;
+        }
 
         // Add to container
         container.appendChild(messageEl);
+
+        // Add report button to AI messages
+        if (message.type === "ai" && window.VoiceroSupport) {
+          setTimeout(() => {
+            try {
+              window.VoiceroSupport.processAIMessage(messageEl, "text");
+            } catch (e) {
+              console.error("Error adding report button:", e);
+            }
+          }, 100);
+        }
       });
 
       // Scroll to bottom
@@ -1307,8 +1451,28 @@
               "I received your message, but I'm not sure how to respond.";
           }
 
-          // Add AI response to messages
-          this.addMessage(messageText, "ai");
+          // For actions that will generate their own messages (like get_orders),
+          // we'll skip adding the initial response to avoid duplication
+          if (action === "get_orders" || action === "track_order") {
+            // Store the action and context for processing, but don't display the initial message
+            console.log(
+              `VoiceroText: Skipping initial message display for ${action} action`,
+            );
+
+            // Handle action with VoiceroActionHandler if available
+            if (window.VoiceroActionHandler && action !== "none") {
+              setTimeout(() => {
+                window.VoiceroActionHandler.handle({
+                  answer: messageText,
+                  action: action,
+                  action_context: action_context,
+                });
+              }, 100);
+            }
+          } else {
+            // For normal actions or no action, add AI response to messages
+            this.addMessage(messageText, "ai");
+          }
 
           // Store thread ID if returned
           if (data && data.threadId && window.VoiceroCore) {

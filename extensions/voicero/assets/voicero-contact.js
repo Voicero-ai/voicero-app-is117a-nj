@@ -106,6 +106,37 @@ var VoiceroContact = {
     }
   },
 
+  // Helper method to notify the user with proper message handling
+  notifyUser: function (message) {
+    // Use VoiceroText for notifications
+    if (window.VoiceroText && window.VoiceroText.addMessage) {
+      // Clear any existing typing indicator to prevent message overlap
+      if (window.VoiceroText.typingIndicator) {
+        if (window.VoiceroText.typingIndicator.parentNode) {
+          window.VoiceroText.typingIndicator.parentNode.removeChild(
+            window.VoiceroText.typingIndicator,
+          );
+        }
+        window.VoiceroText.typingIndicator = null;
+      }
+
+      // Find the messages container and force a re-render if possible
+      const messagesContainer = document
+        .querySelector("#voicero-chat-container")
+        ?.shadowRoot?.querySelector(".messages-container");
+      if (messagesContainer) {
+        window.VoiceroText.addMessage(message, "ai");
+        window.VoiceroText.renderMessages(messagesContainer);
+      } else {
+        window.VoiceroText.addMessage(message, "ai");
+      }
+      return;
+    }
+
+    // Only log to console, don't show alert popup
+    console.log("User notification:", message);
+  },
+
   // Apply styles to the form elements
   applyFormStyles: function (formContainer) {
     // Get the main theme color from VoiceroText - voice functionality has been removed
@@ -388,9 +419,7 @@ var VoiceroContact = {
         var cancelMessage =
           "No problem! Let me know if you have any other questions.";
 
-        if (window.VoiceroText && window.VoiceroText.addMessage) {
-          window.VoiceroText.addMessage(cancelMessage, "ai");
-        }
+        this.notifyUser(cancelMessage);
       });
     }
   },
@@ -537,9 +566,7 @@ var VoiceroContact = {
         var successMessage =
           "Thank you for your message! We've received your request and will get back to you soon.";
 
-        if (window.VoiceroText && window.VoiceroText.addMessage) {
-          window.VoiceroText.addMessage(successMessage, "ai");
-        }
+        this.notifyUser(successMessage);
       })
       .catch((error) => {
         // Restore button state

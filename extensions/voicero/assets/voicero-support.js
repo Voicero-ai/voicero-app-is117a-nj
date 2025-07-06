@@ -57,10 +57,8 @@ var VoiceroSupport = {
 
     // Function to find and observe the chat messages container
     var setupObserver = () => {
-      // Find the text chat container
-      var textChatContainer = document.getElementById(
-        "voicero-text-chat-container",
-      );
+      // Find the text chat container - updated selector to match voicero-chat-container
+      var textChatContainer = document.getElementById("voicero-chat-container");
       if (!textChatContainer || !textChatContainer.shadowRoot) {
         if (this.debugMode)
           console.log(
@@ -69,9 +67,10 @@ var VoiceroSupport = {
         return false;
       }
 
-      // Get the messages container from shadow DOM
-      var messagesContainer =
-        textChatContainer.shadowRoot.getElementById("chat-messages");
+      // Get the messages container from shadow DOM - updated selector to match .messages-container
+      var messagesContainer = textChatContainer.shadowRoot.querySelector(
+        ".messages-container",
+      );
       if (!messagesContainer) {
         if (this.debugMode)
           console.log(
@@ -166,10 +165,8 @@ var VoiceroSupport = {
       console.log("VoiceroSupport: Processing existing messages");
 
     try {
-      // Process text chat messages
-      var textChatContainer = document.getElementById(
-        "voicero-text-chat-container",
-      );
+      // Process text chat messages - updated selector to match voicero-chat-container
+      var textChatContainer = document.getElementById("voicero-chat-container");
 
       if (textChatContainer && textChatContainer.shadowRoot) {
         if (this.debugMode)
@@ -221,13 +218,17 @@ var VoiceroSupport = {
         return;
       }
 
-      // Skip welcome messages and system messages
+      // Skip welcome messages, system messages, and loading indicators
       if (
         messageElement.querySelector(".welcome-message") ||
         messageElement.querySelector(".voice-prompt") ||
         messageElement.classList.contains("placeholder") ||
         messageElement.classList.contains("typing-indicator") ||
-        messageElement.classList.contains("typing-wrapper")
+        messageElement.classList.contains("typing-wrapper") ||
+        messageElement.id === "voicero-typing-indicator" ||
+        messageElement.querySelector("#voicero-typing-indicator") ||
+        messageElement.textContent.includes("...") || // Skip loading messages with ellipsis
+        messageElement.innerHTML.includes("typing-dot") // Skip messages with typing dots
       ) {
         return;
       }
@@ -241,15 +242,9 @@ var VoiceroSupport = {
       let messageContent = "";
 
       if (chatType === "text") {
-        var contentEl = messageElement.querySelector(".message-content");
-        if (contentEl) {
-          // For text format, get text content with normalized whitespace
-          messageContent = contentEl.textContent || contentEl.innerText || "";
-        } else {
-          // Fallback to direct text content
-          messageContent =
-            messageElement.textContent || messageElement.innerText || "";
-        }
+        // Updated to handle direct text content in message bubbles
+        messageContent =
+          messageElement.textContent || messageElement.innerText || "";
       } else {
         // voice
         var contentEl = messageElement.querySelector(".voice-message-content");
@@ -306,27 +301,28 @@ var VoiceroSupport = {
         );
       });
 
-      // Get the content container for message
-      let contentContainer = null;
+      // For the new structure, we just append directly to the message element
+      // No need to look for content containers as the structure is simpler now
 
-      if (chatType === "text") {
-        contentContainer = messageElement.querySelector(".message-content");
-      } else {
-        // voice
-        contentContainer = messageElement.querySelector(
-          ".voice-message-content",
-        );
-      }
+      // Append directly to the message element
+      messageElement.appendChild(reportButton);
 
-      // If we found the content container, append the report button
-      if (contentContainer) {
-        contentContainer.appendChild(reportButton);
-        return true;
-      } else {
-        // If we can't find the content container, append directly to the message
-        messageElement.appendChild(reportButton);
-        return true;
-      }
+      // Ensure the button is positioned at the bottom right
+      reportButton.style.cssText = `
+        font-size: 12px;
+        color: #888;
+        margin-top: 10px;
+        text-align: right;
+        cursor: pointer;
+        text-decoration: underline;
+        display: block;
+        opacity: 0.8;
+        transition: opacity 0.2s ease;
+        position: relative;
+        width: 100%;
+      `;
+
+      return true;
     } catch (error) {
       console.error("Error attaching report button:", error);
       return false;
@@ -636,6 +632,21 @@ document.addEventListener("DOMContentLoaded", function () {
     VoiceroSupport.init();
   }, 1000);
 });
+
+// Also try to initialize immediately to catch early messages
+setTimeout(() => {
+  if (!VoiceroSupport.initialized) {
+    console.log("VoiceroSupport: Immediate initialization attempt");
+    VoiceroSupport.init();
+  }
+}, 100);
+
+// And set up a periodic check for new messages
+setInterval(() => {
+  if (VoiceroSupport.initialized) {
+    VoiceroSupport.processExistingMessages();
+  }
+}, 5000);
 
 // Make a function to directly process a single AI message
 VoiceroSupport.processAIMessage = function (messageElement, chatType) {

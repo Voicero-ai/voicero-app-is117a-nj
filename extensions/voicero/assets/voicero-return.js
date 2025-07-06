@@ -951,7 +951,26 @@ Would you like me to help you initiate a return request once you receive your or
   notifyUser: function (message) {
     // Use VoiceroText - voice interface has been removed
     if (window.VoiceroText && window.VoiceroText.addMessage) {
-      window.VoiceroText.addMessage(message, "ai");
+      // Clear any existing typing indicator to prevent message overlap
+      if (window.VoiceroText.typingIndicator) {
+        if (window.VoiceroText.typingIndicator.parentNode) {
+          window.VoiceroText.typingIndicator.parentNode.removeChild(
+            window.VoiceroText.typingIndicator,
+          );
+        }
+        window.VoiceroText.typingIndicator = null;
+      }
+
+      // Find the messages container and force a re-render if possible
+      const messagesContainer = document
+        .querySelector("#voicero-chat-container")
+        ?.shadowRoot?.querySelector(".messages-container");
+      if (messagesContainer) {
+        window.VoiceroText.addMessage(message, "ai");
+        window.VoiceroText.renderMessages(messagesContainer);
+      } else {
+        window.VoiceroText.addMessage(message, "ai");
+      }
       return;
     }
 
