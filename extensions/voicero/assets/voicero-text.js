@@ -2312,12 +2312,18 @@
       );
       if (textChatContainer) {
         textChatContainer.style.display = "none";
+        textChatContainer.style.visibility = "hidden";
+        textChatContainer.style.opacity = "0";
+        textChatContainer.style.pointerEvents = "none";
+        textChatContainer.style.zIndex = "-1";
       }
 
       // Update window state to hide text interface - SIMPLIFIED to only use textOpen
       if (window.VoiceroCore && window.VoiceroCore.updateWindowState) {
         window.VoiceroCore.updateWindowState({
           textOpen: false,
+          textChat: false, // Explicitly set textChat to false
+          textWelcome: true, // Set welcome to true to show welcome screen
         });
       }
 
@@ -2361,29 +2367,76 @@
                 }
               }
             }
+
+            // After API call completes, show welcome screen
+            this.showWelcomeAfterClear();
           })
           .catch((error) => {
             // console.error("Failed to clear chat history:", error);
+
+            // Even if API fails, still show welcome screen
+            this.showWelcomeAfterClear();
           });
-      }
-
-      // Use VoiceroWelcome module to show welcome screen
-      if (
-        window.VoiceroWelcome &&
-        typeof window.VoiceroWelcome.createWelcomeContainer === "function"
-      ) {
-        console.log(
-          "VoiceroText: Delegating to VoiceroWelcome module for welcome screen",
-        );
-
-        // Pass this instance to VoiceroWelcome for proper event handling
-        window.VoiceroWelcome.voiceroTextInstance = this;
-
-        // Let VoiceroWelcome handle creating and showing the welcome screen
-        window.VoiceroWelcome.createWelcomeContainer();
       } else {
-        console.error("VoiceroText: VoiceroWelcome module not available");
+        // No session ID, just show welcome screen directly
+        this.showWelcomeAfterClear();
       }
+    },
+
+    // Helper method to show welcome screen after clearing chat
+    showWelcomeAfterClear: function () {
+      // Make sure text chat is fully closed
+      const textChatContainer = document.getElementById(
+        "voicero-text-chat-container",
+      );
+      if (textChatContainer) {
+        textChatContainer.style.display = "none";
+        textChatContainer.style.visibility = "hidden";
+        textChatContainer.style.opacity = "0";
+        textChatContainer.style.pointerEvents = "none";
+        textChatContainer.style.zIndex = "-1";
+      }
+
+      // Small delay to ensure text chat is closed before showing welcome
+      setTimeout(() => {
+        // Use VoiceroWelcome module to show welcome screen
+        if (
+          window.VoiceroWelcome &&
+          typeof window.VoiceroWelcome.createWelcomeContainer === "function"
+        ) {
+          console.log(
+            "VoiceroText: Delegating to VoiceroWelcome module for welcome screen",
+          );
+
+          // Pass this instance to VoiceroWelcome for proper event handling
+          window.VoiceroWelcome.voiceroTextInstance = this;
+
+          // Let VoiceroWelcome handle creating and showing the welcome screen
+          window.VoiceroWelcome.createWelcomeContainer();
+
+          // Make sure welcome container is visible and on top
+          const welcomeContainer = document.getElementById(
+            "voicero-welcome-container",
+          );
+          if (welcomeContainer) {
+            welcomeContainer.style.display = "block";
+            welcomeContainer.style.visibility = "visible";
+            welcomeContainer.style.opacity = "1";
+            welcomeContainer.style.zIndex = "9999999";
+          }
+
+          // Update window state again to ensure welcome shows
+          if (window.VoiceroCore && window.VoiceroCore.updateWindowState) {
+            window.VoiceroCore.updateWindowState({
+              textOpen: false,
+              textChat: false,
+              textWelcome: true,
+            });
+          }
+        } else {
+          console.error("VoiceroText: VoiceroWelcome module not available");
+        }
+      }, 300);
 
       // Force hide the main button to ensure it doesn't appear during transition
       if (window.VoiceroCore && window.VoiceroCore.hideMainButton) {
