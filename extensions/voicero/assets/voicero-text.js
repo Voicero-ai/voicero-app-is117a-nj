@@ -79,21 +79,6 @@
           );
           this.websiteColor = window.VoiceroCore.session.website.color;
         }
-
-        // Ensure the text interface is always maximized by default
-        if (this.session && this.session.textOpen) {
-          console.log(
-            "VoiceroText: Ensuring textOpenWindowUp is true by default",
-          );
-          this.session.textOpenWindowUp = true;
-
-          // Update window state if we have access to the method
-          if (window.VoiceroCore && window.VoiceroCore.updateWindowState) {
-            window.VoiceroCore.updateWindowState({
-              textOpenWindowUp: true,
-            });
-          }
-        }
       }
 
       // Get API URL and color from Core if available
@@ -302,15 +287,7 @@
         }
       }
 
-      console.log(
-        "VoiceroText: Opening text chat interface - ensuring it's maximized",
-      );
-
-      // IMPORTANT: Always ensure textOpenWindowUp is true when opening the interface
-      // It should only be set to false when the user explicitly clicks the minimize button
-      if (window.VoiceroCore && window.VoiceroCore.session) {
-        window.VoiceroCore.session.textOpenWindowUp = true;
-      }
+      console.log("VoiceroText: Opening text chat interface");
 
       // Check if thread has messages
       var hasMessages = this.messages && this.messages.length > 0;
@@ -337,33 +314,16 @@
         }
       }
 
-      // Update window state if it hasn't been done already
+      // Update window state if it hasn't been done already - SIMPLIFIED to only use textOpen
       if (window.VoiceroCore && window.VoiceroCore.updateWindowState) {
-        // First update to close text chat
         window.VoiceroCore.updateWindowState({
           textOpen: true,
-          textOpenWindowUp: true, // Always start maximized
-          textWelcome: shouldShowWelcome, // Keep the existing welcome message state
-          coreOpen: false, // Always false when opening chat
-          voiceOpen: false,
-          voiceOpenWindowUp: false,
         });
       }
 
       // Also update the session object directly to ensure consistency
       if (window.VoiceroCore && window.VoiceroCore.session) {
         window.VoiceroCore.session.textOpen = true;
-        window.VoiceroCore.session.textOpenWindowUp = true;
-      }
-
-      // Close voice interface if it's open
-      var voiceInterface = document.getElementById("voice-chat-interface");
-      if (voiceInterface && voiceInterface.style.display === "block") {
-        if (window.VoiceroVoice && window.VoiceroVoice.closeVoiceChat) {
-          window.VoiceroVoice.closeVoiceChat();
-        } else {
-          voiceInterface.style.display = "none";
-        }
       }
 
       // Hide the toggle container when opening the chat interface
@@ -461,7 +421,7 @@
         }
       }
 
-      // Apply correct border radius for initial state (always maximized initially)
+      // Apply correct border radius for initial state
       this.updateChatContainerBorderRadius(false);
 
       // Set up input and button listeners
@@ -2434,14 +2394,10 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
         textChatContainer.style.display = "none";
       }
 
-      // Update window state to hide text interface
+      // Update window state to hide text interface - SIMPLIFIED to only use textOpen
       if (window.VoiceroCore && window.VoiceroCore.updateWindowState) {
         window.VoiceroCore.updateWindowState({
           textOpen: false,
-          textOpenWindowUp: false,
-          coreOpen: false,
-          voiceOpen: false,
-          voiceOpenWindowUp: false,
         });
       }
 
@@ -3190,18 +3146,6 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
         // Continue with closing
       }
 
-      // Don't block close operations due to session operations
-      if (
-        window.VoiceroCore &&
-        window.VoiceroCore.isSessionBusy &&
-        window.VoiceroCore.isSessionBusy()
-      ) {
-        console.log(
-          "VoiceroText: Warning - closing while session operation in progress",
-        );
-        // Continue with closing
-      }
-
       // Set closing flag
       this.isClosingTextChat = true;
       this.isSessionOperationInProgress = true;
@@ -3214,16 +3158,11 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
       var textInterface = document.getElementById("text-chat-interface");
       var shadowHost = document.getElementById("voicero-text-chat-container");
 
-      // Update window state first - this is critical
+      // Update window state first - this is critical - SIMPLIFIED to only set textOpen
       if (window.VoiceroCore && window.VoiceroCore.updateWindowState) {
-        // First update to close text chat
+        // First update to close text chat - only send textOpen: false
         var updateResult = window.VoiceroCore.updateWindowState({
           textOpen: false,
-          textOpenWindowUp: false,
-          coreOpen: true, // Always false when opening chat
-          voiceOpen: false,
-          autoMic: false,
-          voiceOpenWindowUp: false,
         });
 
         // Check if updateResult is a Promise
@@ -4365,14 +4304,10 @@ Feel free to ask me anything, and I'll do my best to assist you!`;
           chatInputWrapper.style.display = "block";
         }
 
-        // Update window state to ensure text interface is open
+        // Update window state to ensure text interface is open - SIMPLIFIED to only use textOpen
         if (window.VoiceroCore && window.VoiceroCore.updateWindowState) {
           window.VoiceroCore.updateWindowState({
             textOpen: true,
-            textOpenWindowUp: true,
-            coreOpen: false,
-            voiceOpen: false,
-            voiceOpenWindowUp: false,
           });
         }
       }, 100);

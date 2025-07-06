@@ -1491,7 +1491,20 @@
         .then((data) => {
           if (!data) return; // Handle the case where we're creating a new session
 
-          this.session = data.session;
+          // Store only essential data, focus on textOpen
+          this.session = {
+            id: data.session.id,
+            textOpen: data.session.textOpen || false,
+            websiteId: data.session.websiteId,
+            // Add essential local UI properties that aren't stored in API
+            botName: this.botName || "",
+            customWelcomeMessage: this.customWelcomeMessage || "",
+            clickMessage: this.clickMessage || "Need Help Shopping?",
+            removeHighlight:
+              this.removeHighlight !== undefined ? this.removeHighlight : false,
+            iconBot: this.iconBot || "message",
+            websiteColor: this.websiteColor || "#882be6",
+          };
 
           // Get the most recent thread
           if (
@@ -1502,24 +1515,16 @@
             this.thread = data.session.threads[0];
           }
 
-          // Ensure VoiceroCore.thread always matches session.threadId
-          var active = this.session.threads.find(
-            (t) => t.threadId === this.session.threadId,
-          );
-          // If session.threadId hasn't been set yet, fall back to the first one
-          this.thread = active || this.session.threads[0];
-
-          // Log detailed session info
-          if (data.session) {
-          }
+          console.log("VoiceroCore: Simplified session loaded:", this.session);
 
           // Store session ID in global variable and localStorage
           if (data.session && data.session.id) {
             this.sessionId = data.session.id;
             localStorage.setItem("voicero_session_id", data.session.id);
-
-            // Process any pending window state updates now that we have a sessionId
-            this.processPendingWindowStateUpdates();
+            localStorage.setItem(
+              "voicero_session",
+              JSON.stringify(this.session),
+            );
 
             // Ensure button visibility after session is established
             this.ensureMainButtonVisible();
@@ -1531,13 +1536,8 @@
             window.VoiceroText.thread = this.thread;
           }
 
-          if (window.VoiceroVoice) {
-            window.VoiceroVoice.session = this.session;
-            window.VoiceroVoice.thread = this.thread;
-          }
-
-          // Restore interface state based on session flags
-          this.restoreInterfaceState();
+          // Update the interface based on textOpen value
+          this.updateInterfaceFromTextOpen();
 
           // Update the button icon based on loaded session
           this.updateButtonIcon();
@@ -1555,143 +1555,69 @@
         });
     },
 
-    // Restore interface state based on session flags
+    // New method to update the interface based on textOpen
+    updateInterfaceFromTextOpen: function () {
+      if (!this.session) return;
+
+      console.log(
+        "VoiceroCore: Updating interface from textOpen state:",
+        this.session.textOpen,
+      );
+
+      if (this.session.textOpen === true) {
+        // Text chat should be open - open it if not already
+        var textInterface = document.getElementById(
+          "voicero-text-chat-container",
+        );
+
+        if (!textInterface || textInterface.style.display !== "block") {
+          // Hide the main button
+          this.hideMainButton();
+
+          // Try to open the text chat
+          if (window.VoiceroText && window.VoiceroText.openTextChat) {
+            window.VoiceroText.openTextChat();
+
+            // Force maximize
+            setTimeout(() => {
+              if (window.VoiceroText && window.VoiceroText.maximizeChat) {
+                window.VoiceroText.maximizeChat();
+              }
+            }, 100);
+          }
+        }
+      } else {
+        // Text chat should be closed - close it if open
+        var textInterface = document.getElementById(
+          "voicero-text-chat-container",
+        );
+
+        if (textInterface && textInterface.style.display === "block") {
+          // Close text chat
+          if (window.VoiceroText && window.VoiceroText.closeTextChat) {
+            window.VoiceroText.closeTextChat();
+          } else {
+            textInterface.style.display = "none";
+          }
+        }
+
+        // Make sure button is visible
+        this.ensureMainButtonVisible();
+      }
+    },
+
+    // Simplified restoreInterfaceState to focus only on textOpen
     restoreInterfaceState: function () {
       if (!this.session) return;
 
-      // Create a flag to track if we need to hide the button
-      var shouldHideButton =
-        this.session.textOpen === true || this.session.voiceOpen === true;
+      // Simply use the new updateInterfaceFromTextOpen method
+      this.updateInterfaceFromTextOpen();
 
-      // Hide the button first if needed, before any interface operations
-      if (shouldHideButton) {
-        // Hide button immediately to prevent flickering
-        this.hideMainButton();
-
-        // Set a flag to indicate we're currently restoring an interface
-        this.isRestoringInterface = true;
-
-        // Cancel any pending button visibility calls
-        if (this.buttonVisibilityTimeouts) {
-          this.buttonVisibilityTimeouts.forEach((timeoutId) =>
-            clearTimeout(timeoutId),
-          );
-        }
-        this.buttonVisibilityTimeouts = [];
-
-        // Add more aggressive button hiding with multiple timers
-        setTimeout(() => this.hideMainButton(), 100);
-        setTimeout(() => this.hideMainButton(), 500);
-        setTimeout(() => this.hideMainButton(), 1000);
-        setTimeout(() => this.hideMainButton(), 2000);
-      } else {
-        // Check if we should show chooser based on session state
-        if (this.session.chooserOpen === true) {
-          console.log("VoiceroCore: Showing chooser from session state");
-          setTimeout(() => this.displayChooser(), 300);
-        } else {
-          // No interfaces open and chooser not open, ensure button is visible
-          this.ensureMainButtonVisible();
-        }
-
-        // Clear initialization flag after we've determined no interfaces need to be opened
-        this.isInitializing = false;
-        return;
-      }
-
-      // One-time function to ensure button stays hidden
-      var ensureButtonHidden = () => {
-        var toggleContainer = document.getElementById("voice-toggle-container");
-        if (toggleContainer) {
-          toggleContainer.style.cssText = `
-            display: none !important;
-            visibility: hidden !important;
-            opacity: 0 !important;
-            pointer-events: none !important;
-            z-index: -1 !important;
-          `;
-        }
-
-        var mainButton = document.getElementById("chat-website-button");
-        if (mainButton) {
-          mainButton.style.cssText = `
-            display: none !important;
-            visibility: hidden !important;
-            opacity: 0 !important;
-            pointer-events: none !important;
-            z-index: -1 !important;
-          `;
-        }
-      };
-
-      // Check if text interface should be open
-      if (this.session.textOpen === true) {
-        // Make sure VoiceroText is initialized
-        if (window.VoiceroText) {
-          // First ensure the textOpenWindowUp is set to true in the session
-          if (this.session) {
-            this.session.textOpenWindowUp = true;
-          }
-
-          // Open the text chat (always maximized)
-          window.VoiceroText.openTextChat();
-
-          // We no longer minimize based on session value when explicitly opening
-
-          // Multiple timeouts to ensure button stays hidden
-          this.buttonVisibilityTimeouts = [
-            setTimeout(() => ensureButtonHidden(), 300),
-            setTimeout(() => ensureButtonHidden(), 800),
-            setTimeout(() => ensureButtonHidden(), 1500),
-            setTimeout(() => ensureButtonHidden(), 3000),
-          ];
-        }
-      }
-      // Check if voice interface should be open
-      else if (this.session.voiceOpen === true) {
-        // Make sure VoiceroVoice is initialized
-        if (window.VoiceroVoice) {
-          // First ensure the voiceOpenWindowUp is set to true in the session
-          if (this.session) {
-            this.session.voiceOpenWindowUp = true;
-          }
-
-          // Open voice chat (always maximized)
-          window.VoiceroVoice.openVoiceChat();
-
-          // We no longer minimize based on session value when explicitly opening
-
-          // Check if auto mic should be activated
-          if (this.session.autoMic === true) {
-            setTimeout(() => {
-              if (window.VoiceroVoice && window.VoiceroVoice.toggleMic) {
-                window.VoiceroVoice.toggleMic();
-              }
-            }, 1000); // Longer delay for mic activation
-          }
-
-          // Multiple timeouts to ensure button stays hidden
-          this.buttonVisibilityTimeouts = [
-            setTimeout(() => ensureButtonHidden(), 300),
-            setTimeout(() => ensureButtonHidden(), 800),
-            setTimeout(() => ensureButtonHidden(), 1500),
-            setTimeout(() => ensureButtonHidden(), 3000),
-          ];
-        }
-      }
-
-      // Clear restoration flag after a short delay
+      // Clear initialization flag
       setTimeout(() => {
-        this.isRestoringInterface = false;
-
-        // Also clear initialization flag after interface restoration is complete
         this.isInitializing = false;
-
-        // One final check to make sure button stays hidden if interfaces are open
-        if (this.session.textOpen === true || this.session.voiceOpen === true) {
-          this.hideMainButton();
-        }
-      }, 2000);
+        this.isRestoringInterface = false;
+      }, 1000);
     },
 
     // Create a new session specifically called from getSession
@@ -1789,56 +1715,41 @@
 
             // Store session and thread data
             if (data.session) {
-              this.session = data.session;
+              // Store only essential data, focus on textOpen
+              this.session = {
+                id: data.session.id,
+                textOpen: data.session.textOpen || false,
+                websiteId: data.session.websiteId,
+                // Add essential local UI properties that aren't stored in API
+                botName: this.botName || "",
+                customWelcomeMessage: this.customWelcomeMessage || "",
+                clickMessage: this.clickMessage || "Need Help Shopping?",
+                removeHighlight:
+                  this.removeHighlight !== undefined
+                    ? this.removeHighlight
+                    : false,
+                iconBot: this.iconBot || "message",
+                websiteColor: this.websiteColor || "#882be6",
+              };
 
-              // Transfer global properties to session if not already set in API response
-              if (this.botName && !data.session.botName) {
-                this.session.botName = this.botName;
-              }
-              if (
-                this.customWelcomeMessage &&
-                !data.session.customWelcomeMessage
-              ) {
-                this.session.customWelcomeMessage = this.customWelcomeMessage;
-              }
-
-              console.log("VoiceroCore: Session stored:", this.session);
+              console.log(
+                "VoiceroCore: Simplified session stored:",
+                this.session,
+              );
 
               // Store session ID in localStorage
               if (data.session.id) {
                 this.sessionId = data.session.id;
 
-                // Add clickMessage to session if available from API but not in session
-                if (this.clickMessage && !data.session.clickMessage) {
-                  data.session.clickMessage = this.clickMessage;
-                  console.log(
-                    "VoiceroCore: Added clickMessage to session:",
-                    this.clickMessage,
-                  );
-                }
-
-                // Store both the session ID and the full session object
+                // Store both the session ID and the simplified session object
                 localStorage.setItem("voicero_session_id", data.session.id);
                 localStorage.setItem(
                   "voicero_session",
-                  JSON.stringify(data.session),
+                  JSON.stringify(this.session),
                 );
                 console.log(
                   "VoiceroCore: Session ID saved to localStorage:",
                   this.sessionId,
-                );
-
-                // Verify the storage
-                var storedSessionId =
-                  localStorage.getItem("voicero_session_id");
-                var storedSession = localStorage.getItem("voicero_session");
-                console.log(
-                  "VoiceroCore: Verified stored session ID:",
-                  storedSessionId,
-                );
-                console.log(
-                  "VoiceroCore: Verified stored session:",
-                  storedSession,
                 );
               }
             }
@@ -1854,17 +1765,15 @@
               window.VoiceroText.thread = this.thread;
             }
 
-            if (window.VoiceroVoice) {
-              window.VoiceroVoice.session = this.session;
-              window.VoiceroVoice.thread = this.thread;
-            }
-
             // Mark session as initialized
             this.sessionInitialized = true;
             this.isInitializingSession = false;
             this.isSessionOperationInProgress = false;
             this.lastSessionOperationTime = Date.now();
             console.log("VoiceroCore: Session initialization complete");
+
+            // Update interface based on textOpen value
+            this.updateInterfaceFromTextOpen();
           })
           .catch((error) => {
             console.error("VoiceroCore: Session creation failed:", error);
@@ -2185,207 +2094,104 @@
       // to add common control elements
     },
 
-    // Update window state via API - SIMPLIFIED to not hide button
+    // Update window state via API - SIMPLIFIED to only handle textOpen
     updateWindowState: function (windowState) {
       console.log("VoiceroCore: Updating window state", windowState);
 
+      // Only track if a session operation is in progress
       this.isSessionOperationInProgress = true;
       this.lastSessionOperationTime = Date.now();
 
-      // IMPORTANT: No matter what the windowState is, always ensure the button is visible
-      setTimeout(() => this.ensureMainButtonVisible(), 100);
-
-      // Store original suppressChooser value
-      var hadSuppressChooser = windowState.suppressChooser === true;
-
       // Check if session initialization is in progress
-      if (this.isInitializingSession) {
+      if (this.isInitializingSession || !this.sessionId) {
         console.log(
-          "VoiceroCore: Session initializing, queuing window state update",
+          "VoiceroCore: Session initializing or no sessionId, skipping update",
         );
-        this.pendingWindowStateUpdates.push(windowState);
         return;
       }
 
-      // Check if we have a session ID
-      if (!this.sessionId) {
-        // Add to pending updates queue
-        this.pendingWindowStateUpdates.push(windowState);
+      // Extract only the textOpen property - ignore all other properties
+      var textOpen =
+        windowState.textOpen !== undefined ? windowState.textOpen : false;
 
-        // If session is not initialized yet, trigger initialization
-        if (!this.sessionInitialized && !this.isInitializingSession) {
-          this.initializeSession();
-        }
-
-        // Immediately update local session values even without sessionId
-        if (this.session) {
-          // Update our local session with new values
-          Object.assign(this.session, windowState);
-
-          // CRITICAL: Reset suppressChooser after applying it to prevent lingering
-          if (hadSuppressChooser && this.session) {
-            setTimeout(() => {
-              if (this.session) {
-                console.log("[DEBUG] Auto-resetting suppressChooser to false");
-                this.session.suppressChooser = false;
-              }
-            }, 500);
-          }
-
-          // Check if iconBot was updated and update the button icon
-          if (windowState.iconBot) {
-            console.log(
-              "VoiceroCore: iconBot changed to:",
-              windowState.iconBot,
-            );
-            this.updateButtonIcon();
-          }
-
-          // Check if removeHighlight was updated
-          if (windowState.removeHighlight !== undefined) {
-            console.log(
-              "VoiceroCore: removeHighlight changed to:",
-              windowState.removeHighlight,
-            );
-            // Update the local property too for redundancy
-            this.removeHighlight = windowState.removeHighlight;
-          }
-
-          // Propagate the immediate updates to other modules
-          if (window.VoiceroText) {
-            window.VoiceroText.session = this.session;
-          }
-
-          if (window.VoiceroVoice) {
-            window.VoiceroVoice.session = this.session;
-          }
-        }
-
-        return;
-      }
-
-      // Immediately update local session values for instant access
+      // Update local session
       if (this.session) {
-        // Update our local session with new values
-        Object.assign(this.session, windowState);
-
-        // CRITICAL: Reset suppressChooser after applying it to prevent lingering
-        if (hadSuppressChooser && this.session) {
-          setTimeout(() => {
-            if (this.session) {
-              console.log("[DEBUG] Auto-resetting suppressChooser to false");
-              this.session.suppressChooser = false;
-            }
-          }, 500);
-        }
-
-        // Check if iconBot was updated and update the button icon
-        if (windowState.iconBot) {
-          console.log("VoiceroCore: iconBot changed to:", windowState.iconBot);
-          this.updateButtonIcon();
-        }
-
-        // Check if removeHighlight was updated
-        if (windowState.removeHighlight !== undefined) {
-          console.log(
-            "VoiceroCore: removeHighlight changed to:",
-            windowState.removeHighlight,
-          );
-          // Update the local property too for redundancy
-          this.removeHighlight = windowState.removeHighlight;
-        }
-
-        // Propagate the immediate updates to other modules
-        if (window.VoiceroText) {
-          window.VoiceroText.session = this.session;
-        }
-
-        if (window.VoiceroVoice) {
-          window.VoiceroVoice.session = this.session;
-        }
+        this.session.textOpen = textOpen;
       }
 
-      // Store the values we need for the API call to avoid timing issues
-      var sessionIdForApi = this.sessionId;
-      var windowStateForApi = { ...windowState };
+      // Make API call to persist just the textOpen property
+      var proxyUrl = "http://localhost:3000/api/session/windows";
 
-      // Use setTimeout to ensure the API call happens after navigation
-      setTimeout(() => {
-        // Verify we have a valid sessionId
-        if (
-          !sessionIdForApi ||
-          typeof sessionIdForApi !== "string" ||
-          sessionIdForApi.trim() === ""
-        ) {
-          return;
-        }
+      // Format the request body with just sessionId and textOpen
+      var requestBody = {
+        sessionId: this.sessionId,
+        windowState: { textOpen },
+      };
 
-        // Make API call to persist the changes
-        var proxyUrl = "http://localhost:3000/api/session/windows";
+      console.log(
+        "VoiceroCore: Updating textOpen state with API:",
+        requestBody,
+      );
 
-        // Format the request body to match what the Next.js API expects
-        var requestBody = {
-          sessionId: sessionIdForApi,
-          windowState: windowStateForApi,
-        };
-
-        console.log("VoiceroCore: Updating window state:", requestBody);
-
-        fetch(proxyUrl, {
-          method: "POST",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            ...(window.voiceroConfig?.getAuthHeaders
-              ? window.voiceroConfig.getAuthHeaders()
-              : {}),
-          },
-          body: JSON.stringify(requestBody),
+      fetch(proxyUrl, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          ...(window.voiceroConfig?.getAuthHeaders
+            ? window.voiceroConfig.getAuthHeaders()
+            : {}),
+        },
+        body: JSON.stringify(requestBody),
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error(`Window state update failed: ${response.status}`);
+          }
+          return response.json();
         })
-          .then((response) => {
-            if (!response.ok) {
-              throw new Error(`Window state update failed: ${response.status}`);
-            }
-            return response.json();
-          })
-          .then((data) => {
-            console.log(
-              "VoiceroCore: Window state updated successfully:",
-              data,
-            );
-            // Update our local session data with the full server response
-            if (data.session) {
-              // Need to update the global VoiceroCore session
-              if (window.VoiceroCore) {
-                window.VoiceroCore.session = data.session;
-              }
+        .then((data) => {
+          console.log(
+            "VoiceroCore: textOpen state updated successfully:",
+            data,
+          );
 
-              // Propagate the updated session to other modules
-              if (window.VoiceroText) {
-                window.VoiceroText.session = data.session;
-              }
-
-              if (window.VoiceroVoice) {
-                window.VoiceroVoice.session = data.session;
-              }
+          // Update our local session data with just the textOpen property
+          if (data.session && data.session.textOpen !== undefined) {
+            // Update the textOpen property in our local session
+            if (this.session) {
+              this.session.textOpen = data.session.textOpen;
+            } else {
+              this.session = { textOpen: data.session.textOpen };
             }
 
-            this.isSessionOperationInProgress = false;
-            this.lastSessionOperationTime = Date.now();
+            // Update localStorage
+            try {
+              localStorage.setItem(
+                "voicero_session",
+                JSON.stringify(this.session),
+              );
+            } catch (e) {
+              console.error("Failed to update session in localStorage:", e);
+            }
 
-            // Always ensure button is visible after state update
-            this.ensureMainButtonVisible();
-          })
-          .catch((error) => {
-            console.error("VoiceroCore: Window state update failed:", error);
+            // Propagate the updated textOpen to other modules
+            if (window.VoiceroText && window.VoiceroText.session) {
+              window.VoiceroText.session.textOpen = data.session.textOpen;
+            }
+          }
 
-            this.isSessionOperationInProgress = false;
-            this.lastSessionOperationTime = Date.now();
+          this.isSessionOperationInProgress = false;
+          this.lastSessionOperationTime = Date.now();
 
-            // Always ensure button is visible after state update, even on error
-            this.ensureMainButtonVisible();
-          });
-      }, 0);
+          // Update UI based on textOpen state
+          this.updateInterfaceFromTextOpen();
+        })
+        .catch((error) => {
+          console.error("VoiceroCore: Window state update failed:", error);
+          this.isSessionOperationInProgress = false;
+          this.lastSessionOperationTime = Date.now();
+        });
     },
 
     // Update theme color in CSS variables
