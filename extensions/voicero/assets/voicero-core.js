@@ -27,8 +27,8 @@
       this.currentPageUrl = window.location.href;
 
       // Check for existing session ID in localStorage
-      const savedSessionId = localStorage.getItem("voicero_session_id");
-      const savedSession = localStorage.getItem("voicero_session");
+      var savedSessionId = localStorage.getItem("voicero_session_id");
+      var savedSession = localStorage.getItem("voicero_session");
 
       if (savedSessionId && savedSession) {
         try {
@@ -46,7 +46,7 @@
           );
 
           // Get thread ID if available
-          const threadId = localStorage.getItem("voicero_thread_id");
+          var threadId = localStorage.getItem("voicero_thread_id");
           if (threadId) {
             console.log("VoiceroCore: Loaded existing thread ID:", threadId);
             // Initialize thread object
@@ -529,11 +529,11 @@
       console.log("VoiceroCore: Fetching existing session:", sessionId);
 
       // Build the URL with query parameters
-      const baseUrl = "http://localhost:3000/api/session";
-      const url = `${baseUrl}?sessionId=${encodeURIComponent(sessionId)}&websiteId=${encodeURIComponent(this.websiteId)}&pageUrl=${encodeURIComponent(window.location.href)}`;
+      var baseUrl = "http://localhost:3000/api/session";
+      var url = `${baseUrl}?sessionId=${encodeURIComponent(sessionId)}&websiteId=${encodeURIComponent(this.websiteId)}&pageUrl=${encodeURIComponent(window.location.href)}`;
 
       // Get auth headers
-      const headers = {
+      var headers = {
         Accept: "application/json",
         ...(window.voiceroConfig?.getAuthHeaders
           ? window.voiceroConfig.getAuthHeaders()
@@ -549,7 +549,7 @@
           );
 
           // Try production URL as fallback
-          const prodUrl = `https://www.voicero.ai/api/session?sessionId=${encodeURIComponent(sessionId)}&websiteId=${encodeURIComponent(this.websiteId)}&pageUrl=${encodeURIComponent(window.location.href)}`;
+          var prodUrl = `https://www.voicero.ai/api/session?sessionId=${encodeURIComponent(sessionId)}&websiteId=${encodeURIComponent(this.websiteId)}&pageUrl=${encodeURIComponent(window.location.href)}`;
           return this.callSessionGetAPI(prodUrl, headers);
         })
         .catch((error) => {
@@ -605,7 +605,7 @@
             console.log("VoiceroCore: Updated thread data:", this.thread);
 
             // Get thread ID
-            const threadId = data.thread.id || data.thread.threadId;
+            var threadId = data.thread.id || data.thread.threadId;
             if (threadId) {
               console.log("VoiceroCore: Storing updated thread ID:", threadId);
               localStorage.setItem("voicero_thread_id", threadId);
@@ -661,7 +661,7 @@
               );
 
               // Log the first thread ID
-              const firstThread = data.session.threads[0];
+              var firstThread = data.session.threads[0];
               console.log(
                 "VoiceroCore: First thread ID:",
                 firstThread.id || firstThread.threadId,
@@ -685,7 +685,7 @@
             console.log("VoiceroCore: Stored thread:", this.thread);
 
             // Get the correct thread ID field
-            const threadId = data.thread.id || data.thread.threadId;
+            var threadId = data.thread.id || data.thread.threadId;
 
             // Also store thread ID in localStorage
             if (threadId) {
@@ -711,7 +711,7 @@
             );
 
             // Get the correct thread ID field
-            const threadId = this.thread.id || this.thread.threadId;
+            var threadId = this.thread.id || this.thread.threadId;
 
             // Store thread ID in localStorage
             if (threadId) {

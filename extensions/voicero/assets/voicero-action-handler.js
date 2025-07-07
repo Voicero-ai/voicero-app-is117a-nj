@@ -428,7 +428,7 @@ var VoiceroActionHandler = {
       }
 
       // Third pass: Try case-insensitive contains match
-      const lowerText = exact_text.toLowerCase();
+      var lowerText = exact_text.toLowerCase();
       for (let el of elements) {
         if (
           el.textContent &&
@@ -501,7 +501,7 @@ var VoiceroActionHandler = {
         console.log("VoiceroActionHandler: Trying aggressive text search");
 
         // Split the search text into words for partial matching
-        const searchWords = exact_text
+        var searchWords = exact_text
           .toLowerCase()
           .split(/\s+/)
           .filter((word) => word.length > 3);
@@ -511,7 +511,7 @@ var VoiceroActionHandler = {
         );
 
         // Get all text-containing elements
-        const allElements = document.querySelectorAll(
+        var allElements = document.querySelectorAll(
           "p, div, span, h1, h2, h3, h4, h5, h6, li, td, a, button",
         );
 
@@ -522,7 +522,7 @@ var VoiceroActionHandler = {
         allElements.forEach((el) => {
           if (!el.textContent) return;
 
-          const elText = el.textContent.toLowerCase();
+          var elText = el.textContent.toLowerCase();
           let matchCount = 0;
 
           // Count how many search words are in this element
@@ -817,9 +817,9 @@ var VoiceroActionHandler = {
         console.log(`VoiceroActionHandler: Found exact element to highlight`);
 
         // Highlight only the specific text, not the whole element
-        const originalText = exactElement.innerHTML;
-        const textToHighlight = this.escapeRegExp(exact_text);
-        const regex = new RegExp(`(${textToHighlight})`, "gi");
+        var originalText = exactElement.innerHTML;
+        var textToHighlight = this.escapeRegExp(exact_text);
+        var regex = new RegExp(`(${textToHighlight})`, "gi");
 
         // Replace the text with a highlighted version
         exactElement.innerHTML = originalText.replace(
@@ -834,7 +834,7 @@ var VoiceroActionHandler = {
         );
 
         // Try a more aggressive search using substring matching
-        const searchWords = exact_text
+        var searchWords = exact_text
           .toLowerCase()
           .split(/\s+/)
           .filter((word) => word.length > 3);
@@ -844,7 +844,7 @@ var VoiceroActionHandler = {
         );
 
         // Get all text-containing elements
-        const allElements = document.querySelectorAll(
+        var allElements = document.querySelectorAll(
           "p, span, div, li, td, h1, h2, h3, h4, h5, h6, a, button, label",
         );
 
@@ -855,7 +855,7 @@ var VoiceroActionHandler = {
         allElements.forEach((el) => {
           if (!el.textContent) return;
 
-          const elText = el.textContent.toLowerCase();
+          var elText = el.textContent.toLowerCase();
           let matchCount = 0;
 
           // Count how many search words are in this element
@@ -877,14 +877,14 @@ var VoiceroActionHandler = {
           );
 
           // Instead of highlighting the whole element, highlight just the matching words
-          const originalText = bestMatch.innerHTML;
-          const lowerText = originalText.toLowerCase();
+          var originalText = bestMatch.innerHTML;
+          var lowerText = originalText.toLowerCase();
           let newHtml = originalText;
 
           // Highlight each matching word individually
           searchWords.forEach((word) => {
             if (lowerText.includes(word)) {
-              const regex = new RegExp(
+              var regex = new RegExp(
                 `(\\b${this.escapeRegExp(word)}\\b)`,
                 "gi",
               );
@@ -1004,8 +1004,8 @@ var VoiceroActionHandler = {
             );
 
             // Last resort: Try to find any element containing any part of the text
-            const words = exact_text.toLowerCase().split(/\s+/);
-            const significantWords = words.filter((word) => word.length > 3);
+            var words = exact_text.toLowerCase().split(/\s+/);
+            var significantWords = words.filter((word) => word.length > 3);
 
             if (significantWords.length > 0) {
               console.log(
@@ -1013,7 +1013,7 @@ var VoiceroActionHandler = {
               );
 
               // Try each significant word
-              for (const word of significantWords) {
+              for (var word of significantWords) {
                 let found = false;
 
                 elements.forEach((el) => {
@@ -1027,8 +1027,8 @@ var VoiceroActionHandler = {
                     );
 
                     // Highlight just the matching word, not the whole element
-                    const originalText = el.innerHTML;
-                    const regex = new RegExp(
+                    var originalText = el.innerHTML;
+                    var regex = new RegExp(
                       `(\\b${this.escapeRegExp(word)}\\b)`,
                       "gi",
                     );
@@ -1049,25 +1049,25 @@ var VoiceroActionHandler = {
 
             // If still nothing found, just highlight the first paragraph as a fallback
             if (!firstHighlightedElement) {
-              const paragraphs = document.querySelectorAll("p");
+              var paragraphs = document.querySelectorAll("p");
               if (paragraphs.length > 0) {
                 console.log(
                   "VoiceroActionHandler: No matching text found, highlighting any relevant word in first paragraph as fallback",
                 );
 
-                const paragraph = paragraphs[0];
-                const originalText = paragraph.innerHTML;
+                var paragraph = paragraphs[0];
+                var originalText = paragraph.innerHTML;
                 let newHtml = originalText;
                 let wordHighlighted = false;
 
                 // Try to highlight at least one word from the search text
-                const allWords = exact_text
+                var allWords = exact_text
                   .toLowerCase()
                   .split(/\s+/)
                   .filter((w) => w.length > 2);
-                for (const word of allWords) {
+                for (var word of allWords) {
                   if (paragraph.textContent.toLowerCase().includes(word)) {
-                    const regex = new RegExp(
+                    var regex = new RegExp(
                       `(\\b${this.escapeRegExp(word)}\\b)`,
                       "gi",
                     );
@@ -1082,12 +1082,12 @@ var VoiceroActionHandler = {
 
                 // If no word was highlighted, just highlight the first few words
                 if (!wordHighlighted) {
-                  const firstFewWords = paragraph.textContent
+                  var firstFewWords = paragraph.textContent
                     .split(/\s+/)
                     .slice(0, 3)
                     .join(" ");
                   if (firstFewWords) {
-                    const regex = new RegExp(
+                    var regex = new RegExp(
                       `(${this.escapeRegExp(firstFewWords)})`,
                       "i",
                     );
@@ -1948,7 +1948,7 @@ To make changes, please specify what you'd like to update.
         }
 
         // Find the messages container and force a re-render if possible
-        const messagesContainer = document
+        var messagesContainer = document
           .querySelector("#voicero-chat-container")
           ?.shadowRoot?.querySelector(".messages-container");
         if (messagesContainer) {
@@ -2042,7 +2042,7 @@ To make changes, please specify what you'd like to update.
           }
 
           // Find the messages container and force a re-render if possible
-          const messagesContainer = document
+          var messagesContainer = document
             .querySelector("#voicero-chat-container")
             ?.shadowRoot?.querySelector(".messages-container");
           if (messagesContainer) {
@@ -2078,7 +2078,7 @@ To make changes, please specify what you'd like to update.
           }
 
           // Find the messages container and force a re-render if possible
-          const messagesContainer = document
+          var messagesContainer = document
             .querySelector("#voicero-chat-container")
             ?.shadowRoot?.querySelector(".messages-container");
           if (messagesContainer) {
@@ -2112,7 +2112,7 @@ To make changes, please specify what you'd like to update.
       }
 
       // Find the messages container and force a re-render if possible
-      const messagesContainer = document
+      var messagesContainer = document
         .querySelector("#voicero-chat-container")
         ?.shadowRoot?.querySelector(".messages-container");
       if (messagesContainer) {
@@ -2402,7 +2402,7 @@ To make changes, please specify what you'd like to update.
       // Display the message using VoiceroText - ensure this replaces any existing message
       if (window.VoiceroText?.addMessage) {
         // Remove any previous "loading" or temporary message
-        const messagesContainer = document
+        var messagesContainer = document
           .querySelector("#voicero-chat-container")
           ?.shadowRoot?.querySelector(".messages-container");
         if (messagesContainer) {
@@ -2440,7 +2440,7 @@ To make changes, please specify what you'd like to update.
       }
 
       // Find the messages container and force a re-render if possible
-      const messagesContainer = document
+      var messagesContainer = document
         .querySelector("#voicero-chat-container")
         ?.shadowRoot?.querySelector(".messages-container");
 

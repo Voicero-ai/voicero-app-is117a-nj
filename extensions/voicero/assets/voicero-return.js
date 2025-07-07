@@ -962,7 +962,7 @@ Would you like me to help you initiate a return request once you receive your or
       }
 
       // Find the messages container and force a re-render if possible
-      const messagesContainer = document
+      var messagesContainer = document
         .querySelector("#voicero-chat-container")
         ?.shadowRoot?.querySelector(".messages-container");
       if (messagesContainer) {

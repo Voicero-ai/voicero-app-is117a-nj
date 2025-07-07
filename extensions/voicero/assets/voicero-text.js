@@ -183,7 +183,7 @@
       }
 
       // Remove any existing chat container first
-      const existingChat = document.getElementById("voicero-chat-container");
+      var existingChat = document.getElementById("voicero-chat-container");
       if (existingChat) {
         console.log("VoiceroText: Removing existing chat container");
         existingChat.remove();
@@ -197,7 +197,7 @@
       this.loadExistingMessages();
 
       // Make sure the chat container is visible
-      const chatContainer = document.getElementById("voicero-chat-container");
+      var chatContainer = document.getElementById("voicero-chat-container");
       if (chatContainer) {
         console.log("VoiceroText: Ensuring chat container is visible");
         chatContainer.style.display = "flex";
@@ -233,11 +233,11 @@
         window.VoiceroCore.session.threads &&
         window.VoiceroCore.session.threads.length > 0
       ) {
-        const threads = window.VoiceroCore.session.threads;
+        var threads = window.VoiceroCore.session.threads;
         console.log(`VoiceroText: Found ${threads.length} threads in session`);
 
         // Get the most recent thread
-        const latestThread = threads[0];
+        var latestThread = threads[0];
 
         if (
           latestThread &&
@@ -245,7 +245,7 @@
           latestThread.messages.length > 0
         ) {
           // Sort messages by createdAt timestamp
-          const messages = [...latestThread.messages].sort((a, b) => {
+          var messages = [...latestThread.messages].sort((a, b) => {
             return new Date(a.createdAt) - new Date(b.createdAt);
           });
 
@@ -258,10 +258,10 @@
 
           // Simple loop to add messages
           for (let i = 0; i < messages.length; i++) {
-            const message = messages[i];
+            var message = messages[i];
             if (message && message.role && message.content) {
               // Map role to our message type
-              const type = message.role === "user" ? "user" : "ai";
+              var type = message.role === "user" ? "user" : "ai";
 
               // Just extract the text for display
               let displayText = message.content;
@@ -272,7 +272,7 @@
                 displayText.includes('"answer"')
               ) {
                 try {
-                  const parsed = JSON.parse(displayText);
+                  var parsed = JSON.parse(displayText);
                   if (parsed && parsed.answer) {
                     displayText = parsed.answer;
                     console.log("Extracted answer:", displayText);
@@ -293,12 +293,13 @@
               });
 
               // Force scroll to bottom after each message is added
-              const chatContainer = document.getElementById(
+              var chatContainer = document.getElementById(
                 "voicero-chat-container",
               );
               if (chatContainer && chatContainer.shadowRoot) {
-                const messagesContainer =
-                  chatContainer.shadowRoot.querySelector(".messages-container");
+                var messagesContainer = chatContainer.shadowRoot.querySelector(
+                  ".messages-container",
+                );
                 if (messagesContainer) {
                   window.VoiceroText.scrollToBottom(messagesContainer);
                 }
@@ -311,11 +312,9 @@
           }
 
           // Find the messages container and render messages
-          const chatContainer = document.getElementById(
-            "voicero-chat-container",
-          );
+          var chatContainer = document.getElementById("voicero-chat-container");
           if (chatContainer && chatContainer.shadowRoot) {
-            const messagesContainer = chatContainer.shadowRoot.querySelector(
+            var messagesContainer = chatContainer.shadowRoot.querySelector(
               ".messages-container",
             );
             if (messagesContainer) {
@@ -349,7 +348,7 @@
       console.log("VoiceroText: Creating chat interface");
 
       // First remove any existing welcome container
-      const existingWelcome = document.getElementById(
+      var existingWelcome = document.getElementById(
         "voicero-welcome-container",
       );
       if (existingWelcome) {
@@ -358,7 +357,7 @@
       }
 
       // Also remove any existing chat container to prevent duplicates
-      const existingChat = document.getElementById("voicero-chat-container");
+      var existingChat = document.getElementById("voicero-chat-container");
       if (existingChat) {
         console.log("VoiceroText: Removing existing chat container");
         existingChat.remove();
@@ -405,10 +404,10 @@
       let chatShadow = chatContainer.attachShadow({ mode: "open" });
 
       // Add basic styles to the shadow root
-      const styleEl = document.createElement("style");
+      var styleEl = document.createElement("style");
 
       // Get the current website color
-      const themeColor = this.websiteColor || "#882be6";
+      var themeColor = this.websiteColor || "#882be6";
       console.log("VoiceroText: Using color for styles:", themeColor);
 
       // Create RGB values from hex color for the animation
@@ -631,15 +630,15 @@
       chatShadow.appendChild(styleEl);
 
       // Create header
-      const header = document.createElement("div");
+      var header = document.createElement("div");
       header.className = "chat-header";
 
       // Header left side (avatar and name)
-      const headerLeft = document.createElement("div");
+      var headerLeft = document.createElement("div");
       headerLeft.className = "header-left";
 
       // Avatar
-      const avatar = document.createElement("div");
+      var avatar = document.createElement("div");
       avatar.className = "avatar";
 
       // Try to build the correct path for Shopify theme extension assets
@@ -653,20 +652,20 @@
         }
       }
 
-      const avatarImg = document.createElement("img");
+      var avatarImg = document.createElement("img");
       avatarImg.src = extensionUrl ? extensionUrl + "icon.png" : "./icon.png";
       avatarImg.alt = "Support agent";
       avatar.appendChild(avatarImg);
 
       // Name and role
-      const nameContainer = document.createElement("div");
+      var nameContainer = document.createElement("div");
       nameContainer.className = "name-container";
 
-      const name = document.createElement("div");
+      var name = document.createElement("div");
       name.className = "name";
       name.textContent = "Voicero";
 
-      const role = document.createElement("div");
+      var role = document.createElement("div");
       role.className = "role";
       role.textContent = "AI Sales Rep";
 
@@ -677,7 +676,7 @@
       headerLeft.appendChild(nameContainer);
 
       // Header right side (close button)
-      const headerRight = document.createElement("div");
+      var headerRight = document.createElement("div");
       headerRight.className = "header-right"; // Added class for styling
 
       // Add close button
@@ -701,7 +700,7 @@
           })
           .finally(() => {
             // Remove the chat container regardless of API success/failure
-            const chatContainer = document.getElementById(
+            var chatContainer = document.getElementById(
               "voicero-chat-container",
             );
             if (chatContainer) {
@@ -721,7 +720,7 @@
       chatShadow.appendChild(header);
 
       // Messages container
-      const messagesContainer = document.createElement("div");
+      var messagesContainer = document.createElement("div");
       messagesContainer.className = "messages-container";
       chatShadow.appendChild(messagesContainer);
 
@@ -729,30 +728,30 @@
       this.renderMessages(messagesContainer);
 
       // Input container
-      const inputContainer = document.createElement("div");
+      var inputContainer = document.createElement("div");
       inputContainer.className = "input-container";
 
-      const inputWrapper = document.createElement("div");
+      var inputWrapper = document.createElement("div");
       inputWrapper.className = "input-wrapper";
 
-      const input = document.createElement("input");
+      var input = document.createElement("input");
       input.className = "message-input";
       input.type = "text";
       input.placeholder = "Type your message...";
 
-      const sendButton = document.createElement("div");
+      var sendButton = document.createElement("div");
       sendButton.className = "send-button";
 
       // Use the current website color for the send button
-      const buttonColor = this.websiteColor || "#882be6";
+      var buttonColor = this.websiteColor || "#882be6";
 
       sendButton.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${buttonColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"></path>
       </svg>`;
 
       // Send message function
-      const sendMessage = () => {
-        const text = input.value.trim();
+      var sendMessage = () => {
+        var text = input.value.trim();
         if (text) {
           // Add user message to UI
           this.addMessage(text, "user");
@@ -845,7 +844,7 @@
       ) {
         console.log("VoiceroText: Processing JSON string message:", text);
         try {
-          const jsonObj = JSON.parse(text);
+          var jsonObj = JSON.parse(text);
           // Extract the answer field if it exists
           if (jsonObj.answer) {
             messageText = jsonObj.answer;
@@ -874,8 +873,8 @@
       }
 
       // Create timestamp for the message
-      const now = new Date();
-      const timestamp = now.toISOString();
+      var now = new Date();
+      var timestamp = now.toISOString();
 
       // Add to messages array
       this.messages.push({
@@ -1032,19 +1031,19 @@
         );
 
         // Create message element with class based on type
-        const messageEl = document.createElement("div");
+        var messageEl = document.createElement("div");
         messageEl.className = `message ${message.type}-message`;
 
         // Handle AI messages with markdown/HTML formatting
         if (message.type === "ai") {
           // Process message text to handle markdown
-          const formattedText = this.formatMarkdown(message.text);
+          var formattedText = this.formatMarkdown(message.text);
 
           // Set innerHTML instead of textContent to preserve formatting
           messageEl.innerHTML = formattedText;
 
           // Add links to all anchor tags
-          const links = messageEl.querySelectorAll("a");
+          var links = messageEl.querySelectorAll("a");
           links.forEach((link) => {
             if (!link.getAttribute("target")) {
               link.setAttribute("target", "_blank");
@@ -1091,7 +1090,7 @@
       }
 
       // Create and show typing indicator directly in the shadow DOM
-      const typingWrapper = document.createElement("div");
+      var typingWrapper = document.createElement("div");
       typingWrapper.className = "ai-message";
       typingWrapper.style.cssText = `
         align-self: flex-start;
@@ -1102,7 +1101,7 @@
         border-radius: 50px;
       `;
 
-      const typingIndicator = document.createElement("div");
+      var typingIndicator = document.createElement("div");
       typingIndicator.id = "voicero-typing-indicator";
       typingIndicator.style.cssText = `
         background-color: transparent;
@@ -1116,7 +1115,7 @@
 
       // Create the three bouncing dots
       for (let i = 0; i < 3; i++) {
-        const dot = document.createElement("span");
+        var dot = document.createElement("span");
         dot.className = "typing-dot";
         dot.style.cssText = `
           width: 8px;
@@ -1131,7 +1130,7 @@
       }
 
       // Add the animation keyframes to the shadow DOM
-      const styleEl = document.createElement("style");
+      var styleEl = document.createElement("style");
       styleEl.textContent = `
         @keyframes typingBounce {
           0%, 60%, 100% { transform: translateY(0); }
@@ -1156,7 +1155,7 @@
       }
 
       // Prepare request data - following the exact structure expected by the API
-      const requestData = {
+      var requestData = {
         message: text,
         type: "text",
         interactionType: window.voiceroInteractionType || "noneSpecified",
@@ -1178,9 +1177,9 @@
 
         // Get access key if available (from auth headers)
         if (window.voiceroConfig.getAuthHeaders) {
-          const authHeaders = window.voiceroConfig.getAuthHeaders();
+          var authHeaders = window.voiceroConfig.getAuthHeaders();
           if (authHeaders && authHeaders.Authorization) {
-            const authHeader = authHeaders.Authorization;
+            var authHeader = authHeaders.Authorization;
             if (authHeader.startsWith("Bearer ")) {
               accessKey = authHeader.substring(7); // Remove 'Bearer ' prefix
               console.log("VoiceroText: Found access key in auth headers");
@@ -1227,7 +1226,7 @@
           window.VoiceroCore.session.threads &&
           window.VoiceroCore.session.threads.length > 0
         ) {
-          const firstThread = window.VoiceroCore.session.threads[0];
+          var firstThread = window.VoiceroCore.session.threads[0];
           threadId = firstThread.id || firstThread.threadId;
           console.log(
             "VoiceroText: Found thread ID in session.threads:",
@@ -1236,7 +1235,7 @@
         }
         // Check localStorage
         else {
-          const storedThreadId = localStorage.getItem("voicero_thread_id");
+          var storedThreadId = localStorage.getItem("voicero_thread_id");
           if (storedThreadId) {
             threadId = storedThreadId;
             console.log(
@@ -1255,7 +1254,7 @@
       // Add page data if available - ensure it matches the expected structure
       if (window.VoiceroCore && window.VoiceroCore.pageData) {
         // Make sure pageData has the expected structure
-        const pageData = {
+        var pageData = {
           url: window.location.href,
           full_text:
             window.VoiceroCore.pageData.fullText || this.collectFullPageText(),
@@ -1272,7 +1271,7 @@
         );
       } else {
         // Create more comprehensive page data
-        const fullText = this.collectFullPageText();
+        var fullText = this.collectFullPageText();
         requestData.pageData = {
           url: window.location.href,
           full_text: fullText,
@@ -1290,13 +1289,13 @@
       // Add past context from messages - format as expected by the API
       if (this.messages && this.messages.length > 0) {
         // Filter out the current message being sent
-        const validMessages = this.messages.filter(
+        var validMessages = this.messages.filter(
           (msg) => !(msg.type === "user" && msg.text === text), // Filter out the current message
         );
 
         // Only add past context if there are valid previous messages
         if (validMessages.length > 0) {
-          const pastContext = validMessages.map((msg) => {
+          var pastContext = validMessages.map((msg) => {
             // For user messages
             if (msg.type === "user") {
               return {
@@ -1339,7 +1338,7 @@
       }
 
       // Get auth headers
-      const headers = {
+      var headers = {
         "Content-Type": "application/json",
       };
 
@@ -1414,7 +1413,7 @@
         }
 
         // Add error message
-        const errorMessage =
+        var errorMessage =
           "Sorry, I couldn't connect to the server. Please try again later.";
         this.addMessage(errorMessage, "ai");
         this.renderMessages(messagesContainer);
@@ -1434,9 +1433,9 @@
         console.log("VoiceroCore.thread:", window.VoiceroCore.thread);
 
         // Check localStorage
-        const sessionId = localStorage.getItem("voicero_session_id");
-        const sessionData = localStorage.getItem("voicero_session");
-        const threadId = localStorage.getItem("voicero_thread_id");
+        var sessionId = localStorage.getItem("voicero_session_id");
+        var sessionData = localStorage.getItem("voicero_session");
+        var threadId = localStorage.getItem("voicero_thread_id");
 
         console.log("localStorage session ID:", sessionId);
         console.log("localStorage session data:", sessionData);
@@ -1464,7 +1463,7 @@
 
       try {
         // Get all visible text elements
-        const textElements = document.querySelectorAll(
+        var textElements = document.querySelectorAll(
           "p, h1, h2, h3, h4, h5, h6, span, div, li, td, th, a, button, label",
         );
 
@@ -1472,14 +1471,14 @@
         let textContent = [];
 
         // Function to check if an element is visible
-        const isVisible = (element) => {
+        var isVisible = (element) => {
           if (
             !element.offsetParent &&
             element.offsetHeight === 0 &&
             element.offsetWidth === 0
           )
             return false;
-          const style = window.getComputedStyle(element);
+          var style = window.getComputedStyle(element);
           return style.display !== "none" && style.visibility !== "hidden";
         };
 
@@ -1496,7 +1495,7 @@
           let directText = "";
           for (let node of element.childNodes) {
             if (node.nodeType === Node.TEXT_NODE) {
-              const text = node.textContent.trim();
+              var text = node.textContent.trim();
               if (text) directText += text + " ";
             }
           }
@@ -1508,7 +1507,7 @@
         });
 
         // Join all text with newlines to preserve structure
-        const fullText = textContent.join("\n");
+        var fullText = textContent.join("\n");
         console.log(
           `VoiceroText: Collected ${fullText.length} characters of text from ${textContent.length} elements`,
         );
@@ -1633,7 +1632,7 @@
           // Handle action with VoiceroActionHandler if available
           if (window.VoiceroActionHandler && action !== "none" && action) {
             // Get the last message we just added
-            const lastMessage = this.messages[this.messages.length - 1];
+            var lastMessage = this.messages[this.messages.length - 1];
 
             // Skip action processing for historical messages
             if (lastMessage && lastMessage.isHistorical) {
@@ -1664,7 +1663,7 @@
       console.log("VoiceroText: Clearing session");
 
       // Get session ID from VoiceroCore
-      const sessionId =
+      var sessionId =
         window.VoiceroCore?.sessionId ||
         localStorage.getItem("voicero_session_id");
 
@@ -1674,11 +1673,11 @@
       }
 
       // Try local API endpoint first
-      const localApiUrl = "http://localhost:3000/api/session/clear";
-      const prodApiUrl = "https://www.voicero.ai/api/session/clear";
+      var localApiUrl = "http://localhost:3000/api/session/clear";
+      var prodApiUrl = "https://www.voicero.ai/api/session/clear";
 
       // Get auth headers if available
-      const headers = {
+      var headers = {
         "Content-Type": "application/json",
         Accept: "application/json",
         ...(window.voiceroConfig?.getAuthHeaders
@@ -1707,8 +1706,8 @@
             data.session.threads &&
             data.session.threads.length > 0
           ) {
-            const newThread = data.session.threads[0];
-            const newThreadId = newThread.id || newThread.threadId;
+            var newThread = data.session.threads[0];
+            var newThreadId = newThread.id || newThread.threadId;
 
             if (newThreadId) {
               console.log("VoiceroText: Updating thread ID to:", newThreadId);
@@ -1767,8 +1766,8 @@
                 data.session.threads &&
                 data.session.threads.length > 0
               ) {
-                const newThread = data.session.threads[0];
-                const newThreadId = newThread.id || newThread.threadId;
+                var newThread = data.session.threads[0];
+                var newThreadId = newThread.id || newThread.threadId;
 
                 if (newThreadId) {
                   console.log(
@@ -1863,7 +1862,7 @@
       window.VoiceroText.addMessage(text, "user");
 
       // Re-render messages
-      const container = document
+      var container = document
         .querySelector("#voicero-chat-container")
         .shadowRoot.querySelector(".messages-container");
       if (container) {
@@ -1873,7 +1872,7 @@
         window.VoiceroText.scrollToBottom(container);
 
         // Get the send button for animation
-        const sendButton = document
+        var sendButton = document
           .querySelector("#voicero-chat-container")
           .shadowRoot.querySelector(".send-button");
 

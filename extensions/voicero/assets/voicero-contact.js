@@ -27,7 +27,7 @@ var VoiceroContact = {
     // Otherwise use text interface - check for the new container structure
     else {
       // Find the chat container in the DOM
-      const chatContainer = document.getElementById("voicero-chat-container");
+      var chatContainer = document.getElementById("voicero-chat-container");
 
       if (chatContainer && chatContainer.shadowRoot) {
         // Get the messages container from the shadow DOM
@@ -45,7 +45,7 @@ var VoiceroContact = {
       );
 
       // Try one more fallback approach
-      const chatContainer = document.getElementById("voicero-chat-container");
+      var chatContainer = document.getElementById("voicero-chat-container");
       if (chatContainer && chatContainer.shadowRoot) {
         // Create the contact form directly in the chat container
         this.createContactFormInChat(chatContainer.shadowRoot);
@@ -104,7 +104,7 @@ var VoiceroContact = {
     // Apply basic styling directly to elements
     try {
       // Style the form container
-      const formContainer = messageDiv.querySelector(".contact-form-container");
+      var formContainer = messageDiv.querySelector(".contact-form-container");
       if (formContainer) {
         formContainer.style.backgroundColor = "#ffffff";
         formContainer.style.padding = "10px";
@@ -114,26 +114,26 @@ var VoiceroContact = {
       }
 
       // Style the heading and paragraph
-      const heading = formContainer.querySelector("h3");
+      var heading = formContainer.querySelector("h3");
       if (heading) {
         heading.style.fontSize = "15px";
         heading.style.margin = "0 0 5px 0";
       }
 
-      const paragraph = formContainer.querySelector("p");
+      var paragraph = formContainer.querySelector("p");
       if (paragraph) {
         paragraph.style.fontSize = "12px";
         paragraph.style.margin = "0 0 8px 0";
       }
 
       // Style form groups
-      const formGroups = formContainer.querySelectorAll(".form-group");
+      var formGroups = formContainer.querySelectorAll(".form-group");
       formGroups.forEach((group) => {
         group.style.marginBottom = "8px";
       });
 
       // Style labels
-      const labels = formContainer.querySelectorAll("label");
+      var labels = formContainer.querySelectorAll("label");
       labels.forEach((label) => {
         label.style.fontSize = "12px";
         label.style.display = "block";
@@ -141,7 +141,7 @@ var VoiceroContact = {
       });
 
       // Style the submit button
-      const submitButton = messageDiv.querySelector("#contact-submit");
+      var submitButton = messageDiv.querySelector("#contact-submit");
       if (submitButton) {
         submitButton.style.backgroundColor = mainColor;
         submitButton.style.color = "white";
@@ -153,7 +153,7 @@ var VoiceroContact = {
       }
 
       // Style the cancel button
-      const cancelButton = messageDiv.querySelector("#contact-cancel");
+      var cancelButton = messageDiv.querySelector("#contact-cancel");
       if (cancelButton) {
         cancelButton.style.backgroundColor = "#f2f2f2";
         cancelButton.style.color = "#555";
@@ -165,7 +165,7 @@ var VoiceroContact = {
       }
 
       // Style form actions
-      const formActions = messageDiv.querySelector(".form-actions");
+      var formActions = messageDiv.querySelector(".form-actions");
       if (formActions) {
         formActions.style.display = "flex";
         formActions.style.justifyContent = "space-between";
@@ -173,7 +173,7 @@ var VoiceroContact = {
       }
 
       // Style inputs
-      const inputs = messageDiv.querySelectorAll("input, textarea");
+      var inputs = messageDiv.querySelectorAll("input, textarea");
       inputs.forEach((input) => {
         input.style.width = "100%";
         input.style.padding = "6px";
@@ -184,7 +184,7 @@ var VoiceroContact = {
       });
 
       // Make textarea smaller
-      const textarea = messageDiv.querySelector("textarea");
+      var textarea = messageDiv.querySelector("textarea");
       if (textarea) {
         textarea.rows = 2;
       }
@@ -320,7 +320,7 @@ var VoiceroContact = {
       }
 
       // Find the messages container and force a re-render if possible
-      const messagesContainer = document
+      var messagesContainer = document
         .querySelector("#voicero-chat-container")
         ?.shadowRoot?.querySelector(".messages-container");
       if (messagesContainer) {
@@ -513,7 +513,7 @@ var VoiceroContact = {
 
     // Apply styles directly to the container element first
     if (formContainer) {
-      const contactFormMessage = formContainer.querySelector(
+      var contactFormMessage = formContainer.querySelector(
         ".contact-form-message",
       );
       if (contactFormMessage) {
@@ -524,7 +524,7 @@ var VoiceroContact = {
         `;
       }
 
-      const contactFormContainer = formContainer.querySelector(
+      var contactFormContainer = formContainer.querySelector(
         ".contact-form-container",
       );
       if (contactFormContainer) {
@@ -553,7 +553,7 @@ var VoiceroContact = {
     // For text interface with shadow DOM
     else {
       // Try to find the chat container and its shadow root
-      const chatContainer = document.getElementById("voicero-chat-container");
+      var chatContainer = document.getElementById("voicero-chat-container");
       if (chatContainer && chatContainer.shadowRoot) {
         // Check if style already exists in shadow DOM
         var existingStyle = chatContainer.shadowRoot.getElementById(

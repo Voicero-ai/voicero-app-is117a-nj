@@ -18,7 +18,7 @@
   }
 
   // Helper function to check if there are existing thread messages
-  const checkForThreadMessages = function () {
+  var checkForThreadMessages = function () {
     console.log("VoiceroWelcome: Checking for existing thread messages");
 
     // Check if we're in chat mode - if so, don't show welcome screen
@@ -31,7 +31,7 @@
     }
 
     // Check if chat container already exists
-    const chatContainer = document.getElementById("voicero-chat-container");
+    var chatContainer = document.getElementById("voicero-chat-container");
     if (chatContainer) {
       console.log(
         "VoiceroWelcome: Chat container already exists, skipping welcome screen",
@@ -59,7 +59,7 @@
       window.voiceroInChatMode = true;
 
       // Hide any existing welcome container
-      const welcomeContainer = document.getElementById(
+      var welcomeContainer = document.getElementById(
         "voicero-welcome-container",
       );
       if (welcomeContainer) {
@@ -101,7 +101,7 @@
   };
 
   // Add global CSS for welcome screen
-  const globalWelcomeStyle = document.createElement("style");
+  var globalWelcomeStyle = document.createElement("style");
   globalWelcomeStyle.innerHTML = `
     #voicero-welcome-container {
       z-index: 9999999 !important;
@@ -195,7 +195,7 @@
       window.voiceroWelcomeInProgress = true;
 
       // CRITICAL: First remove any existing welcome container to prevent duplicates
-      const existingWelcome = document.getElementById(
+      var existingWelcome = document.getElementById(
         "voicero-welcome-container",
       );
       if (existingWelcome) {
@@ -235,7 +235,7 @@
       let welcomeShadow = welcomeContainer.attachShadow({ mode: "open" });
 
       // Add basic styles to the shadow root
-      const styleEl = document.createElement("style");
+      var styleEl = document.createElement("style");
       styleEl.textContent = `
         :host {
           display: block;
@@ -258,7 +258,7 @@
 
       try {
         // Create a messages container first
-        const messagesDiv = document.createElement("div");
+        var messagesDiv = document.createElement("div");
         messagesDiv.id = "chat-messages";
         welcomeShadow.appendChild(messagesDiv);
 
@@ -404,7 +404,7 @@
         e.preventDefault();
 
         // CRITICAL: Force remove the welcome container immediately
-        const welcomeContainer = document.getElementById(
+        var welcomeContainer = document.getElementById(
           "voicero-welcome-container",
         );
         if (welcomeContainer) {
@@ -419,6 +419,15 @@
 
         // Set flag to indicate welcome is closed
         self.isShowingWelcomeScreen = false;
+
+        // CRITICAL: Set flags to prevent welcome screen from reappearing
+        window.voiceroInChatMode = true;
+        window.voiceroWelcomeInProgress = true;
+
+        // Clear any welcome check intervals
+        if (window.voiceroWelcomeCheckInterval) {
+          clearInterval(window.voiceroWelcomeCheckInterval);
+        }
       });
 
       welcomeScreen.appendChild(closeButton);
@@ -547,8 +556,8 @@
       welcomeScreen.appendChild(messageContainer);
 
       // Ensure the welcome screen doesn't exceed viewport height
-      const viewportHeight = window.innerHeight;
-      const maxHeight = Math.min(400, viewportHeight * 0.8); // 80% of viewport or 400px, whichever is smaller
+      var viewportHeight = window.innerHeight;
+      var maxHeight = Math.min(400, viewportHeight * 0.8); // 80% of viewport or 400px, whichever is smaller
       welcomeScreen.style.height = maxHeight + "px";
 
       // Create buttons container - position right above input box
@@ -618,7 +627,7 @@
           }
 
           // SIMPLIFIED: Remove the welcome container
-          const welcomeContainer = document.getElementById(
+          var welcomeContainer = document.getElementById(
             "voicero-welcome-container",
           );
           if (welcomeContainer) {
@@ -705,7 +714,7 @@
 
       // Add click handler for send icon
       sendIcon.addEventListener("click", () => {
-        const text = askInput.value.trim();
+        var text = askInput.value.trim();
         if (text) {
           console.log("Send icon clicked with text: " + text);
           this.handleUserInput(text);
@@ -725,7 +734,7 @@
       // Add event listener for Enter key
       askInput.addEventListener("keydown", (e) => {
         if (e.key === "Enter") {
-          const text = askInput.value.trim();
+          var text = askInput.value.trim();
           if (text) {
             console.log("Enter key pressed with text: " + text);
             this.handleUserInput(text);
@@ -748,7 +757,7 @@
       window.voiceroInteractionType = "noneSpecified";
 
       // SIMPLIFIED: Remove welcome container
-      const welcomeContainer = document.getElementById(
+      var welcomeContainer = document.getElementById(
         "voicero-welcome-container",
       );
       if (welcomeContainer) {
@@ -786,10 +795,8 @@
 
       // Force the core button to go behind by updating its z-index
       setTimeout(() => {
-        const buttonContainer = document.getElementById(
-          "voice-toggle-container",
-        );
-        const mainButton = document.getElementById("chat-website-button");
+        var buttonContainer = document.getElementById("voice-toggle-container");
+        var mainButton = document.getElementById("chat-website-button");
 
         if (buttonContainer) {
           buttonContainer.style.zIndex = "999999";
@@ -811,7 +818,7 @@
       window.voiceroInChatMode = true;
 
       // Hide welcome screen if it exists
-      const welcomeContainer = document.getElementById(
+      var welcomeContainer = document.getElementById(
         "voicero-welcome-container",
       );
       if (welcomeContainer) {
@@ -876,7 +883,7 @@
 
   // Method 4: Set a recurring check to ensure welcome screen appears
   let welcomeCheckAttempts = 0;
-  const welcomeCheckInterval = setInterval(function () {
+  var welcomeCheckInterval = setInterval(function () {
     welcomeCheckAttempts++;
     console.log("VoiceroWelcome: Check attempt " + welcomeCheckAttempts);
 
@@ -891,16 +898,18 @@
     }
 
     // Check if welcome screen exists
-    const welcomeContainer = document.getElementById(
-      "voicero-welcome-container",
-    );
+    var welcomeContainer = document.getElementById("voicero-welcome-container");
 
     // Also check if chat container exists - don't show welcome if chat is open
-    const chatContainer = document.getElementById("voicero-chat-container");
+    var chatContainer = document.getElementById("voicero-chat-container");
 
-    if (chatContainer) {
+    // Don't show welcome if user has explicitly closed it
+    if (
+      window.voiceroInChatMode === true ||
+      window.voiceroWelcomeInProgress === true
+    ) {
       console.log(
-        "VoiceroWelcome: Chat container found, not showing welcome screen",
+        "VoiceroWelcome: User closed welcome screen, not showing it again",
       );
       clearInterval(welcomeCheckInterval);
       return;
