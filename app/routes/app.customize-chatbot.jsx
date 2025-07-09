@@ -410,9 +410,6 @@ export default function CustomizeChatbotPage() {
       ? hexToHsb(chatbotSettings.color)
       : { hue: 147, brightness: 0.5, saturation: 1 },
   );
-  const [removeHighlight, setRemoveHighlight] = useState(
-    chatbotSettings?.removeHighlight || false,
-  );
   const [allowMultiAIReview, setAllowMultiAIReview] = useState(
     chatbotSettings?.allowMultiAIReview || false,
   );
@@ -552,7 +549,6 @@ export default function CustomizeChatbotPage() {
         clickMessage,
         popUpQuestions: formattedQuestions,
         color: colorHex,
-        removeHighlight,
         allowMultiAIReview,
         iconBot,
       };
@@ -657,7 +653,12 @@ export default function CustomizeChatbotPage() {
                       autoComplete="off"
                       helpText="The name displayed to your customers (max 120 characters)"
                       error={botNameError}
+                      disabled={true}
                     />
+                    <Banner tone="info">
+                      Note: Chatbot name is currently disabled and not being
+                      used.
+                    </Banner>
 
                     <TextField
                       label="Welcome Message"
@@ -670,7 +671,12 @@ export default function CustomizeChatbotPage() {
                       autoComplete="off"
                       helpText="First message shown when a customer opens the chat (max 25 words)"
                       error={welcomeMessageError}
+                      disabled={true}
                     />
+                    <Banner tone="info">
+                      Note: Welcome message is currently disabled and not being
+                      used.
+                    </Banner>
 
                     <TextField
                       label="Custom Instructions"
@@ -725,12 +731,17 @@ export default function CustomizeChatbotPage() {
                       options for customers to click.
                     </Text>
 
-                    {/* Popup questions list */}
+                    <Banner tone="info">
+                      Note: Suggested questions are currently disabled and not
+                      being used.
+                    </Banner>
+
+                    {/* Popup questions list - now disabled */}
                     <BlockStack gap="300">
                       {popUpQuestions.length > 0 ? (
                         popUpQuestions.map((question, index) => (
                           <InlineStack key={index} align="space-between">
-                            <Text variant="bodyMd">
+                            <Text variant="bodyMd" color="subdued">
                               {typeof question === "object"
                                 ? question.question || ""
                                 : question}
@@ -740,6 +751,7 @@ export default function CustomizeChatbotPage() {
                               plain
                               onClick={() => handleRemoveQuestion(index)}
                               accessibilityLabel="Remove question"
+                              disabled={true}
                             />
                           </InlineStack>
                         ))
@@ -750,7 +762,7 @@ export default function CustomizeChatbotPage() {
                       )}
                     </BlockStack>
 
-                    {/* Add new question */}
+                    {/* Add new question - now disabled */}
                     <InlineStack gap="200" align="start">
                       <div style={{ flexGrow: 1 }}>
                         <TextField
@@ -760,15 +772,13 @@ export default function CustomizeChatbotPage() {
                           autoComplete="off"
                           labelHidden
                           placeholder="Type a question customers might ask..."
+                          disabled={true}
                         />
                       </div>
                       <div style={{ marginTop: "4px" }}>
                         <Button
                           onClick={handleAddQuestion}
-                          disabled={
-                            newQuestion.trim() === "" ||
-                            popUpQuestions.length >= 3
-                          }
+                          disabled={true}
                           icon={PlusIcon}
                         >
                           Add
@@ -821,13 +831,6 @@ export default function CustomizeChatbotPage() {
                         </Text>
                       </BlockStack>
                     </Box>
-
-                    <Checkbox
-                      label="Remove highlighting from AI answers"
-                      checked={removeHighlight}
-                      onChange={setRemoveHighlight}
-                      helpText="When enabled, color highlighting will be removed from Chooser"
-                    />
 
                     <InlineStack gap="400" blockAlign="center">
                       <Select
