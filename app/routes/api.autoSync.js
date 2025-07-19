@@ -885,7 +885,7 @@ export const loader = async ({ request }) => {
       const isLocalhost = syncUrl.includes('localhost');
       
       try {
-        console.log(`Auto-sync: Attempting to send data to ${isLocalhost ? 'localhost' : 'production'}...`);
+        console.log(`Auto-sync: Attempting to send data to ${isLocalhost ? 'localhost' : 'production'}... (${syncUrl})`);
         
         const autoSyncResponse = await fetch(syncUrl, {
           method: "POST",
@@ -898,18 +898,31 @@ export const loader = async ({ request }) => {
             autoSync: true,
             data: formattedData,
           }),
+          // Add timeout for localhost
+          ...(isLocalhost && { signal: AbortSignal.timeout(5000) }),
         });
 
         if (!autoSyncResponse.ok) {
-          const errorData = await autoSyncResponse.json();
-          throw new Error(
-            `Auto-sync failed! status: ${autoSyncResponse.status}, details: ${
+          let errorMessage = `HTTP ${autoSyncResponse.status}: ${autoSyncResponse.statusText}`;
+          try {
+            const errorData = await autoSyncResponse.json();
+            errorMessage = `Auto-sync failed! status: ${autoSyncResponse.status}, details: ${
               errorData.error || "unknown error"
-            }`,
-          );
+            }`;
+          } catch (parseError) {
+            // If we can't parse JSON (e.g., HTML error page), use the status
+            errorMessage = `Auto-sync failed! status: ${autoSyncResponse.status} - Response was not JSON (likely HTML error page)`;
+          }
+          throw new Error(errorMessage);
         }
 
-        autoSyncResult = await autoSyncResponse.json();
+        // Parse response safely
+        try {
+          autoSyncResult = await autoSyncResponse.json();
+        } catch (parseError) {
+          const responseText = await autoSyncResponse.text();
+          throw new Error(`Auto-sync response parsing failed. Response was: ${responseText.substring(0, 200)}...`);
+        }
         console.log(`Auto-sync completed successfully via ${isLocalhost ? 'localhost' : 'production'}:`, autoSyncResult);
         break; // Exit loop on success
       } catch (error) {
@@ -924,9 +937,14 @@ export const loader = async ({ request }) => {
       }
     }
 
-    // If all attempts failed, throw the last error
+    // If all attempts failed, return graceful failure (don't throw)
     if (!autoSyncResult) {
-      throw lastError || new Error("All auto-sync endpoints failed");
+      console.error("Auto-sync: All endpoints failed, but continuing gracefully");
+      return json({
+        success: false,
+        message: "Auto-sync failed but operation continues",
+        error: lastError?.message || "All auto-sync endpoints failed",
+      });
     }
 
     return json({
@@ -939,13 +957,11 @@ export const loader = async ({ request }) => {
       message: error.message,
       stack: error.stack,
     });
-    return json(
-      {
-        success: false,
-        error: "Auto-sync failed",
-        details: error.message,
-      },
-      { status: 500 },
-    );
+    // Return graceful failure without 500 status to avoid throwing in the UI
+    return json({
+      success: false,
+      error: "Auto-sync failed during data collection",
+      details: error.message,
+    });
   }
 };
