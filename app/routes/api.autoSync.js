@@ -30,7 +30,10 @@ export const loader = async ({ request }) => {
 
     if (!accessKey) {
       console.log("Auto-sync: No access key found, skipping");
-      return json({ success: false, error: "No access key found" }, { status: 400 });
+      return json(
+        { success: false, error: "No access key found" },
+        { status: 400 },
+      );
     }
 
     // ---------------------
@@ -870,9 +873,9 @@ export const loader = async ({ request }) => {
     // Send data to voicero.ai auto-sync endpoint
     // ---------------------
     console.log("Auto-sync: Sending data to voicero.ai...");
-    
+
     const autoSyncResponse = await fetch(
-      `http://localhost:3000/api/shopify/autoSync`,
+      `${urls.apiBaseUrl}/api/shopify/autoSync`,
       {
         method: "POST",
         headers: {

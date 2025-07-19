@@ -7,6 +7,7 @@ const urls = {
   // Voicero API URLs
   voiceroApi: "https://www.voicero.ai",
   newVoiceroApi: "https://www.voicero.ai",
+  apiBaseUrl: "http://localhost:3000",
 };
 
 export default urls;
