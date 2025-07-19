@@ -870,38 +870,64 @@ export const loader = async ({ request }) => {
     };
 
     // ---------------------
-    // Send data to voicero.ai auto-sync endpoint
+    // Send data to auto-sync endpoint (try localhost first, then fallback to production)
     // ---------------------
-    console.log("Auto-sync: Sending data to voicero.ai...");
+    const syncUrls = [
+      `${urls.apiBaseUrl}/api/shopify/autoSync`, // localhost:3000
+      `${urls.voiceroApi}/api/shopify/autoSync`, // www.voicero.ai
+    ];
 
-    const autoSyncResponse = await fetch(
-      `${urls.apiBaseUrl}/api/shopify/autoSync`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          Authorization: `Bearer ${accessKey}`,
-        },
-        body: JSON.stringify({
-          autoSync: true,
-          data: formattedData,
-        }),
-      },
-    );
+    let autoSyncResult = null;
+    let lastError = null;
 
-    if (!autoSyncResponse.ok) {
-      const errorData = await autoSyncResponse.json();
-      console.error("Auto-sync error:", errorData);
-      throw new Error(
-        `Auto-sync failed! status: ${autoSyncResponse.status}, details: ${
-          errorData.error || "unknown error"
-        }`,
-      );
+    for (let i = 0; i < syncUrls.length; i++) {
+      const syncUrl = syncUrls[i];
+      const isLocalhost = syncUrl.includes('localhost');
+      
+      try {
+        console.log(`Auto-sync: Attempting to send data to ${isLocalhost ? 'localhost' : 'production'}...`);
+        
+        const autoSyncResponse = await fetch(syncUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            Authorization: `Bearer ${accessKey}`,
+          },
+          body: JSON.stringify({
+            autoSync: true,
+            data: formattedData,
+          }),
+        });
+
+        if (!autoSyncResponse.ok) {
+          const errorData = await autoSyncResponse.json();
+          throw new Error(
+            `Auto-sync failed! status: ${autoSyncResponse.status}, details: ${
+              errorData.error || "unknown error"
+            }`,
+          );
+        }
+
+        autoSyncResult = await autoSyncResponse.json();
+        console.log(`Auto-sync completed successfully via ${isLocalhost ? 'localhost' : 'production'}:`, autoSyncResult);
+        break; // Exit loop on success
+      } catch (error) {
+        console.error(`Auto-sync error with ${isLocalhost ? 'localhost' : 'production'}:`, error.message);
+        lastError = error;
+        
+        // If this is not the last URL, continue to next
+        if (i < syncUrls.length - 1) {
+          console.log(`Auto-sync: Trying next endpoint...`);
+          continue;
+        }
+      }
     }
 
-    const autoSyncResult = await autoSyncResponse.json();
-    console.log("Auto-sync completed successfully:", autoSyncResult);
+    // If all attempts failed, throw the last error
+    if (!autoSyncResult) {
+      throw lastError || new Error("All auto-sync endpoints failed");
+    }
 
     return json({
       success: true,
