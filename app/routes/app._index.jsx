@@ -817,6 +817,39 @@ export default function Index() {
     }
   }, [accessKey, fetcher.data?.success]);
 
+  // Add useEffect to trigger auto-sync when page loads and connection is established
+  useEffect(() => {
+    if (
+      accessKey && 
+      fetcher.data?.success && 
+      fetcher.data?.websiteData
+    ) {
+      // Trigger auto-sync in the background
+      const performAutoSync = async () => {
+        try {
+          console.log("Auto-sync: Triggering background sync...");
+          const response = await fetch("/api/autoSync");
+          const data = await response.json();
+          
+          if (data.success) {
+            console.log("Auto-sync: Successfully completed");
+          } else {
+            console.log("Auto-sync: Failed -", data.error);
+          }
+        } catch (error) {
+          console.log("Auto-sync: Error -", error.message);
+          // Silent failure - don't show user errors for background sync
+        }
+      };
+
+      // Add a small delay to ensure page is fully loaded
+      const timeoutId = setTimeout(performAutoSync, 2000);
+      
+      // Cleanup timeout on unmount
+      return () => clearTimeout(timeoutId);
+    }
+  }, [accessKey, fetcher.data?.success, fetcher.data?.websiteData]);
+
   // Calculate unread contacts
   const unreadContacts = contactsData.filter((contact) => !contact.read).length;
 
