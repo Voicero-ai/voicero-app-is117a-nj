@@ -36,6 +36,29 @@ export const loader = async ({ request }) => {
       );
     }
 
+    // Get website ID from /api/connect endpoint
+    let websiteId = null;
+    try {
+      const connectionResponse = await fetch(`${urls.voiceroApi}/api/connect`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${accessKey}`,
+        },
+      });
+
+      if (connectionResponse.ok) {
+        const connectionData = await connectionResponse.json();
+        websiteId = connectionData.website?.id;
+        console.log("Auto-sync: Got websiteId:", websiteId);
+      } else {
+        console.log("Auto-sync: Failed to get website ID, continuing without it");
+      }
+    } catch (error) {
+      console.log("Auto-sync: Error getting website ID, continuing without it:", error.message);
+    }
+
     // ---------------------
     // 1) Basic shop info
     // ---------------------
@@ -896,6 +919,7 @@ export const loader = async ({ request }) => {
           },
           body: JSON.stringify({
             autoSync: true,
+            websiteId: websiteId,
             data: formattedData,
           }),
           // Add timeout for localhost
