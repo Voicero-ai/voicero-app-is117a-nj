@@ -76,6 +76,12 @@ export async function loader({ request }) {
 
     const websiteData = await websiteResponse.json();
 
+    // Log the full JSON output from the websites/get endpoint
+    console.log(
+      "Full websites/get response:",
+      JSON.stringify(websiteData, null, 2),
+    );
+
     return json({ success: true, websiteData });
   } catch (error) {
     console.error("API website get error:", error);
