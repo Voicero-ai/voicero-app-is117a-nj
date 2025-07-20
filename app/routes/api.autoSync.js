@@ -215,7 +215,9 @@ export const loader = async ({ request }) => {
           images: (node.images?.edges || []).map(({ node: img }) => ({
             shopifyId: parseInt(extractNumericId(img.id)),
             url: img.originalSrc || "",
+            src: img.originalSrc || "", // Add src field for compatibility
             altText: img.altText || "",
+            alt: img.altText || "", // Add alt field for compatibility
           })),
           variants: (node.variants?.edges || []).map(({ node: v }) => ({
             shopifyId: parseInt(extractNumericId(v.id)),
@@ -231,22 +233,13 @@ export const loader = async ({ request }) => {
           })),
           collections: (node.collections?.edges || []).map(
             ({ node: coll }) => ({
-              shopifyId: parseInt(extractNumericId(coll.id)),
               title: coll.title || "",
               handle: coll.handle || "",
               description: coll.description || "",
-              image: coll.image
-                ? {
-                    url: coll.image.url || "",
-                    altText: coll.image.altText || "",
-                  }
-                : null,
               ruleSet: coll.ruleSet
                 ? {
                     rules: (coll.ruleSet.rules || []).map((rule) => ({
-                      column: rule.column || "",
-                      condition: rule.condition || "",
-                      relation: rule.relation || "",
+                      title: rule.column || "", // Map column to title as expected by interface
                     })),
                   }
                 : null,
@@ -552,7 +545,7 @@ export const loader = async ({ request }) => {
               handle: fullArticle.article.handle || "",
               content: fullArticle.article.body_html || "",
               author: fullArticle.article.author || "",
-              image: fullArticle.article.image?.src || null,
+              image: fullArticle.article.image?.src ? { src: fullArticle.article.image.src } : null,
               isPublished: article.isPublished || false,
               publishedAt: article.publishedAt,
               summary: fullArticle.article.summary || "",
@@ -668,9 +661,7 @@ export const loader = async ({ request }) => {
         ruleSet: node.ruleSet
           ? {
               rules: node.ruleSet.rules.map((rule) => ({
-                column: rule.column,
-                condition: rule.condition,
-                relation: rule.relation,
+                title: rule.column || "", // Map column to title as expected by interface
               })),
             }
           : null,
