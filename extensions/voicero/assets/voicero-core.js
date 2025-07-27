@@ -317,7 +317,7 @@
           };
 
           // Show help bubble after a delay
-          setTimeout(() => this.showHelpBubble(), 2000);
+          setTimeout(() => this.showHelpBubble(), 7000);
 
           // Add click handler for the main button
           var mainButton = document.getElementById("chat-website-button");

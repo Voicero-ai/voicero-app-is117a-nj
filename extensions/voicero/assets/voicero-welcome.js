@@ -195,9 +195,9 @@
         position: fixed !important;
         bottom: 20px !important;
         right: 20px !important;
-        width: 375px;
+        width: 320px;
         max-width: 90vw;
-        max-height: 400px;
+        max-height: 350px;
         z-index: 9999999 !important;
         border-radius: 12px;
         overflow: hidden;
@@ -227,7 +227,7 @@
           height: 100%;
         }
         #chat-messages {
-          height: 400px;
+          height: 350px;
           background: white;
           border-radius: 12px;
           overflow: hidden;
@@ -336,8 +336,8 @@
       welcomeScreen.style.cssText = `
         display: flex;
         flex-direction: column;
-        height: 400px;
-        max-height: 400px;
+        height: 350px;
+        max-height: 350px;
         padding: 0;
         background-color: white;
         border-radius: 12px;
@@ -499,7 +499,7 @@
       // Create welcome message
       var messageContainer = document.createElement("div");
       messageContainer.style.cssText = `
-        padding: 10px 15px 60px;
+        padding: 8px 12px 50px;
         flex-grow: 1;
         overflow-y: auto;
       `;
@@ -509,9 +509,9 @@
         text-align: left;
         color: #333;
         padding: 0;
-        margin-bottom: 10px;
-        font-size: 16px;
-        line-height: 1.5;
+        margin-bottom: 8px;
+        font-size: 14px;
+        line-height: 1.4;
       `;
 
       // Get website name if available
@@ -541,7 +541,7 @@
 
       // Ensure the welcome screen doesn't exceed viewport height
       var viewportHeight = window.innerHeight;
-      var maxHeight = Math.min(400, viewportHeight * 0.8); // 80% of viewport or 400px, whichever is smaller
+      var maxHeight = Math.min(350, viewportHeight * 0.8); // 80% of viewport or 350px, whichever is smaller
       welcomeScreen.style.height = maxHeight + "px";
 
       // Create buttons container - position right above input box
@@ -550,20 +550,19 @@
         display: flex;
         flex-direction: row;
         justify-content: space-between;
-        gap: 8px;
-        margin: 0 15px 10px;
+        gap: 6px;
+        margin: 0 12px 8px;
         padding: 0;
         position: absolute;
-        bottom: 70px;
+        bottom: 60px;
         left: 0;
         right: 0;
-        width: calc(100% - 30px);
+        width: calc(100% - 24px);
       `;
 
       // Add buttons
       var buttons = [
         { text: "Talk to Sales", action: "talk-to-sales" },
-        { text: "Get Started", action: "get-started" },
         { text: "Customer Support", action: "customer-support" },
       ];
 
@@ -575,13 +574,15 @@
           flex: 1;
           background: white;
           border: 1px solid rgba(0, 0, 0, 0.1);
-          border-radius: 16px;
-          padding: 8px 10px;
-          font-size: 13px;
+          border-radius: 14px;
+          padding: 6px 8px;
+          font-size: 12px;
           cursor: pointer;
           text-align: center;
           transition: all 0.2s ease;
           white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
         `;
 
         button.addEventListener("mouseover", function () {
@@ -599,9 +600,6 @@
           switch (buttonData.action) {
             case "talk-to-sales":
               window.voiceroInteractionType = "sales";
-              break;
-            case "get-started":
-              window.voiceroInteractionType = "general";
               break;
             case "customer-support":
               window.voiceroInteractionType = "support";
@@ -643,8 +641,8 @@
       // Add a real input field for "Ask a question"
       var askContainer = document.createElement("div");
       askContainer.style.cssText = `
-        margin: auto 0 20px;
-        padding: 0 15px;
+        margin: auto 0 16px;
+        padding: 0 12px;
         width: 100%;
         box-sizing: border-box;
         position: absolute;
@@ -665,11 +663,11 @@
       askInput.placeholder = "Ask a question";
       askInput.style.cssText = `
         width: 100%;
-        padding: 12px 15px;
-        padding-right: 40px;
+        padding: 10px 12px;
+        padding-right: 36px;
         border: 1px solid rgba(0, 0, 0, 0.1);
         border-radius: 8px;
-        font-size: 14px;
+        font-size: 13px;
         color: #333;
         background: white;
         outline: none;
@@ -738,7 +736,7 @@
       console.log("VoiceroWelcome: Handling user input: " + text);
 
       // Set default type for direct text input
-      window.voiceroInteractionType = "noneSpecified";
+      window.voiceroInteractionType = "general";
 
       // SIMPLIFIED: Remove welcome container
       var welcomeContainer = document.getElementById(

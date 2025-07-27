@@ -383,9 +383,9 @@
         position: fixed !important;
         bottom: 20px !important;
         right: 20px !important;
-        width: 375px;
+        width: 320px;
         max-width: 90vw;
-        height: 500px;
+        height: 420px;
         max-height: 80vh;
         z-index: 9999999 !important;
         border-radius: 12px;
