@@ -333,16 +333,7 @@
                 window.VoiceroCore.appState.hasShownHelpBubble = true;
               }
 
-              // Check if the welcome screen should be reopened
-              if (
-                window.VoiceroWelcome &&
-                window.VoiceroWelcome.reopenWelcomeScreen
-              ) {
-                window.VoiceroWelcome.reopenWelcomeScreen();
-                return;
-              }
-
-              // Just show welcome screen when button is clicked
+              // Open welcome screen when button is clicked (but don't auto-popup)
               if (
                 window.VoiceroWelcome &&
                 window.VoiceroWelcome.createWelcomeContainer

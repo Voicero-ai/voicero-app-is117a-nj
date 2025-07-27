@@ -2016,7 +2016,7 @@ export default function Index() {
                                   ? "/ Pay per query"
                                   : fetcher.data?.websiteData?.plan ===
                                       "Starter"
-                                    ? "/ 1000"
+                                    ? "/ 100"
                                     : `/ ${fetcher.data?.websiteData?.queryLimit || 0}`}
                             </Text>
                           </InlineStack>

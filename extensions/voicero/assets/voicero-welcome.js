@@ -164,35 +164,19 @@
         this.websiteColor = "#882be6";
       }
 
-      // First check if there are existing thread messages
-      if (!checkForThreadMessages()) {
-        // No existing messages, show welcome screen
-        setTimeout(() => {
-          this.createWelcomeContainer();
-        }, 500);
-      }
+      // Never automatically show welcome screen
+      console.log("VoiceroWelcome: Auto-popup disabled, welcome screen will not show automatically");
     },
 
     // Create the welcome container and show the welcome screen
     createWelcomeContainer: function () {
       console.log("VoiceroWelcome: Creating welcome container");
 
-      // Check if we're in chat mode - if so, don't show welcome screen
-      if (window.voiceroInChatMode === true) {
-        console.log("VoiceroWelcome: In chat mode, not showing welcome screen");
-        return;
-      }
-
-      // CRITICAL: Check if welcome creation is already in progress
-      if (window.voiceroWelcomeInProgress) {
-        console.log(
-          "VoiceroWelcome: Welcome creation already in progress, skipping",
-        );
-        return;
-      }
-
-      // Set flag to prevent recursive calls
-      window.voiceroWelcomeInProgress = true;
+      // Reset chat mode flag when manually opening welcome screen
+      window.voiceroInChatMode = false;
+      
+      // Reset the progress flag to allow manual opening
+      window.voiceroWelcomeInProgress = false;
 
       // CRITICAL: First remove any existing welcome container to prevent duplicates
       var existingWelcome = document.getElementById(
@@ -843,94 +827,32 @@
   // CRITICAL: Ensure the welcome screen is always shown on page load
   // Use multiple methods to ensure it loads reliably
 
-  // Method 1: Initialize immediately if document is already loaded
+  // Method 1: Initialize immediately if document is already loaded - but don't auto-show
   if (
     document.readyState === "complete" ||
     document.readyState === "interactive"
   ) {
     console.log(
-      "VoiceroWelcome: Document already loaded, initializing immediately",
+      "VoiceroWelcome: Document already loaded, initializing without auto-show",
     );
-    setTimeout(function () {
-      // First check for existing thread messages
-      if (!checkForThreadMessages()) {
-        window.VoiceroWelcome.init();
-      }
-    }, 1000); // Slightly longer delay to ensure everything is ready
+    // Only initialize, don't auto-show welcome screen
+    window.VoiceroWelcome.initialized = true;
   }
 
-  // Method 2: Add DOMContentLoaded listener as backup
+  // Method 2: Add DOMContentLoaded listener as backup - but don't auto-show
   document.addEventListener("DOMContentLoaded", function () {
-    console.log("VoiceroWelcome: DOMContentLoaded fired, initializing");
-    setTimeout(function () {
-      // First check for existing thread messages
-      if (!checkForThreadMessages()) {
-        window.VoiceroWelcome.init();
-      }
-    }, 1000);
+    console.log("VoiceroWelcome: DOMContentLoaded fired, initializing without auto-show");
+    // Only initialize, don't auto-show welcome screen
+    window.VoiceroWelcome.initialized = true;
   });
 
-  // Method 3: Add window load event as final fallback
+  // Method 3: Add window load event as final fallback - but don't auto-show
   window.addEventListener("load", function () {
-    console.log("VoiceroWelcome: Window load event fired, initializing");
-    setTimeout(function () {
-      // First check for existing thread messages
-      if (!checkForThreadMessages()) {
-        window.VoiceroWelcome.init();
-      }
-    }, 1500);
+    console.log("VoiceroWelcome: Window load event fired, initializing without auto-show");
+    // Only initialize, don't auto-show welcome screen
+    window.VoiceroWelcome.initialized = true;
   });
 
-  // Method 4: Set a recurring check to ensure welcome screen appears
-  let welcomeCheckAttempts = 0;
-  var welcomeCheckInterval = setInterval(function () {
-    welcomeCheckAttempts++;
-    console.log("VoiceroWelcome: Check attempt " + welcomeCheckAttempts);
-
-    // First check for existing thread messages
-    if (checkForThreadMessages()) {
-      // If we found messages, stop checking for welcome
-      console.log(
-        "VoiceroWelcome: Found existing messages, stopping welcome check",
-      );
-      clearInterval(welcomeCheckInterval);
-      return;
-    }
-
-    // Check if welcome screen exists
-    var welcomeContainer = document.getElementById("voicero-welcome-container");
-
-    // Also check if chat container exists - don't show welcome if chat is open
-    var chatContainer = document.getElementById("voicero-chat-container");
-
-    // Don't show welcome if user has explicitly closed it
-    if (
-      window.voiceroInChatMode === true ||
-      window.voiceroWelcomeInProgress === true
-    ) {
-      console.log(
-        "VoiceroWelcome: User closed welcome screen, not showing it again",
-      );
-      clearInterval(welcomeCheckInterval);
-      return;
-    }
-
-    if (
-      !welcomeContainer &&
-      !chatContainer &&
-      window.VoiceroWelcome &&
-      window.VoiceroWelcome.initialized
-    ) {
-      console.log("VoiceroWelcome: Welcome screen not found, creating it");
-      window.VoiceroWelcome.createWelcomeContainer();
-    }
-
-    // Stop checking after 10 attempts (5 seconds)
-    if (welcomeCheckAttempts >= 10) {
-      clearInterval(welcomeCheckInterval);
-    }
-  }, 500);
-
-  // Store interval ID to prevent garbage collection
-  window.voiceroWelcomeCheckInterval = welcomeCheckInterval;
+  // Method 4: Disabled recurring check - welcome screen no longer auto-appears
+  console.log("VoiceroWelcome: Recurring welcome check disabled - no auto-popup");
 })(window, document);

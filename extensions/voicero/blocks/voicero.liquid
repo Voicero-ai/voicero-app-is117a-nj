@@ -254,13 +254,8 @@
           console.log("VoiceroText loaded");
         });
         
-        // Ensure welcome screen is created after modules are loaded
-        if (window.VoiceroWelcome && window.VoiceroWelcome.createWelcomeContainer) {
-          console.log("Ensuring welcome container is created");
-          setTimeout(function() {
-            window.VoiceroWelcome.createWelcomeContainer();
-          }, 200);
-        }
+        // Welcome screen auto-creation disabled - only show core button
+        console.log("VoiceroAI: Welcome auto-creation disabled, core button will be primary interface");
       });
       
       // Load other scripts in parallel after core and welcome are loaded
