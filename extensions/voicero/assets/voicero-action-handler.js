@@ -2187,17 +2187,8 @@ To make changes, please specify what you'd like to update.
     // This handler will redirect to the contact page instead of showing a form
     console.log("VoiceroActionHandler: Contact action detected - redirecting to contact page");
 
-    // Get the current page URL and append /pages/contact
-    var currentUrl = window.location.href;
-    var baseUrl = currentUrl.split('?')[0].split('#')[0]; // Remove query params and hash
-    
-    // Remove trailing slash if present
-    if (baseUrl.endsWith('/')) {
-      baseUrl = baseUrl.slice(0, -1);
-    }
-    
-    // Construct the contact page URL
-    var contactUrl = baseUrl + '/pages/contact';
+    // Simply redirect to /pages/contact from the root
+    var contactUrl = '/pages/contact';
     
     console.log("VoiceroActionHandler: Redirecting to:", contactUrl);
     

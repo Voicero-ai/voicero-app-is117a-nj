@@ -447,6 +447,9 @@
                 this.createSession();
               }
 
+              // Check if we should auto-show chat based on existing messages
+              this.checkForAutoShowChat();
+
               // Signal that core initialization is complete
               this.coreInitialized = true;
               window.dispatchEvent(new CustomEvent("voicero-core-initialized"));
@@ -604,6 +607,19 @@
             }
           }
 
+          // Update website color if provided in session
+          if (this.session && this.session.websiteColor) {
+            this.websiteColor = this.session.websiteColor;
+            this.updateThemeColor(this.websiteColor);
+            console.log("VoiceroCore: Updated website color from session:", this.websiteColor);
+          }
+
+          // Check if we should auto-show chat after fetching existing session
+          // Note: setTimeout callback intentionally not async to avoid complexity
+          setTimeout(() => {
+            this.checkForAutoShowChat();
+          }, 100);
+
           return data;
         });
     },
@@ -643,6 +659,13 @@
             this.session.clickMessage =
               this.clickMessage || "Need Help Shopping?";
             this.session.websiteColor = this.websiteColor || "#882be6";
+
+            // Update website color if provided in session response
+            if (data.session.websiteColor && data.session.websiteColor !== this.websiteColor) {
+              this.websiteColor = data.session.websiteColor;
+              this.updateThemeColor(this.websiteColor);
+              console.log("VoiceroCore: Updated website color from session creation:", this.websiteColor);
+            }
 
             // Log threads if present
             if (data.session.threads && data.session.threads.length > 0) {
@@ -731,18 +754,39 @@
         color,
       );
 
-      // Create a pulse style
+      // Convert hex color to RGB for the pulse animation
+      let r = 136, g = 43, b = 230; // Default purple RGB
+      
+      if (color && color.startsWith("#")) {
+        try {
+          if (color.length === 7) {
+            r = parseInt(color.substring(1, 3), 16);
+            g = parseInt(color.substring(3, 5), 16);
+            b = parseInt(color.substring(5, 7), 16);
+          } else if (color.length === 4) {
+            // For #RGB format
+            r = parseInt(color.charAt(1) + color.charAt(1), 16);
+            g = parseInt(color.charAt(2) + color.charAt(2), 16);
+            b = parseInt(color.charAt(3) + color.charAt(3), 16);
+          }
+          console.log(`VoiceroCore: Converted ${color} to RGB: ${r}, ${g}, ${b}`);
+        } catch (e) {
+          console.log("VoiceroCore: Error converting color to RGB, using default");
+        }
+      }
+
+      // Create a pulse style with dynamic color
       var pulseStyle = document.createElement("style");
       pulseStyle.innerHTML = `
         @keyframes pulse {
           0% {
-            box-shadow: 0 0 0 0 rgba(136, 43, 230, 0.4);
+            box-shadow: 0 0 0 0 rgba(${r}, ${g}, ${b}, 0.4);
           }
           70% {
-            box-shadow: 0 0 0 10px rgba(136, 43, 230, 0);
+            box-shadow: 0 0 0 10px rgba(${r}, ${g}, ${b}, 0);
           }
           100% {
-            box-shadow: 0 0 0 0 rgba(136, 43, 230, 0);
+            box-shadow: 0 0 0 0 rgba(${r}, ${g}, ${b}, 0);
           }
         }
       `;
@@ -755,6 +799,9 @@
 
       pulseStyle.id = "voicero-pulse-style";
       document.head.appendChild(pulseStyle);
+
+      // Update button color if it exists
+      this.applyButtonAnimation();
     },
 
     // Add button animation
@@ -783,6 +830,56 @@
           animation: pulse 2s infinite !important;
         `;
       }
+    },
+
+    // Check if we should automatically show the chat interface based on existing messages
+    checkForAutoShowChat: function () {
+      console.log("VoiceroCore: Checking if we should auto-show chat");
+      
+      // Check if we have session data with threads containing messages
+      if (
+        this.session &&
+        this.session.threads &&
+        this.session.threads.length > 0
+      ) {
+        var threads = this.session.threads;
+        console.log(`VoiceroCore: Found ${threads.length} threads in session`);
+
+        // Get the most recent thread
+        var latestThread = threads[0];
+
+        if (
+          latestThread &&
+          latestThread.messages &&
+          latestThread.messages.length > 0
+        ) {
+          console.log(
+            `VoiceroCore: Latest thread has ${latestThread.messages.length} messages - auto-showing chat`
+          );
+
+          // Auto-show the text interface with existing messages
+          setTimeout(() => {
+            if (window.handleVoiceroWelcomeAction) {
+              window.handleVoiceroWelcomeAction("load-existing-chat");
+            } else {
+              console.log("VoiceroCore: handleVoiceroWelcomeAction not available yet, retrying...");
+              // Retry after VoiceroText is likely loaded
+              setTimeout(() => {
+                if (window.handleVoiceroWelcomeAction) {
+                  window.handleVoiceroWelcomeAction("load-existing-chat");
+                } else {
+                  console.log("VoiceroCore: handleVoiceroWelcomeAction still not available");
+                }
+              }, 1000);
+            }
+          }, 100);
+          
+          return true;
+        }
+      }
+      
+      console.log("VoiceroCore: No existing messages found, not auto-showing chat");
+      return false;
     },
   };
 
