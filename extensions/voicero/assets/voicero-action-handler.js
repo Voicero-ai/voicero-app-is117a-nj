@@ -2184,77 +2184,25 @@ To make changes, please specify what you'd like to update.
   },
 
   handleContact: function (target) {
-    // This handler will show the contact form even when VoiceroText is not available
-    console.log("VoiceroActionHandler: Contact action detected");
+    // This handler will redirect to the contact page instead of showing a form
+    console.log("VoiceroActionHandler: Contact action detected - redirecting to contact page");
 
-    // Try to use VoiceroContact directly if available
-    if (
-      window.VoiceroContact &&
-      typeof window.VoiceroContact.showContactForm === "function"
-    ) {
-      console.log(
-        "VoiceroActionHandler: Using VoiceroContact module to show form",
-      );
-      setTimeout(() => window.VoiceroContact.showContactForm(), 500);
-      return;
+    // Get the current page URL and append /pages/contact
+    var currentUrl = window.location.href;
+    var baseUrl = currentUrl.split('?')[0].split('#')[0]; // Remove query params and hash
+    
+    // Remove trailing slash if present
+    if (baseUrl.endsWith('/')) {
+      baseUrl = baseUrl.slice(0, -1);
     }
-
-    // Try to use VoiceroText as fallback
-    if (
-      window.VoiceroText &&
-      typeof window.VoiceroText.showContactForm === "function"
-    ) {
-      console.log(
-        "VoiceroActionHandler: Using VoiceroText module to show form",
-      );
-      window.VoiceroText.showContactForm();
-      return;
-    }
-
-    // Last resort fallback: Create a simple contact form or show a message
-    console.log(
-      "VoiceroActionHandler: No contact modules available, creating fallback",
-    );
-
-    // Check if there's already a contact form on the page
-    var existingForm = document.querySelector('form[action*="contact"]');
-    if (existingForm) {
-      // Scroll to the existing form
-      existingForm.scrollIntoView({ behavior: "smooth", block: "center" });
-      // Highlight the form
-      var originalStyle = existingForm.style.cssText;
-      existingForm.style.cssText =
-        "border: 2px solid #882be6 !important; padding: 10px !important; box-shadow: 0 0 15px rgba(136, 43, 230, 0.5) !important;";
-
-      // Reset style after a few seconds
-      setTimeout(() => {
-        existingForm.style.cssText = originalStyle;
-      }, 5000);
-
-      return;
-    }
-
-    // If no form exists, show a message directing to the contact page
-    alert(
-      "To contact us, please visit our contact page or send an email to our customer support.",
-    );
-
-    // Try to navigate to the contact page if it likely exists
-    var contactLinks = Array.from(document.querySelectorAll("a")).filter(
-      (a) =>
-        a.href &&
-        (a.href.includes("/contact") ||
-          a.href.includes("/support") ||
-          a.textContent.toLowerCase().includes("contact")),
-    );
-
-    if (contactLinks.length > 0) {
-      // Click the first contact link found
-      contactLinks[0].click();
-    } else {
-      // Try to navigate to a likely contact page
-      window.location.href = "/contact";
-    }
+    
+    // Construct the contact page URL
+    var contactUrl = baseUrl + '/pages/contact';
+    
+    console.log("VoiceroActionHandler: Redirecting to:", contactUrl);
+    
+    // Redirect to the contact page
+    window.location.href = contactUrl;
   },
 
   handleReturn_order: function (target) {
