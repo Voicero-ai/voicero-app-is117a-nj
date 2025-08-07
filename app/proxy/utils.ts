@@ -12,6 +12,82 @@ export const addCorsHeaders = (responseInit: ResponseInit = {}) => {
   };
 };
 
+// Allowed return reasons used across proxy return flows
+export const ALLOWED_RETURN_REASONS = [
+  "SIZE_TOO_SMALL",
+  "SIZE_TOO_LARGE",
+  "UNWANTED",
+  "NOT_AS_DESCRIBED",
+  "WRONG_ITEM",
+  "DEFECTIVE",
+  "STYLE",
+  "COLOR",
+  "OTHER",
+  "UNKNOWN",
+] as const;
+
+export type AllowedReturnReason = (typeof ALLOWED_RETURN_REASONS)[number];
+
+// Build label from code (e.g., NOT_AS_DESCRIBED -> Not as described)
+export function getReturnReasonLabel(code: AllowedReturnReason): string {
+  return code
+    .toLowerCase()
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+export const RETURN_REASON_OPTIONS: Array<{
+  code: AllowedReturnReason;
+  label: string;
+}> = ALLOWED_RETURN_REASONS.map((code) => ({
+  code,
+  label: getReturnReasonLabel(code),
+}));
+
+// Normalize arbitrary input into one of the allowed return reasons
+export function normalizeReturnReason(
+  input: unknown,
+): AllowedReturnReason | null {
+  if (typeof input !== "string") return null;
+
+  const trimmed = input.trim();
+  if (!trimmed) return null;
+
+  const normalized = trimmed
+    .toUpperCase()
+    .replace(/[^A-Z_\s]/g, "")
+    .replace(/\s+/g, "_");
+
+  // Direct match
+  if ((ALLOWED_RETURN_REASONS as readonly string[]).includes(normalized)) {
+    return normalized as AllowedReturnReason;
+  }
+
+  // Simple synonym mapping
+  const synonymMap: Record<string, AllowedReturnReason> = {
+    DAMAGED: "DEFECTIVE",
+    BROKEN: "DEFECTIVE",
+    FAULTY: "DEFECTIVE",
+    WRONG_SIZE: "SIZE_TOO_SMALL", // default when ambiguous
+    TOO_SMALL: "SIZE_TOO_SMALL",
+    TOO_LARGE: "SIZE_TOO_LARGE",
+    CHANGE_OF_MIND: "UNWANTED",
+    CUSTOMER_CHANGE_OF_MIND: "UNWANTED",
+    NOT_DESCRIBED: "NOT_AS_DESCRIBED",
+    NOT_AS_EXPECTED: "NOT_AS_DESCRIBED",
+    COLOR_ISSUE: "COLOR",
+    STYLE_ISSUE: "STYLE",
+    INCORRECT_ITEM: "WRONG_ITEM",
+    WRONG_PRODUCT: "WRONG_ITEM",
+    UNKNOWN_REASON: "UNKNOWN",
+  };
+
+  if (synonymMap[normalized]) return synonymMap[normalized];
+
+  return "OTHER";
+}
+
 // Function to validate customer fields before sending to API
 export function validateCustomerFields(customer: any): string[] {
   const errors: string[] = [];

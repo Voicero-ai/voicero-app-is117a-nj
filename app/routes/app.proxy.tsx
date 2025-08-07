@@ -1,5 +1,9 @@
 import { ActionFunction, LoaderFunction, json } from "@remix-run/node";
-import { addCorsHeaders } from "app/proxy/utils";
+import {
+  addCorsHeaders,
+  RETURN_REASON_OPTIONS,
+  normalizeReturnReason,
+} from "app/proxy/utils";
 import { loader as listOrdersLoader } from "./app.proxy.orders";
 import { processCustomerAction } from "app/proxy/handlers/customers.server";
 import { processOrderAction } from "app/proxy/handlers/ordersActions.server";
@@ -564,6 +568,13 @@ export const action: ActionFunction = async ({ request }) => {
               data.action_context.returnReason || data.action_context.reason;
           }
 
+          // Normalize any provided reason to our allowed set
+          const normalizedOrderDetailsReason =
+            normalizeReturnReason(returnReason);
+          if (normalizedOrderDetailsReason) {
+            returnReason = normalizedOrderDetailsReason;
+          }
+
           // Log if return info is detected in order_details call
           if (includesReturnInfo) {
             console.log("⚠️ DETECTED RETURN INFO IN ORDER_DETAILS CALL:", {
@@ -992,7 +1003,9 @@ export const action: ActionFunction = async ({ request }) => {
 
             // Now we use the normalized data directly
             const returnReason =
-              normalizedData.returnReason || normalizedData.reason;
+              normalizeReturnReason(
+                normalizedData.returnReason || normalizedData.reason,
+              ) || "OTHER";
             const returnReasonNote = normalizedData.returnReasonNote;
 
             console.log("Extracted return reason:", returnReason);
@@ -1015,13 +1028,7 @@ export const action: ActionFunction = async ({ request }) => {
                   success: false,
                   need_reason: true,
                   message: "Please provide a reason for your return",
-                  options: [
-                    { code: "DEFECTIVE", label: "Damaged item" },
-                    { code: "SIZE_TOO_SMALL", label: "Wrong size" },
-                    { code: "NOT_AS_DESCRIBED", label: "Not as described" },
-                    { code: "CUSTOMER_CHANGE_OF_MIND", label: "Changed mind" },
-                    { code: "OTHER", label: "Other reason" },
-                  ],
+                  options: RETURN_REASON_OPTIONS,
                   order_details: {
                     order_number: order.name,
                   },

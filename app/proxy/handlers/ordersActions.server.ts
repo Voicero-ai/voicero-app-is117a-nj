@@ -1,5 +1,10 @@
 import { json } from "@remix-run/node";
-import { addCorsHeaders } from "app/proxy/utils";
+import {
+  addCorsHeaders,
+  ALLOWED_RETURN_REASONS,
+  RETURN_REASON_OPTIONS,
+  normalizeReturnReason,
+} from "app/proxy/utils";
 
 export async function processOrderAction(request: Request) {
   if (request.method.toLowerCase() === "options") {
@@ -118,6 +123,12 @@ export async function processOrderAction(request: Request) {
           data.action_context.returnReason || data.action_context.reason;
       }
 
+      // Normalize any provided reason to our allowed set
+      const normalizedReason = normalizeReturnReason(returnReason);
+      if (normalizedReason) {
+        returnReason = normalizedReason;
+      }
+
       const formattedOrder = {
         id: order.id,
         order_number: order.name.replace("#", ""),
@@ -220,6 +231,14 @@ export async function processOrderAction(request: Request) {
     // Normalize reason fields for return flows
     if (data.returnReason && !data.reason) data.reason = data.returnReason;
     if (data.reason && !data.returnReason) data.returnReason = data.reason;
+    // Enforce allowed reasons
+    const normalizedIncomingReason = normalizeReturnReason(
+      data.returnReason || data.reason,
+    );
+    if (normalizedIncomingReason) {
+      data.reason = normalizedIncomingReason;
+      data.returnReason = normalizedIncomingReason;
+    }
 
     if (data.action === "exchange") {
       return json(
@@ -274,13 +293,7 @@ export async function processOrderAction(request: Request) {
             success: false,
             need_reason: true,
             message: "Please provide a reason for your return",
-            options: [
-              { code: "DEFECTIVE", label: "Damaged item" },
-              { code: "SIZE_TOO_SMALL", label: "Wrong size" },
-              { code: "NOT_AS_DESCRIBED", label: "Not as described" },
-              { code: "CUSTOMER_CHANGE_OF_MIND", label: "Changed mind" },
-              { code: "OTHER", label: "Other reason" },
-            ],
+            options: RETURN_REASON_OPTIONS,
             order_details: { order_number: order.name },
           },
           addCorsHeaders(),
@@ -338,7 +351,7 @@ export async function processOrderAction(request: Request) {
       const returnLineItems = fulfillmentLineItems.map((item: any) => ({
         fulfillmentLineItemId: item.id,
         quantity: item.quantity,
-        returnReason: returnReason,
+        returnReason: normalizeReturnReason(returnReason) || "OTHER",
         returnReasonNote: returnReasonNote,
       }));
 
@@ -374,8 +387,8 @@ export async function processOrderAction(request: Request) {
           message: `Return for order ${order.name} has been initiated successfully.`,
           return: returnResult.data?.returnCreate?.return,
           status: "approved",
-          reason: returnReason,
-          returnReason: returnReason,
+          reason: normalizeReturnReason(returnReason) || "OTHER",
+          returnReason: normalizeReturnReason(returnReason) || "OTHER",
           reason_note: returnReasonNote,
           returnReasonNote: returnReasonNote,
         },
