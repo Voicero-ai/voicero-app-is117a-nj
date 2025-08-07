@@ -1818,7 +1818,7 @@ export default function Index() {
                             </Text>
                           </div>
                         )}
-                        <Link url="http://localhost:3000/app/contacts">
+                        <Link url="http://https://www.voicero.ai/app/contacts">
                           <Button primary={unreadContacts > 0} icon={ChatIcon}>
                             View Contacts
                           </Button>
@@ -2165,129 +2165,6 @@ export default function Index() {
                       </div>
                     </BlockStack>
                   </div>
-
-                  {/* NEW: Extended Analytics Card
-                  {accessKey && fetcher.data?.success && (
-                    <div
-                      style={{
-                        background: "linear-gradient(180deg,#F8FAFC,#FFFFFF)",
-                        borderRadius: "16px",
-                        padding: "24px",
-                        boxShadow: "0 10px 20px rgba(16, 24, 40, 0.06)",
-                        border: "1px solid #EEF2F7",
-                      }}
-                    >
-                      <BlockStack gap="600">
-                        <InlineStack align="space-between" blockAlign="center">
-                          <BlockStack gap="200">
-                            <Text variant="headingLg" fontWeight="semibold">
-                              Conversation Analytics
-                            </Text>
-                            <Text variant="bodyMd" color="subdued">
-                              Insights into how customers interact with your AI
-                              assistant
-                            </Text>
-                          </BlockStack>
-                          <Button
-                            onClick={fetchExtendedWebsiteData}
-                            loading={isLoadingExtendedData}
-                            icon={RefreshIcon}
-                            disabled={!fetcher.data?.websiteData?.plan}
-                          >
-                            Refresh Data
-                          </Button>
-                        </InlineStack>
-
-                        {isLoadingExtendedData && !extendedWebsiteData ? (
-                          <div style={{ padding: "32px", textAlign: "center" }}>
-                            <BlockStack gap="400" align="center">
-                              <Spinner size="large" />
-                              <Text variant="bodyMd" color="subdued">
-                                Loading analytics data...
-                              </Text>
-                            </BlockStack>
-                          </div>
-                        ) : extendedWebsiteData ? (
-                          <div
-                            style={{
-                              backgroundColor: "#F9FAFB",
-                              borderRadius: "12px",
-                              padding: "20px",
-                              display: "grid",
-                              gridTemplateColumns:
-                                "repeat(auto-fit, minmax(200px, 1fr))",
-                              gap: "20px",
-                            }}
-                          >
-                            {[
-                              {
-                                icon: DataPresentationIcon,
-                                count:
-                                  extendedWebsiteData.stats?.totalRedirects ||
-                                  0,
-                                label: "Total Redirects",
-                              },
-                              {
-                                icon: CalendarIcon,
-                                count: Math.round(
-                                  extendedWebsiteData.stats?.redirectRate || 0,
-                                ),
-                                label: "Redirect Rate %",
-                                isPercentage: true,
-                              },
-                              {
-                                icon: ChatIcon,
-                                count:
-                                  extendedWebsiteData.globalStats
-                                    ?.totalTextChats || 0,
-                                label: "Text Chats",
-                              },
-                              {
-                                icon: ToggleOnIcon,
-                                count:
-                                  extendedWebsiteData.globalStats
-                                    ?.totalVoiceChats || 0,
-                                label: "Voice Chats",
-                              },
-                            ].map((item, index) => (
-                              <div key={index} style={{ textAlign: "center" }}>
-                                <BlockStack gap="300" align="center">
-                                  <div
-                                    style={{
-                                      width: "48px",
-                                      height: "48px",
-                                      backgroundColor: "white",
-                                      borderRadius: "12px",
-                                      display: "flex",
-                                      alignItems: "center",
-                                      justifyContent: "center",
-                                      margin: "0 auto",
-                                      boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
-                                    }}
-                                  >
-                                    <Icon source={item.icon} color="base" />
-                                  </div>
-                                  <Text variant="heading2xl" fontWeight="bold">
-                                    {item.count}
-                                    {item.isPercentage ? "%" : ""}
-                                  </Text>
-                                  <Text variant="bodySm" color="subdued">
-                                    {item.label}
-                                  </Text>
-                                </BlockStack>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div style={{ padding: "32px", textAlign: "center" }}>
-                            <Text variant="bodyMd" color="subdued">
-                              No analytics data available
-                            </Text>
-                          </div>
-                        )}
-                      </BlockStack>
-                    </div>
-                  )} */}
 
                   {/* NEW: 1-Month Check-In Summary (static placeholder) */}
                   {accessKey && fetcher.data?.success && (

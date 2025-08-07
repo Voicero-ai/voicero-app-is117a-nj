@@ -762,7 +762,10 @@ export default function SettingsPage() {
             <button
               style={styles.destructiveButton}
               onClick={() =>
-                window.open("http://localhost:3000/app/settings", "_blank")
+                window.open(
+                  "http://https://www.voicero.ai/app/settings",
+                  "_blank",
+                )
               }
             >
               Delete Website
@@ -1325,7 +1328,7 @@ export default function SettingsPage() {
             style={styles.secondaryButton}
             onClick={() =>
               window.open(
-                `http://localhost:3000/app/websites/website?id=${websiteData.id}`,
+                `http://https://www.voicero.ai/app/websites/website?id=${websiteData.id}`,
                 "_blank",
               )
             }

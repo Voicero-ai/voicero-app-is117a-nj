@@ -5,9 +5,9 @@ const urls = {
   shopifyAdmin: "https://admin.shopify.com",
 
   // Voicero API URLs
-  voiceroApi: "http://localhost:3000",
-  newVoiceroApi: "http://localhost:3000",
-  apiBaseUrl: "http://localhost:3000",
+  voiceroApi: "http://https://www.voicero.ai",
+  newVoiceroApi: "http://https://www.voicero.ai",
+  apiBaseUrl: "http://https://www.voicero.ai",
 };
 
 export default urls;
