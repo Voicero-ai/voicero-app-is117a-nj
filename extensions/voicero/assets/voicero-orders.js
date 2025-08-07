@@ -191,7 +191,7 @@ var ShopifyProxyClient = {
     console.log("Formatted orders payload for API:", payload);
 
     // Send the data to the external API
-    fetch("https://www.voicero.ai/api/shopify/updateAllOrders", {
+    fetch("http://localhost:3000/api/shopify/updateAllOrders", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

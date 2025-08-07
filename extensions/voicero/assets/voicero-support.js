@@ -540,7 +540,7 @@ var VoiceroSupport = {
     }
 
     // Make API request to the WordPress endpoint with the actual UUIDs
-    fetch("https://www.voicero.ai/api/support/help", {
+    fetch("http://localhost:3000/api/support/help", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

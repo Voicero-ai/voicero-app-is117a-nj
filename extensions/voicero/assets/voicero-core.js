@@ -4,7 +4,7 @@
 
 (function (window, document) {
   var VoiceroCore = {
-    apiBaseUrls: ["https://www.voicero.ai"],
+    apiBaseUrls: ["http://localhost:3000"],
     apiBaseUrl: null,
     apiConnected: false,
     session: null,
@@ -501,7 +501,7 @@
             error,
           );
           return this.callSessionAPI(
-            "https://www.voicero.ai/api/session",
+            "http://localhost:3000/api/session",
             requestBody,
           );
         })
@@ -543,7 +543,7 @@
           );
 
           // Try production URL as fallback
-          var prodUrl = `https://www.voicero.ai/api/session?sessionId=${encodeURIComponent(sessionId)}&websiteId=${encodeURIComponent(this.websiteId)}&pageUrl=${encodeURIComponent(window.location.href)}`;
+          var prodUrl = `http://localhost:3000/api/session?sessionId=${encodeURIComponent(sessionId)}&websiteId=${encodeURIComponent(this.websiteId)}&pageUrl=${encodeURIComponent(window.location.href)}`;
           return this.callSessionGetAPI(prodUrl, headers);
         })
         .catch((error) => {
@@ -611,7 +611,10 @@
           if (this.session && this.session.websiteColor) {
             this.websiteColor = this.session.websiteColor;
             this.updateThemeColor(this.websiteColor);
-            console.log("VoiceroCore: Updated website color from session:", this.websiteColor);
+            console.log(
+              "VoiceroCore: Updated website color from session:",
+              this.websiteColor,
+            );
           }
 
           // Check if we should auto-show chat after fetching existing session
@@ -661,10 +664,16 @@
             this.session.websiteColor = this.websiteColor || "#882be6";
 
             // Update website color if provided in session response
-            if (data.session.websiteColor && data.session.websiteColor !== this.websiteColor) {
+            if (
+              data.session.websiteColor &&
+              data.session.websiteColor !== this.websiteColor
+            ) {
               this.websiteColor = data.session.websiteColor;
               this.updateThemeColor(this.websiteColor);
-              console.log("VoiceroCore: Updated website color from session creation:", this.websiteColor);
+              console.log(
+                "VoiceroCore: Updated website color from session creation:",
+                this.websiteColor,
+              );
             }
 
             // Log threads if present
@@ -755,8 +764,10 @@
       );
 
       // Convert hex color to RGB for the pulse animation
-      let r = 136, g = 43, b = 230; // Default purple RGB
-      
+      let r = 136,
+        g = 43,
+        b = 230; // Default purple RGB
+
       if (color && color.startsWith("#")) {
         try {
           if (color.length === 7) {
@@ -769,9 +780,13 @@
             g = parseInt(color.charAt(2) + color.charAt(2), 16);
             b = parseInt(color.charAt(3) + color.charAt(3), 16);
           }
-          console.log(`VoiceroCore: Converted ${color} to RGB: ${r}, ${g}, ${b}`);
+          console.log(
+            `VoiceroCore: Converted ${color} to RGB: ${r}, ${g}, ${b}`,
+          );
         } catch (e) {
-          console.log("VoiceroCore: Error converting color to RGB, using default");
+          console.log(
+            "VoiceroCore: Error converting color to RGB, using default",
+          );
         }
       }
 
@@ -835,7 +850,7 @@
     // Check if we should automatically show the chat interface based on existing messages
     checkForAutoShowChat: function () {
       console.log("VoiceroCore: Checking if we should auto-show chat");
-      
+
       // Check if we have session data with threads containing messages
       if (
         this.session &&
@@ -854,7 +869,7 @@
           latestThread.messages.length > 0
         ) {
           console.log(
-            `VoiceroCore: Latest thread has ${latestThread.messages.length} messages - auto-showing chat`
+            `VoiceroCore: Latest thread has ${latestThread.messages.length} messages - auto-showing chat`,
           );
 
           // Auto-show the text interface with existing messages
@@ -862,23 +877,29 @@
             if (window.handleVoiceroWelcomeAction) {
               window.handleVoiceroWelcomeAction("load-existing-chat");
             } else {
-              console.log("VoiceroCore: handleVoiceroWelcomeAction not available yet, retrying...");
+              console.log(
+                "VoiceroCore: handleVoiceroWelcomeAction not available yet, retrying...",
+              );
               // Retry after VoiceroText is likely loaded
               setTimeout(() => {
                 if (window.handleVoiceroWelcomeAction) {
                   window.handleVoiceroWelcomeAction("load-existing-chat");
                 } else {
-                  console.log("VoiceroCore: handleVoiceroWelcomeAction still not available");
+                  console.log(
+                    "VoiceroCore: handleVoiceroWelcomeAction still not available",
+                  );
                 }
               }, 1000);
             }
           }, 100);
-          
+
           return true;
         }
       }
-      
-      console.log("VoiceroCore: No existing messages found, not auto-showing chat");
+
+      console.log(
+        "VoiceroCore: No existing messages found, not auto-showing chat",
+      );
       return false;
     },
   };

@@ -994,7 +994,7 @@ export default function AIOverviewPage() {
                       <Box paddingBlock="300">
                         <InlineStack align="center">
                           <Button
-                            url="https://www.voicero.ai/app/chats"
+                            url="http://localhost:3000/app/chats"
                             external={true}
                           >
                             View All Conversations

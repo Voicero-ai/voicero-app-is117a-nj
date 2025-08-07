@@ -1384,7 +1384,7 @@
             error,
           );
           return this.callAPI(
-            "https://www.voicero.ai/api/shopify/chat",
+            "http://localhost:3000/api/shopify/chat",
             requestData,
             headers,
             messagesContainer,
@@ -1674,7 +1674,7 @@
 
       // Try local API endpoint first
       var localApiUrl = "http://localhost:3000/api/session/clear";
-      var prodApiUrl = "https://www.voicero.ai/api/session/clear";
+      var prodApiUrl = "http://localhost:3000/api/session/clear";
 
       // Get auth headers if available
       var headers = {

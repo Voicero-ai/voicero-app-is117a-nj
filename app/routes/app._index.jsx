@@ -1818,7 +1818,7 @@ export default function Index() {
                             </Text>
                           </div>
                         )}
-                        <Link url="https://www.voicero.ai/app/contacts">
+                        <Link url="http://localhost:3000/app/contacts">
                           <Button primary={unreadContacts > 0} icon={ChatIcon}>
                             View Contacts
                           </Button>
@@ -2043,86 +2043,125 @@ export default function Index() {
                         style={{
                           display: "grid",
                           gridTemplateColumns:
-                            "repeat(auto-fit, minmax(220px, 1fr))",
-                          gap: "20px",
+                            "repeat(auto-fit, minmax(240px, 1fr))",
+                          gap: 16,
                         }}
                       >
-                        <BlockStack gap="200">
-                          <Text variant="bodySm" color="subdued">
-                            Plan Type
-                          </Text>
-                          <Text variant="headingMd" fontWeight="semibold">
-                            {fetcher.data?.websiteData?.plan || (
-                              <InlineStack gap="200" blockAlign="center">
-                                <Text
-                                  variant="headingMd"
-                                  fontWeight="semibold"
-                                  tone="warning"
-                                >
-                                  No Active Plan
-                                </Text>
+                        {(() => {
+                          const isActive = !!fetcher.data?.websiteData?.active;
+                          const hasPlan = !!fetcher.data?.websiteData?.plan;
+                          const plan = fetcher.data?.websiteData?.plan;
+                          const monthlyQueries =
+                            fetcher.data?.websiteData?.monthlyQueries || 0;
+                          const queryLimit =
+                            fetcher.data?.websiteData?.queryLimit || 0;
+                          const lastSyncedRaw =
+                            fetcher.data?.websiteData?.lastSyncedAt;
+                          const isSynced =
+                            !!lastSyncedRaw && lastSyncedRaw !== "Never";
+                          const lastSyncedDisplay = lastSyncedRaw
+                            ? lastSyncedRaw === "Never"
+                              ? "Never"
+                              : new Date(lastSyncedRaw).toLocaleDateString()
+                            : "Never";
+
+                          const limitLabel =
+                            plan === "Beta"
+                              ? "/ Unlimited"
+                              : plan === "Enterprise"
+                                ? "/ Pay per query"
+                                : plan === "Starter"
+                                  ? "/ 100"
+                                  : `/ ${queryLimit}`;
+
+                          const tiles = [
+                            {
+                              icon: isActive ? CheckIcon : InfoIcon,
+                              label: "Status",
+                              value: isActive ? "Active" : "Inactive",
+                              sub: isActive ? "Live" : "Requires activation",
+                              accent: isActive ? "#E8F5E9" : "#FFF4E4",
+                            },
+                            {
+                              icon: DataPresentationIcon,
+                              label: "Plan Type",
+                              value: hasPlan ? plan : "No Active Plan",
+                              sub: hasPlan ? "Active plan" : "Limited Access",
+                              accent: hasPlan ? "#EEF6FF" : "#FFF4E4",
+                            },
+                            {
+                              icon: ChatIcon,
+                              label: "Monthly Queries",
+                              value: monthlyQueries,
+                              sub: limitLabel,
+                              accent: "#F3E8FF",
+                            },
+                            {
+                              icon: CalendarIcon,
+                              label: "Last Synced",
+                              value: lastSyncedDisplay,
+                              sub: isSynced ? "Up to date" : "Never synced",
+                              accent: isSynced ? "#E8F5E9" : "#FFF4E4",
+                            },
+                          ];
+
+                          return tiles.map((tile, idx) => (
+                            <div
+                              key={idx}
+                              style={{
+                                backgroundColor: tile.accent,
+                                borderRadius: 12,
+                                padding: 16,
+                                transition:
+                                  "transform 0.15s ease, box-shadow 0.15s ease",
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.transform =
+                                  "translateY(-2px)";
+                                e.currentTarget.style.boxShadow =
+                                  "0 8px 16px rgba(16,24,40,0.08)";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.transform =
+                                  "translateY(0)";
+                                e.currentTarget.style.boxShadow = "none";
+                              }}
+                            >
+                              <InlineStack gap="300" blockAlign="center">
                                 <div
                                   style={{
-                                    backgroundColor: "#FFF4E4",
-                                    padding: "4px 8px",
-                                    borderRadius: "4px",
-                                    border: "1px solid #FFECCC",
+                                    width: 40,
+                                    height: 40,
+                                    borderRadius: 10,
+                                    backgroundColor: "white",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
                                   }}
                                 >
-                                  <Text variant="bodySm" tone="warning">
-                                    Limited Access
-                                  </Text>
+                                  <Icon source={tile.icon} color="base" />
                                 </div>
+                                <BlockStack gap="100">
+                                  <Text variant="bodySm" color="subdued">
+                                    {tile.label}
+                                  </Text>
+                                  <Text
+                                    variant="headingMd"
+                                    fontWeight="semibold"
+                                  >
+                                    {tile.value}
+                                  </Text>
+                                  {tile.sub && (
+                                    <Text variant="bodySm" color="subdued">
+                                      {tile.sub}
+                                    </Text>
+                                  )}
+                                </BlockStack>
                               </InlineStack>
-                            )}
-                          </Text>
-                        </BlockStack>
-                        <BlockStack gap="200">
-                          <Text variant="bodySm" color="subdued">
-                            Monthly Queries
-                          </Text>
-                          <InlineStack gap="200" blockAlign="baseline">
-                            <Text variant="headingMd" fontWeight="semibold">
-                              {fetcher.data?.websiteData?.monthlyQueries || 0}
-                            </Text>
-                            <Text variant="bodySm" color="subdued">
-                              {fetcher.data?.websiteData?.plan === "Beta"
-                                ? "/ Unlimited"
-                                : fetcher.data?.websiteData?.plan ===
-                                    "Enterprise"
-                                  ? "/ Pay per query"
-                                  : fetcher.data?.websiteData?.plan ===
-                                      "Starter"
-                                    ? "/ 100"
-                                    : `/ ${fetcher.data?.websiteData?.queryLimit || 0}`}
-                            </Text>
-                          </InlineStack>
-                        </BlockStack>
-                        <BlockStack gap="200">
-                          <Text variant="bodySm" color="subdued">
-                            Last Synced
-                          </Text>
-                          <Text
-                            variant="headingMd"
-                            fontWeight="semibold"
-                            tone={
-                              fetcher.data?.websiteData?.lastSyncedAt &&
-                              fetcher.data?.websiteData?.lastSyncedAt !==
-                                "Never"
-                                ? "success"
-                                : "caution"
-                            }
-                          >
-                            {fetcher.data?.websiteData?.lastSyncedAt
-                              ? fetcher.data?.websiteData?.lastSyncedAt ===
-                                "Never"
-                                ? "Never"
-                                : new Date(
-                                    fetcher.data?.websiteData?.lastSyncedAt,
-                                  ).toLocaleDateString()
-                              : "Never"}
-                          </Text>
-                        </BlockStack>
+                            </div>
+                          ));
+                        })()}
                       </div>
                     </BlockStack>
                   </div>

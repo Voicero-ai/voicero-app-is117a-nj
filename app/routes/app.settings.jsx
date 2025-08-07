@@ -762,7 +762,7 @@ export default function SettingsPage() {
             <button
               style={styles.destructiveButton}
               onClick={() =>
-                window.open("https://www.voicero.ai/app/settings", "_blank")
+                window.open("http://localhost:3000/app/settings", "_blank")
               }
             >
               Delete Website
@@ -1305,9 +1305,9 @@ export default function SettingsPage() {
               ? "Free (Unlimited Queries)"
               : websiteData.plan === "Starter"
                 ? "$120/month"
-              : websiteData.plan === "Enterprise"
-                ? "$0.10 per query"
-                : "Free"}
+                : websiteData.plan === "Enterprise"
+                  ? "$0.10 per query"
+                  : "Free"}
           </span>
         </div>
 
@@ -1325,7 +1325,7 @@ export default function SettingsPage() {
             style={styles.secondaryButton}
             onClick={() =>
               window.open(
-                `https://www.voicero.ai/app/websites/website?id=${websiteData.id}`,
+                `http://localhost:3000/app/websites/website?id=${websiteData.id}`,
                 "_blank",
               )
             }

@@ -2185,13 +2185,15 @@ To make changes, please specify what you'd like to update.
 
   handleContact: function (target) {
     // This handler will redirect to the contact page instead of showing a form
-    console.log("VoiceroActionHandler: Contact action detected - redirecting to contact page");
+    console.log(
+      "VoiceroActionHandler: Contact action detected - redirecting to contact page",
+    );
 
     // Simply redirect to /pages/contact from the root
-    var contactUrl = '/pages/contact';
-    
+    var contactUrl = "/pages/contact";
+
     console.log("VoiceroActionHandler: Redirecting to:", contactUrl);
-    
+
     // Redirect to the contact page
     window.location.href = contactUrl;
   },
@@ -2682,7 +2684,7 @@ To make changes, please specify what you'd like to update.
 
           // Only proceed if we have a valid API URL
           if (apiBaseUrl) {
-            fetch(`https://www.voicero.ai/api/session/message`, {
+            fetch(`http://localhost:3000/api/session/message`, {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
