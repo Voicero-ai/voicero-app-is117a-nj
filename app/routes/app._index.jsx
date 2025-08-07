@@ -2277,10 +2277,10 @@ export default function Index() {
                           </div>
                           <BlockStack gap="100">
                             <Text variant="headingLg" fontWeight="semibold">
-                              1‑Month Check‑In
+                              Month Past Performance
                             </Text>
                             <Text variant="bodySm" color="subdued">
-                              Based on the last ~2.5 weeks (demo data)
+                              Based on the last 4 weeks
                             </Text>
                           </BlockStack>
                         </InlineStack>
@@ -2637,68 +2637,101 @@ export default function Index() {
                               backgroundColor: "#F9FAFB",
                               borderRadius: "12px",
                               padding: "20px",
-                              display: "grid",
-                              gridTemplateColumns:
-                                "repeat(auto-fit, minmax(200px, 1fr))",
-                              gap: "20px",
                             }}
                           >
-                            {[
-                              {
-                                icon: DataPresentationIcon,
-                                count:
-                                  extendedWebsiteData.globalStats
-                                    ?.totalAiRedirects || 0,
-                                label: "Redirects",
-                              },
-                              {
-                                icon: CheckIcon,
-                                count:
-                                  extendedWebsiteData.globalStats
-                                    ?.totalAiPurchases || 0,
-                                label: "Purchases",
-                              },
-                              {
-                                icon: InfoIcon,
-                                count:
-                                  extendedWebsiteData.globalStats
-                                    ?.totalAiClicks || 0,
-                                label: "Clicks",
-                              },
-                              {
-                                icon: RefreshIcon,
-                                count:
-                                  extendedWebsiteData.globalStats
-                                    ?.totalAiScrolls || 0,
-                                label: "Scrolls",
-                              },
-                            ].map((item, index) => (
-                              <div key={index} style={{ textAlign: "center" }}>
-                                <BlockStack gap="300" align="center">
-                                  <div
-                                    style={{
-                                      width: "48px",
-                                      height: "48px",
-                                      backgroundColor: "white",
-                                      borderRadius: "12px",
-                                      display: "flex",
-                                      alignItems: "center",
-                                      justifyContent: "center",
-                                      margin: "0 auto",
-                                      boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
-                                    }}
-                                  >
-                                    <Icon source={item.icon} color="base" />
-                                  </div>
-                                  <Text variant="heading2xl" fontWeight="bold">
-                                    {item.count}
-                                  </Text>
-                                  <Text variant="bodySm" color="subdued">
-                                    {item.label}
-                                  </Text>
-                                </BlockStack>
-                              </div>
-                            ))}
+                            <div
+                              style={{
+                                display: "grid",
+                                gridTemplateColumns:
+                                  "repeat(auto-fit, minmax(240px, 1fr))",
+                                gap: 16,
+                              }}
+                            >
+                              {[
+                                {
+                                  icon: DataPresentationIcon,
+                                  value:
+                                    extendedWebsiteData.globalStats
+                                      ?.totalAiRedirects || 0,
+                                  label: "Redirects",
+                                  accent: "#EEF6FF",
+                                },
+                                {
+                                  icon: CheckIcon,
+                                  value:
+                                    extendedWebsiteData.globalStats
+                                      ?.totalAiPurchases || 0,
+                                  label: "Purchases",
+                                  accent: "#E8F5E9",
+                                },
+                                {
+                                  icon: InfoIcon,
+                                  value:
+                                    extendedWebsiteData.globalStats
+                                      ?.totalAiClicks || 0,
+                                  label: "Clicks",
+                                  accent: "#FEF3C7",
+                                },
+                                {
+                                  icon: RefreshIcon,
+                                  value:
+                                    extendedWebsiteData.globalStats
+                                      ?.totalAiScrolls || 0,
+                                  label: "Scrolls",
+                                  accent: "#F3E8FF",
+                                },
+                              ].map((stat, idx) => (
+                                <div
+                                  key={idx}
+                                  style={{
+                                    backgroundColor: stat.accent,
+                                    borderRadius: 12,
+                                    padding: 16,
+                                    transition:
+                                      "transform 0.15s ease, box-shadow 0.15s ease",
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform =
+                                      "translateY(-2px)";
+                                    e.currentTarget.style.boxShadow =
+                                      "0 8px 16px rgba(16,24,40,0.08)";
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform =
+                                      "translateY(0)";
+                                    e.currentTarget.style.boxShadow = "none";
+                                  }}
+                                >
+                                  <InlineStack gap="300" blockAlign="center">
+                                    <div
+                                      style={{
+                                        width: 40,
+                                        height: 40,
+                                        borderRadius: 10,
+                                        backgroundColor: "white",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+                                      }}
+                                    >
+                                      <Icon source={stat.icon} color="base" />
+                                    </div>
+                                    <BlockStack gap="100">
+                                      <Text variant="bodySm" color="subdued">
+                                        {stat.label}
+                                      </Text>
+                                      <Text
+                                        variant="headingXl"
+                                        fontWeight="bold"
+                                      >
+                                        {stat.value}
+                                      </Text>
+                                    </BlockStack>
+                                  </InlineStack>
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         ) : (
                           <div style={{ padding: "32px", textAlign: "center" }}>
@@ -2783,8 +2816,8 @@ export default function Index() {
                           style={{
                             display: "grid",
                             gridTemplateColumns:
-                              "repeat(auto-fit, minmax(180px, 1fr))",
-                            gap: "16px",
+                              "repeat(auto-fit, minmax(240px, 1fr))",
+                            gap: 16,
                           }}
                         >
                           {[
@@ -2795,6 +2828,7 @@ export default function Index() {
                                   ?.length || 0,
                               label: "Products",
                               id: "products",
+                              accent: "#EEF6FF",
                             },
                             {
                               icon: PageIcon,
@@ -2803,6 +2837,7 @@ export default function Index() {
                                 0,
                               label: "Pages",
                               id: "pages",
+                              accent: "#E8F5E9",
                             },
                             {
                               icon: BlogIcon,
@@ -2811,6 +2846,7 @@ export default function Index() {
                                   ?.length || 0,
                               label: "Blog Posts",
                               id: "blogPosts",
+                              accent: "#FEF3C7",
                             },
                             {
                               icon: CollectionIcon,
@@ -2819,6 +2855,7 @@ export default function Index() {
                                   ?.length || 0,
                               label: "Collections",
                               id: "collections",
+                              accent: "#F3E8FF",
                             },
                             {
                               icon: DiscountIcon,
@@ -2827,64 +2864,60 @@ export default function Index() {
                                   ?.length || 0,
                               label: "Discounts",
                               id: "discounts",
+                              accent: "#E0F2FE",
                             },
                           ].map((item, index) => (
                             <div
                               key={index}
                               style={{
-                                backgroundColor:
-                                  selectedContentTab === index
-                                    ? "#EBF5FF"
-                                    : "white",
-                                borderRadius: "8px",
-                                padding: "16px",
+                                backgroundColor: item.accent,
+                                borderRadius: 12,
+                                padding: 16,
                                 cursor: "pointer",
                                 border:
                                   selectedContentTab === index
                                     ? "1px solid #B3D7FF"
-                                    : "1px solid #E4E5E7",
-                                transition: "all 0.2s ease",
+                                    : "1px solid transparent",
+                                transition:
+                                  "transform 0.15s ease, box-shadow 0.15s ease",
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.transform =
+                                  "translateY(-2px)";
+                                e.currentTarget.style.boxShadow =
+                                  "0 8px 16px rgba(16,24,40,0.08)";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.transform =
+                                  "translateY(0)";
+                                e.currentTarget.style.boxShadow = "none";
                               }}
                               onClick={() => setSelectedContentTab(index)}
                             >
-                              <BlockStack gap="300" align="center">
+                              <InlineStack gap="300" blockAlign="center">
                                 <div
                                   style={{
-                                    width: "40px",
-                                    height: "40px",
-                                    backgroundColor:
-                                      selectedContentTab === index
-                                        ? "#DEEBFF"
-                                        : "#F4F5F7",
-                                    borderRadius: "8px",
+                                    width: 40,
+                                    height: 40,
+                                    borderRadius: 10,
+                                    backgroundColor: "white",
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: "center",
+                                    boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
                                   }}
                                 >
-                                  <Icon
-                                    source={item.icon}
-                                    color={
-                                      selectedContentTab === index
-                                        ? "highlight"
-                                        : "base"
-                                    }
-                                  />
+                                  <Icon source={item.icon} color="base" />
                                 </div>
-                                <Text variant="heading2xl" fontWeight="bold">
-                                  {item.count}
-                                </Text>
-                                <Text
-                                  variant="bodySm"
-                                  color={
-                                    selectedContentTab === index
-                                      ? "highlight"
-                                      : "subdued"
-                                  }
-                                >
-                                  {item.label}
-                                </Text>
-                              </BlockStack>
+                                <BlockStack gap="100">
+                                  <Text variant="bodySm" color="subdued">
+                                    {item.label}
+                                  </Text>
+                                  <Text variant="headingXl" fontWeight="bold">
+                                    {item.count}
+                                  </Text>
+                                </BlockStack>
+                              </InlineStack>
                             </div>
                           ))}
                         </div>
