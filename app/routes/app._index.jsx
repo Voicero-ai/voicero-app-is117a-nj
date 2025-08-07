@@ -16,6 +16,7 @@ import {
   Divider,
   Spinner,
   Tabs,
+  Badge,
 } from "@shopify/polaris";
 import {
   KeyIcon,
@@ -817,7 +818,6 @@ export default function Index() {
     }
   }, [accessKey, fetcher.data?.success]);
 
-
   // Calculate unread contacts
   const unreadContacts = contactsData.filter((contact) => !contact.read).length;
 
@@ -957,6 +957,95 @@ export default function Index() {
 
   // Get API key from saved key (from loader data)
   const apiKey = savedKey;
+
+  // Static helper metrics and datasets (placeholder until wired to backend)
+  const formatCurrency = (amount) =>
+    new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+    }).format(amount || 0);
+
+  const helpfulMetrics = {
+    totalRevenue: 12340, // USD
+    resolutionRate: 0.92, // 92%
+    avgMessages: 3.2, // per conversation
+  };
+
+  const recentQuestionsByTopic = {
+    products: [
+      {
+        text: "Does the hoodie run true to size?",
+        status: "resolved",
+        purchased: "Fleece Hoodie",
+      },
+      {
+        text: "What material is the yoga mat?",
+        status: "resolved",
+        purchased: null,
+      },
+      {
+        text: "Is the water bottle dishwasher safe?",
+        status: "attention",
+        purchased: null,
+      },
+    ],
+    subscription: [
+      {
+        text: "How do I pause my subscription?",
+        status: "resolved",
+        purchased: null,
+      },
+      {
+        text: "Can I change delivery frequency?",
+        status: "resolved",
+        purchased: null,
+      },
+      { text: "Why was I billed twice?", status: "attention", purchased: null },
+    ],
+    orders: [
+      { text: "Where is my order?", status: "resolved", purchased: null },
+      {
+        text: "Can I update my shipping address?",
+        status: "attention",
+        purchased: null,
+      },
+      { text: "How to request a return?", status: "resolved", purchased: null },
+    ],
+    discounts: [
+      {
+        text: "Can I stack discount codes?",
+        status: "attention",
+        purchased: null,
+      },
+      {
+        text: "Why isn't my code working?",
+        status: "resolved",
+        purchased: null,
+      },
+      {
+        text: "Any bundle deals available?",
+        status: "resolved",
+        purchased: "Bundle: Starter Kit",
+      },
+    ],
+    account: [
+      {
+        text: "I can't access my account",
+        status: "attention",
+        purchased: null,
+      },
+      {
+        text: "How do I reset my password?",
+        status: "resolved",
+        purchased: null,
+      },
+      {
+        text: "How to update payment method?",
+        status: "resolved",
+        purchased: null,
+      },
+    ],
+  };
 
   // Modify the useEffect that handles successful connection
   useEffect(() => {
@@ -2139,7 +2228,7 @@ export default function Index() {
                     </div>
                   )} */}
 
-                  {/* NEW: Top Content Card - REPLACING with Action Statistics */}
+                  {/* NEW: Helpful Overview (static placeholder) */}
                   {accessKey && fetcher.data?.success && (
                     <div
                       style={{
@@ -2152,8 +2241,256 @@ export default function Index() {
                       <BlockStack gap="600">
                         <BlockStack gap="200">
                           <Text variant="headingLg" fontWeight="semibold">
-                            Action Statistics
+                            Helpful Overview
                           </Text>
+                          <Text variant="bodyMd" color="subdued">
+                            Key support and sales metrics (demo data)
+                          </Text>
+                        </BlockStack>
+
+                        <div
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns:
+                              "repeat(auto-fit, minmax(240px, 1fr))",
+                            gap: "20px",
+                          }}
+                        >
+                          {[
+                            {
+                              icon: DataPresentationIcon,
+                              label: "Total Revenue",
+                              value: formatCurrency(
+                                helpfulMetrics.totalRevenue,
+                              ),
+                              accent: "#EEF6FF",
+                            },
+                            {
+                              icon: CheckIcon,
+                              label: "Resolution Rate",
+                              value: `${Math.round(
+                                (helpfulMetrics.resolutionRate || 0) * 100,
+                              )}%`,
+                              accent: "#E8F5E9",
+                              progress: helpfulMetrics.resolutionRate || 0,
+                            },
+                            {
+                              icon: ChatIcon,
+                              label: "Avg Messages",
+                              value: (helpfulMetrics.avgMessages || 0).toFixed(
+                                1,
+                              ),
+                              accent: "#FFF7ED",
+                            },
+                          ].map((m, idx) => (
+                            <div
+                              key={idx}
+                              style={{
+                                backgroundColor: m.accent,
+                                borderRadius: "12px",
+                                padding: "20px",
+                              }}
+                            >
+                              <InlineStack gap="300" blockAlign="center">
+                                <div
+                                  style={{
+                                    width: "44px",
+                                    height: "44px",
+                                    backgroundColor: "white",
+                                    borderRadius: "10px",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+                                  }}
+                                >
+                                  <Icon source={m.icon} color="base" />
+                                </div>
+                                <BlockStack gap="100">
+                                  <Text variant="bodySm" color="subdued">
+                                    {m.label}
+                                  </Text>
+                                  <Text variant="headingXl" fontWeight="bold">
+                                    {m.value}
+                                  </Text>
+                                  {typeof m.progress === "number" && (
+                                    <div style={{ width: "100%" }}>
+                                      <div
+                                        style={{
+                                          width: "100%",
+                                          height: "6px",
+                                          backgroundColor: "#E5E7EB",
+                                          borderRadius: "9999px",
+                                          overflow: "hidden",
+                                        }}
+                                      >
+                                        <div
+                                          style={{
+                                            width: `${Math.min(
+                                              100,
+                                              Math.max(0, m.progress * 100),
+                                            )}%`,
+                                            height: "100%",
+                                            background:
+                                              "linear-gradient(90deg,#22C55E,#16A34A)",
+                                          }}
+                                        />
+                                      </div>
+                                    </div>
+                                  )}
+                                </BlockStack>
+                              </InlineStack>
+                            </div>
+                          ))}
+                        </div>
+                      </BlockStack>
+                    </div>
+                  )}
+
+                  {/* NEW: Recent Questions by Topic (static placeholder) */}
+                  {accessKey && fetcher.data?.success && (
+                    <div
+                      style={{
+                        backgroundColor: "white",
+                        borderRadius: "12px",
+                        padding: "24px",
+                        boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+                      }}
+                    >
+                      <BlockStack gap="600">
+                        <BlockStack gap="200">
+                          <Text variant="headingLg" fontWeight="semibold">
+                            Recent Questions by Topic
+                          </Text>
+                          <Text variant="bodyMd" color="subdued">
+                            What shoppers are asking (demo data)
+                          </Text>
+                        </BlockStack>
+
+                        <div
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns:
+                              "repeat(auto-fit, minmax(220px, 1fr))",
+                            gap: "16px",
+                          }}
+                        >
+                          {[
+                            { key: "products", label: "Products" },
+                            { key: "subscription", label: "Subscription" },
+                            { key: "orders", label: "Orders" },
+                            { key: "discounts", label: "Discounts" },
+                            { key: "account", label: "Account Access" },
+                          ].map((topic) => (
+                            <div
+                              key={topic.key}
+                              style={{
+                                backgroundColor: "#F9FAFB",
+                                borderRadius: "12px",
+                                padding: "16px",
+                              }}
+                            >
+                              <Text variant="headingSm" fontWeight="semibold">
+                                {topic.label}
+                              </Text>
+                              <div style={{ height: 8 }} />
+                              <BlockStack gap="200">
+                                {(recentQuestionsByTopic[topic.key] || []).map(
+                                  (q, i) => (
+                                    <div
+                                      key={i}
+                                      style={{
+                                        backgroundColor: "white",
+                                        borderRadius: "10px",
+                                        padding: "12px",
+                                        border: "1px solid #EEF2F7",
+                                      }}
+                                    >
+                                      <BlockStack gap="100">
+                                        <Text variant="bodySm">{q.text}</Text>
+                                        <InlineStack
+                                          gap="200"
+                                          blockAlign="center"
+                                        >
+                                          <div
+                                            style={{
+                                              backgroundColor:
+                                                q.status === "resolved"
+                                                  ? "#E8F5E9"
+                                                  : "#FEF3C7",
+                                              border: `1px solid ${
+                                                q.status === "resolved"
+                                                  ? "#86EFAC"
+                                                  : "#FDE68A"
+                                              }`,
+                                              color:
+                                                q.status === "resolved"
+                                                  ? "#065F46"
+                                                  : "#92400E",
+                                              padding: "2px 8px",
+                                              borderRadius: 999,
+                                              fontSize: 12,
+                                              fontWeight: 600,
+                                            }}
+                                          >
+                                            {q.status === "resolved"
+                                              ? "Resolved"
+                                              : "Needs attention"}
+                                          </div>
+                                          {q.purchased && (
+                                            <Text
+                                              variant="bodySm"
+                                              color="subdued"
+                                            >
+                                              Purchased: {q.purchased}
+                                            </Text>
+                                          )}
+                                        </InlineStack>
+                                      </BlockStack>
+                                    </div>
+                                  ),
+                                )}
+                              </BlockStack>
+                            </div>
+                          ))}
+                        </div>
+                      </BlockStack>
+                    </div>
+                  )}
+
+                  {/* NEW: Top Content Card - REPLACING with Action Statistics */}
+                  {accessKey && fetcher.data?.success && (
+                    <div
+                      style={{
+                        backgroundColor: "white",
+                        borderRadius: "12px",
+                        padding: "24px",
+                        boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+                      }}
+                    >
+                      <BlockStack gap="600">
+                        <BlockStack gap="200">
+                          <InlineStack gap="300" blockAlign="center">
+                            <div
+                              style={{
+                                width: 40,
+                                height: 40,
+                                backgroundColor: "#EEF6FF",
+                                borderRadius: 10,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                              }}
+                            >
+                              <Icon
+                                source={DataPresentationIcon}
+                                color="base"
+                              />
+                            </div>
+                            <Text variant="headingLg" fontWeight="semibold">
+                              Action Statistics
+                            </Text>
+                          </InlineStack>
                           <Text variant="bodyMd" color="subdued">
                             How customers are interacting with your AI assistant
                           </Text>
@@ -2175,7 +2512,8 @@ export default function Index() {
                               borderRadius: "12px",
                               padding: "20px",
                               display: "grid",
-                              gridTemplateColumns: "repeat(4, 1fr)",
+                              gridTemplateColumns:
+                                "repeat(auto-fit, minmax(200px, 1fr))",
                               gap: "20px",
                             }}
                           >
@@ -2302,7 +2640,8 @@ export default function Index() {
                         <div
                           style={{
                             display: "grid",
-                            gridTemplateColumns: "repeat(5, 1fr)",
+                            gridTemplateColumns:
+                              "repeat(auto-fit, minmax(180px, 1fr))",
                             gap: "16px",
                           }}
                         >
