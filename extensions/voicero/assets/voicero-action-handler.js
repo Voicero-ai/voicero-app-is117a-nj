@@ -2128,105 +2128,86 @@ To make changes, please specify what you'd like to update.
   },
 
   handleProcess_return: async function (target) {
-    // Enhanced return processing with better field detection for Shopify
-    var { order_id, email, reason, items = [] } = target || {};
-    if (!order_id || !email) {
-      // Try to use saved order info if available
-      if (this.config.userCredentials?.lastOrder) {
-        target = { ...this.config.userCredentials.lastOrder, ...target };
-      } else {
-        // console.warn("Order ID and email required for return");
-        return;
-      }
+    // Always delegate to proxy-backed return handler
+    if (
+      window.VoiceroReturnHandler &&
+      typeof window.VoiceroReturnHandler.handleReturn === "function"
+    ) {
+      window.VoiceroReturnHandler.handleReturn(target || {});
+      return;
     }
 
-    var returnForm =
-      this.findForm("return") ||
-      document.querySelector('form[action*="return_request"]');
-    if (returnForm) {
-      var orderIdField = returnForm.querySelector(
-        'input[name="return[order_id]"], input[name="order_id"]',
-      );
-      var emailField = returnForm.querySelector(
-        'input[type="email"], input[name="return[email]"], input[name="email"]',
-      );
-      var reasonField = returnForm.querySelector(
-        'select[name="return[reason]"], textarea[name="return[reason]"], select[name="reason"], textarea[name="reason"]',
-      );
-
-      if (orderIdField && emailField) {
-        orderIdField.value = order_id;
-        emailField.value = email;
-        if (reasonField) reasonField.value = reason;
-
-        items.forEach((item) => {
-          var itemCheckbox = returnForm.querySelector(
-            `input[name="return[items][]"][value="${item.id}"], 
-                         input[name="return_items[]"][value="${item.id}"]`,
-          );
-          if (itemCheckbox) itemCheckbox.checked = true;
-        });
-
-        returnForm.dispatchEvent(new Event("submit", { bubbles: true }));
-        return;
-      }
-    }
-
-    // If no form is found, redirect to the returns page
-    if (window.VoiceroText?.addMessage) {
-      window.VoiceroText.addMessage(
-        `To start a return for order #${order_id}, please visit the returns page.`,
-      );
-    }
-
-    // Redirect to returns page
-    window.location.href = `/account/returns/new?order_id=${order_id}&email=${encodeURIComponent(email)}`;
+    // Fallback: attempt direct proxy call
+    try {
+      var payload = {
+        action: "return",
+        ...(target || {}),
+      };
+      var url = "/apps/proxy";
+      await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+    } catch (_) {}
   },
 
   handleContact: function (target) {
-    // This handler will redirect to the contact page instead of showing a form
+    // Prefer inline contact form over hard redirect
     console.log(
-      "VoiceroActionHandler: Contact action detected - redirecting to contact page",
+      "VoiceroActionHandler: Contact action detected - opening contact UI",
     );
 
-    // Simply redirect to /pages/contact from the root
-    var contactUrl = "/pages/contact";
+    // If the VoiceroContact module is available, show the embedded form
+    try {
+      if (
+        window.VoiceroContact &&
+        typeof window.VoiceroContact.showContactForm === "function"
+      ) {
+        window.VoiceroContact.showContactForm();
+        return;
+      }
+    } catch (_) {}
 
-    console.log("VoiceroActionHandler: Redirecting to:", contactUrl);
+    // Fallback: present a link button instead of auto-redirecting
+    var contactUrl = (target && target.url) || "/pages/contact";
 
-    // Redirect to the contact page
+    var message = `
+      <div class="voicero-message-card">
+        <h3>Contact Support</h3>
+        <p>I can connect you with our support team. Click the button below to open the contact page.</p>
+        <div class="voicero-action-buttons">
+          <a href="${contactUrl}" class="voicero-button">Open Contact Page</a>
+        </div>
+      </div>
+    `;
+
+    if (window.VoiceroText?.addMessage) {
+      window.VoiceroText.addMessage(message, "ai");
+      return;
+    }
+
+    // Last resort: redirect only if no chat UI is available
     window.location.href = contactUrl;
   },
 
   handleReturn_order: function (target) {
-    var message = `
-      <div class="voicero-message-card">
-        <h3>Start a Return</h3>
-        <p>To begin the return process, you'll need to view your order details first.</p>
-        <div class="voicero-action-buttons">
-          <a href="/account/orders" class="voicero-button">View All Orders</a>
-        </div>
-        <p class="voicero-small-text">Once you're on your order page, look for the "Start Return" button or contact customer support if you need assistance.</p>
-      </div>
-    `;
+    // Always use proxy-backed return flow
+    if (
+      window.VoiceroReturnHandler &&
+      typeof window.VoiceroReturnHandler.handleReturn === "function"
+    ) {
+      window.VoiceroReturnHandler.handleReturn(target || {});
+      return;
+    }
 
-    // Display the message using VoiceroText
+    // Fallback message if return handler is not available
+    var message = `Starting your return. If this takes longer than expected, please try again in a moment.`;
     if (window.VoiceroText?.addMessage) {
       window.VoiceroText.addMessage(message, "ai");
-    }
-    // Display the message using VoiceroVoice as well
-    if (window.VoiceroVoice?.addMessage) {
-      window.VoiceroVoice.addMessage(message, "ai");
-    }
-
-    // Save message to session if VoiceroCore is available
-    this.saveMessageToSession(message, "assistant");
-
-    // Check if there's a URL in the target (action_context) and redirect to it
-    if (target && target.url) {
-      setTimeout(() => {
-        this.handleRedirect(target);
-      }, 500); // Small delay to ensure message is displayed and saved first
     }
   },
 
