@@ -17,6 +17,7 @@ import {
   Spinner,
   Tabs,
   Badge,
+  Select,
 } from "@shopify/polaris";
 import {
   KeyIcon,
@@ -2228,6 +2229,216 @@ export default function Index() {
                     </div>
                   )} */}
 
+                  {/* NEW: 1-Month Check-In Summary (static placeholder) */}
+                  {accessKey && fetcher.data?.success && (
+                    <div
+                      style={{
+                        backgroundColor: "white",
+                        borderRadius: "12px",
+                        padding: "24px",
+                        boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+                      }}
+                    >
+                      <BlockStack gap="600">
+                        <InlineStack gap="300" blockAlign="center">
+                          <div
+                            style={{
+                              width: 40,
+                              height: 40,
+                              backgroundColor: "#F4F5F7",
+                              borderRadius: 10,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                            }}
+                          >
+                            <Icon source={CalendarIcon} color="base" />
+                          </div>
+                          <BlockStack gap="100">
+                            <Text variant="headingLg" fontWeight="semibold">
+                              1‑Month Check‑In
+                            </Text>
+                            <Text variant="bodySm" color="subdued">
+                              Based on the last ~2.5 weeks (demo data)
+                            </Text>
+                          </BlockStack>
+                        </InlineStack>
+
+                        {/* Top-line KPIs */}
+                        <div
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns:
+                              "repeat(auto-fit, minmax(240px, 1fr))",
+                            gap: 16,
+                          }}
+                        >
+                          {[
+                            {
+                              label: "Total Message Threads",
+                              value: "44",
+                              accent: "#EEF6FF",
+                              icon: ChatIcon,
+                            },
+                            {
+                              label: "Total Revenue Increase",
+                              value: "$330",
+                              sub: "6 threads • 14% • AOV $55",
+                              accent: "#E8F5E9",
+                              icon: DataPresentationIcon,
+                            },
+                            {
+                              label: "Problem Resolution Rate",
+                              value: "67%",
+                              sub: "29 of 44 threads",
+                              accent: "#FEF3C7",
+                              icon: CheckIcon,
+                            },
+                            {
+                              label: "Avg Messages/Thread",
+                              value: "3.5",
+                              accent: "#F3E8FF",
+                              icon: ChatIcon,
+                            },
+                          ].map((kpi, idx) => (
+                            <div
+                              key={idx}
+                              style={{
+                                backgroundColor: kpi.accent,
+                                borderRadius: 12,
+                                padding: 16,
+                              }}
+                            >
+                              <InlineStack gap="300" blockAlign="center">
+                                <div
+                                  style={{
+                                    width: 40,
+                                    height: 40,
+                                    borderRadius: 10,
+                                    backgroundColor: "white",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+                                  }}
+                                >
+                                  <Icon source={kpi.icon} color="base" />
+                                </div>
+                                <BlockStack gap="100">
+                                  <Text variant="bodySm" color="subdued">
+                                    {kpi.label}
+                                  </Text>
+                                  <Text variant="headingXl" fontWeight="bold">
+                                    {kpi.value}
+                                  </Text>
+                                  {kpi.sub && (
+                                    <Text variant="bodySm" color="subdued">
+                                      {kpi.sub}
+                                    </Text>
+                                  )}
+                                </BlockStack>
+                              </InlineStack>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Most Common Asked Questions */}
+                        <div
+                          style={{
+                            backgroundColor: "#F9FAFB",
+                            borderRadius: 12,
+                            padding: 16,
+                          }}
+                        >
+                          <Text variant="headingSm" fontWeight="semibold">
+                            Most Common Asked Questions
+                          </Text>
+                          <div style={{ height: 12 }} />
+                          <div
+                            style={{
+                              display: "grid",
+                              gridTemplateColumns:
+                                "repeat(auto-fit, minmax(260px, 1fr))",
+                              gap: 12,
+                            }}
+                          >
+                            {[
+                              {
+                                title: "Product Related Questions",
+                                count: 13,
+                                summary:
+                                  "Detailed strain lists, ingredients, suitability (lactose, vegetarian); assurance on efficacy & safety before purchase.",
+                              },
+                              {
+                                title: "Order / Shipping Information",
+                                count: 8,
+                                summary:
+                                  "Where’s my order, delayed packages, international availability; need tracking links & realistic ETAs.",
+                              },
+                              {
+                                title: "Subscription / Order Changes",
+                                count: 7,
+                                summary:
+                                  "Skip, reschedule, upgrade/cancel subscriptions; fix duplicate orders with back‑end actions.",
+                              },
+                              {
+                                title: "Discounts / Promotions",
+                                count: 6,
+                                summary:
+                                  "Stacking codes, loyalty points, free item pricing logic; clarify promotion rules & cart behavior.",
+                              },
+                              {
+                                title: "Account Access / Login",
+                                count: 4,
+                                summary:
+                                  "Reset emails not received, account lockouts blocking purchases & rewards; need quick recovery path.",
+                              },
+                            ].map((cat, i) => (
+                              <div
+                                key={i}
+                                style={{
+                                  backgroundColor: "white",
+                                  borderRadius: 10,
+                                  padding: 16,
+                                  border: "1px solid #EEF2F7",
+                                }}
+                              >
+                                <InlineStack
+                                  align="space-between"
+                                  blockAlign="center"
+                                >
+                                  <Text
+                                    variant="headingSm"
+                                    fontWeight="semibold"
+                                  >
+                                    {cat.title}
+                                  </Text>
+                                  <div
+                                    style={{
+                                      backgroundColor: "#EEF6FF",
+                                      padding: "2px 10px",
+                                      borderRadius: 999,
+                                      border: "1px solid #B3D7FF",
+                                      fontSize: 12,
+                                      fontWeight: 600,
+                                      color: "#1E3A8A",
+                                    }}
+                                  >
+                                    {cat.count} threads
+                                  </div>
+                                </InlineStack>
+                                <div style={{ height: 8 }} />
+                                <Text variant="bodySm" color="subdued">
+                                  {cat.summary}
+                                </Text>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </BlockStack>
+                    </div>
+                  )}
+
                   {/* NEW: Helpful Overview (static placeholder) */}
                   {accessKey && fetcher.data?.success && (
                     <div
@@ -2605,18 +2816,34 @@ export default function Index() {
                             Your store's AI-ready content
                           </Text>
                         </BlockStack>
-                        <Button
-                          onClick={handleSync}
-                          loading={isSyncing}
-                          icon={RefreshIcon}
-                          primary={
-                            !fetcher.data?.websiteData?.lastSyncedAt ||
-                            fetcher.data?.websiteData?.lastSyncedAt === "Never"
-                          }
-                          disabled={!fetcher.data?.websiteData?.plan}
-                        >
-                          {isSyncing ? "Syncing..." : "Sync Content"}
-                        </Button>
+                        <InlineStack gap="200" blockAlign="center">
+                          <Select
+                            labelHidden
+                            label="Content type"
+                            options={[
+                              { label: "Products", value: "0" },
+                              { label: "Pages", value: "1" },
+                              { label: "Blog Posts", value: "2" },
+                              { label: "Collections", value: "3" },
+                              { label: "Discounts", value: "4" },
+                            ]}
+                            onChange={(v) => setSelectedContentTab(Number(v))}
+                            value={String(selectedContentTab)}
+                          />
+                          <Button
+                            onClick={handleSync}
+                            loading={isSyncing}
+                            icon={RefreshIcon}
+                            primary={
+                              !fetcher.data?.websiteData?.lastSyncedAt ||
+                              fetcher.data?.websiteData?.lastSyncedAt ===
+                                "Never"
+                            }
+                            disabled={!fetcher.data?.websiteData?.plan}
+                          >
+                            {isSyncing ? "Syncing..." : "Sync Content"}
+                          </Button>
+                        </InlineStack>
                         {isSyncing && (
                           <Text
                             variant="bodySm"
