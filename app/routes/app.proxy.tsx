@@ -1,9 +1,8 @@
 import { ActionFunction, LoaderFunction, json } from "@remix-run/node";
-import { authenticate } from "app/shopify.server";
 import { addCorsHeaders } from "app/proxy/utils";
 import { loader as listOrdersLoader } from "./app.proxy.orders";
-import { processCustomerAction } from "./app.proxy.customers";
-import { processOrderAction } from "./app.proxy.orders.actions";
+import { processCustomerAction } from "app/proxy/handlers/customers.server";
+import { processOrderAction } from "app/proxy/handlers/ordersActions.server";
 
 export const dynamic = "force-dynamic";
 
@@ -51,6 +50,7 @@ export const action: ActionFunction = async ({ request }) => {
 
   try {
     // Authenticate the app proxy request
+    const { authenticate } = await import("app/shopify.server");
     const { session, admin } = await authenticate.public.appProxy(request);
 
     if (!session || !admin) {

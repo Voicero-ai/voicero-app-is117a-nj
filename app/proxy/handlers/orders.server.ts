@@ -1,21 +1,13 @@
-import {
-  json,
-  type ActionFunctionArgs,
-  type LoaderFunctionArgs,
-} from "@remix-run/node";
+import { json } from "@remix-run/node";
+import { authenticate } from "app/shopify.server";
 import { addCorsHeaders } from "app/proxy/utils";
 
-export const dynamic = "force-dynamic";
-
-// GET /app/proxy/orders -> list recent orders (20 days, paginated across all)
-export async function loader({ request }: LoaderFunctionArgs) {
-  // Handle preflight
+export async function listRecentOrders(request: Request) {
   if (request.method.toLowerCase() === "options") {
     return new Response(null, addCorsHeaders({ status: 204 }));
   }
 
   try {
-    const { authenticate } = await import("app/shopify.server");
     const { session, admin } = await authenticate.public.appProxy(request);
     if (!session || !admin) {
       return json(
@@ -27,7 +19,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const now = new Date();
     const twentyDaysAgo = new Date();
     twentyDaysAgo.setDate(twentyDaysAgo.getDate() - 20);
-
     const minDate = twentyDaysAgo.toISOString();
     const maxDate = now.toISOString();
 
@@ -99,15 +90,4 @@ export async function loader({ request }: LoaderFunctionArgs) {
       addCorsHeaders({ status: 500 }),
     );
   }
-}
-
-// POST /app/proxy/orders -> currently noop placeholder
-export async function action({ request }: ActionFunctionArgs) {
-  if (request.method.toLowerCase() === "options") {
-    return new Response(null, addCorsHeaders({ status: 204 }));
-  }
-  return json(
-    { success: true, message: "Orders action processed" },
-    addCorsHeaders(),
-  );
 }
