@@ -3432,29 +3432,29 @@ export default function Index() {
                 <div
                   style={{
                     backgroundColor: "white",
-                    borderRadius: "12px",
-                    padding: "48px",
-                    boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
-                    textAlign: "center",
+                    borderRadius: "16px",
+                    padding: "32px 32px 24px 32px",
+                    boxShadow: "0 10px 20px rgba(16, 24, 40, 0.06)",
+                    border: "1px solid #EEF2F7",
                   }}
                 >
-                  <BlockStack gap="600" align="center">
+                  <BlockStack gap="500" align="center">
                     <div
                       style={{
-                        width: "80px",
-                        height: "80px",
-                        borderRadius: "50%",
+                        width: "88px",
+                        height: "88px",
+                        borderRadius: "20px",
                         background:
                           "linear-gradient(135deg, #5C6AC4 0%, #202E78 100%)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        margin: "0 auto",
+                        boxShadow: "0 10px 20px rgba(16,24,40,0.08)",
                       }}
                     >
                       <Icon source={ChatIcon} color="base" />
                     </div>
-                    <BlockStack gap="200" align="center">
+                    <BlockStack gap="100" align="center">
                       <Text
                         variant="headingXl"
                         fontWeight="bold"
@@ -3462,11 +3462,94 @@ export default function Index() {
                       >
                         Connect Your AI Assistant
                       </Text>
-                      <Text variant="bodyLg" color="subdued" alignment="center">
+                      <Text variant="bodyMd" color="subdued" alignment="center">
                         Choose how you'd like to connect your Voicero AI
                         assistant
                       </Text>
                     </BlockStack>
+
+                    {/* Steps Overview */}
+                    <div
+                      style={{
+                        width: "100%",
+                        backgroundColor: "#F9FAFB",
+                        borderRadius: 12,
+                        padding: 16,
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns:
+                            "repeat(auto-fit, minmax(220px, 1fr))",
+                          gap: 12,
+                        }}
+                      >
+                        {[
+                          {
+                            icon: GlobeIcon,
+                            label: "1. Quick Connect",
+                            sub: "Fastest setup",
+                          },
+                          {
+                            icon: KeyIcon,
+                            label: "2. Manual Key",
+                            sub: "Use existing key",
+                          },
+                          {
+                            icon: CheckIcon,
+                            label: "3. Activate in Theme",
+                            sub: "Enable embed",
+                          },
+                        ].map((step, i) => (
+                          <div
+                            key={i}
+                            style={{
+                              backgroundColor: "white",
+                              borderRadius: 10,
+                              padding: 12,
+                              border: "1px solid #EEF2F7",
+                              transition:
+                                "transform 0.15s ease, box-shadow 0.15s ease",
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.transform =
+                                "translateY(-2px)";
+                              e.currentTarget.style.boxShadow =
+                                "0 8px 16px rgba(16,24,40,0.08)";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.transform = "translateY(0)";
+                              e.currentTarget.style.boxShadow = "none";
+                            }}
+                          >
+                            <InlineStack gap="200" blockAlign="center">
+                              <div
+                                style={{
+                                  width: 32,
+                                  height: 32,
+                                  borderRadius: 8,
+                                  backgroundColor: "#F4F5FA",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                }}
+                              >
+                                <Icon source={step.icon} color="subdued" />
+                              </div>
+                              <BlockStack gap="0">
+                                <Text variant="bodyMd" fontWeight="semibold">
+                                  {step.label}
+                                </Text>
+                                <Text variant="bodySm" color="subdued">
+                                  {step.sub}
+                                </Text>
+                              </BlockStack>
+                            </InlineStack>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </BlockStack>
                 </div>
 
@@ -3474,18 +3557,32 @@ export default function Index() {
                 <div
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
-                    gap: "20px",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+                    gap: 20,
                   }}
                 >
                   <div
                     style={{
                       backgroundColor: "white",
-                      borderRadius: "12px",
-                      padding: "24px",
+                      borderRadius: 12,
+                      padding: 24,
                       boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
                       border: "2px solid transparent",
                       position: "relative",
+                      transition:
+                        "transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = "translateY(-2px)";
+                      e.currentTarget.style.boxShadow =
+                        "0 8px 16px rgba(16,24,40,0.08)";
+                      e.currentTarget.style.borderColor = "#E3F5E1";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = "translateY(0)";
+                      e.currentTarget.style.boxShadow =
+                        "0 1px 3px rgba(0, 0, 0, 0.1)";
+                      e.currentTarget.style.borderColor = "transparent";
                     }}
                   >
                     <div
@@ -3526,6 +3623,17 @@ export default function Index() {
                         The fastest way to get started. Connect with a single
                         click.
                       </Text>
+                      <ul
+                        style={{ margin: 0, paddingLeft: 18, color: "#6B7280" }}
+                      >
+                        <li style={{ marginBottom: 6 }}>
+                          Auto‑installs required settings
+                        </li>
+                        <li style={{ marginBottom: 6 }}>
+                          No code changes needed
+                        </li>
+                        <li>Takes under a minute</li>
+                      </ul>
                       <Button
                         primary
                         fullWidth
@@ -3544,9 +3652,20 @@ export default function Index() {
                   <div
                     style={{
                       backgroundColor: "white",
-                      borderRadius: "12px",
-                      padding: "24px",
+                      borderRadius: 12,
+                      padding: 24,
                       boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+                      transition: "transform 0.15s ease, box-shadow 0.15s ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = "translateY(-2px)";
+                      e.currentTarget.style.boxShadow =
+                        "0 8px 16px rgba(16,24,40,0.08)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = "translateY(0)";
+                      e.currentTarget.style.boxShadow =
+                        "0 1px 3px rgba(0, 0, 0, 0.1)";
                     }}
                   >
                     <BlockStack gap="600">
@@ -3571,6 +3690,17 @@ export default function Index() {
                       <Text variant="bodyMd">
                         Have an access key? Enter it manually to connect.
                       </Text>
+                      <ul
+                        style={{ margin: 0, paddingLeft: 18, color: "#6B7280" }}
+                      >
+                        <li style={{ marginBottom: 6 }}>
+                          Use an existing access key
+                        </li>
+                        <li style={{ marginBottom: 6 }}>
+                          Keeps full control over settings
+                        </li>
+                        <li>Great for advanced setups</li>
+                      </ul>
                       <BlockStack gap="300">
                         <TextField
                           label="Access Key"
@@ -3590,6 +3720,19 @@ export default function Index() {
                         >
                           Connect with Key
                         </Button>
+                        <Text
+                          variant="bodySm"
+                          color="subdued"
+                          alignment="center"
+                        >
+                          Where to find your key? {""}
+                          <Link
+                            url="https://voicero.com/docs/access-key"
+                            external
+                          >
+                            Read the guide
+                          </Link>
+                        </Text>
                       </BlockStack>
                     </BlockStack>
                   </div>
@@ -3598,25 +3741,93 @@ export default function Index() {
                 {/* Help Section */}
                 <div
                   style={{
-                    backgroundColor: "#F9FAFB",
-                    borderRadius: "12px",
-                    padding: "16px 20px",
-                    border: "1px solid #E4E5E7",
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+                    gap: 16,
                   }}
                 >
-                  <InlineStack align="center" gap="300">
-                    <Icon source={QuestionCircleIcon} color="subdued" />
-                    <Text variant="bodyMd" color="subdued">
-                      Need help? Check out our{" "}
-                      <Link url="https://voicero.com/docs" external>
-                        documentation
-                      </Link>{" "}
-                      or{" "}
-                      <Link url="https://voicero.com/support" external>
-                        contact support
-                      </Link>
-                    </Text>
-                  </InlineStack>
+                  <div
+                    style={{
+                      backgroundColor: "#F9FAFB",
+                      borderRadius: 12,
+                      padding: 16,
+                      border: "1px solid #E4E5E7",
+                    }}
+                  >
+                    <InlineStack gap="200" blockAlign="center">
+                      <div
+                        style={{
+                          width: 36,
+                          height: 36,
+                          borderRadius: 8,
+                          backgroundColor: "white",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+                        }}
+                      >
+                        <Icon source={QuestionCircleIcon} color="subdued" />
+                      </div>
+                      <BlockStack gap="0">
+                        <Text variant="bodyMd" fontWeight="semibold">
+                          Read the docs
+                        </Text>
+                        <Text variant="bodySm" color="subdued">
+                          Step-by-step setup and troubleshooting
+                        </Text>
+                      </BlockStack>
+                      <Button
+                        size="slim"
+                        onClick={() =>
+                          window.open("https://voicero.com/docs", "_blank")
+                        }
+                      >
+                        Open
+                      </Button>
+                    </InlineStack>
+                  </div>
+                  <div
+                    style={{
+                      backgroundColor: "#F9FAFB",
+                      borderRadius: 12,
+                      padding: 16,
+                      border: "1px solid #E4E5E7",
+                    }}
+                  >
+                    <InlineStack gap="200" blockAlign="center">
+                      <div
+                        style={{
+                          width: 36,
+                          height: 36,
+                          borderRadius: 8,
+                          backgroundColor: "white",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+                        }}
+                      >
+                        <Icon source={InfoIcon} color="highlight" />
+                      </div>
+                      <BlockStack gap="0">
+                        <Text variant="bodyMd" fontWeight="semibold">
+                          Contact support
+                        </Text>
+                        <Text variant="bodySm" color="subdued">
+                          We're here to help you get live
+                        </Text>
+                      </BlockStack>
+                      <Button
+                        size="slim"
+                        onClick={() =>
+                          window.open("https://voicero.com/support", "_blank")
+                        }
+                      >
+                        Get help
+                      </Button>
+                    </InlineStack>
+                  </div>
                 </div>
               </BlockStack>
             )}
