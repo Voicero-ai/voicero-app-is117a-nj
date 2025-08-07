@@ -1896,7 +1896,7 @@ export default function Index() {
                             />
                           </div>
                           <BlockStack gap="100">
-                            <Text variant="headingLg" fontWeight="semibold">
+                            <Text variant="headingXl" fontWeight="bold">
                               {fetcher.data?.websiteData?.name}
                             </Text>
                             <Link
@@ -1904,7 +1904,7 @@ export default function Index() {
                               external
                               monochrome
                             >
-                              <Text variant="bodySm" color="subdued">
+                              <Text variant="bodyMd" color="subdued">
                                 {fetcher.data?.websiteData?.url}
                               </Text>
                             </Link>
@@ -1918,9 +1918,24 @@ export default function Index() {
                                 : "#FFF4E4",
                               padding: "6px 14px",
                               borderRadius: "9999px",
-                              border: "1px solid #E5E7EB",
+                              border: "1px solid #D1D5DB",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 8,
                             }}
                           >
+                            <div
+                              style={{
+                                width: 8,
+                                height: 8,
+                                borderRadius: 999,
+                                backgroundColor: fetcher.data?.websiteData
+                                  ?.active
+                                  ? "#16A34A"
+                                  : "#D97706",
+                                boxShadow: "0 0 0 3px rgba(22,163,74,0.15)",
+                              }}
+                            />
                             <Text
                               variant="bodySm"
                               fontWeight="semibold"
@@ -2926,16 +2941,36 @@ export default function Index() {
                             }
 
                             return (
-                              <div style={{ display: "grid", gridGap: "16px" }}>
+                              <div
+                                style={{
+                                  display: "grid",
+                                  gridGap: "16px",
+                                  gridTemplateColumns:
+                                    "repeat(auto-fit, minmax(320px, 1fr))",
+                                }}
+                              >
                                 {contentItems.map((item, index) => (
                                   <div
                                     key={index}
                                     style={{
-                                      backgroundColor: "white",
-                                      borderRadius: "8px",
+                                      background:
+                                        "linear-gradient(180deg,#FFFFFF,#F9FAFB)",
+                                      borderRadius: "12px",
                                       padding: "16px",
-                                      boxShadow:
-                                        "0 1px 2px rgba(0, 0, 0, 0.05)",
+                                      border: "1px solid #EEF2F7",
+                                      transition:
+                                        "transform 0.15s ease, box-shadow 0.15s ease",
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      e.currentTarget.style.transform =
+                                        "translateY(-1px)";
+                                      e.currentTarget.style.boxShadow =
+                                        "0 8px 16px rgba(16,24,40,0.06)";
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.currentTarget.style.transform =
+                                        "translateY(0)";
+                                      e.currentTarget.style.boxShadow = "none";
                                     }}
                                   >
                                     <BlockStack gap="300">
@@ -2994,8 +3029,8 @@ export default function Index() {
                                           item.description)) && (
                                         <div
                                           style={{
-                                            paddingLeft: "4px",
-                                            borderLeft: "3px solid #F4F5F7",
+                                            paddingLeft: "10px",
+                                            borderLeft: "3px solid #E5E7EB",
                                           }}
                                         >
                                           <Text
