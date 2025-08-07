@@ -1857,10 +1857,11 @@ export default function Index() {
                   {/* Website Status Card */}
                   <div
                     style={{
-                      backgroundColor: "white",
-                      borderRadius: "12px",
+                      background: "linear-gradient(180deg,#F8FAFC,#FFFFFF)",
+                      borderRadius: "16px",
                       padding: "24px",
-                      boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+                      boxShadow: "0 10px 20px rgba(16, 24, 40, 0.06)",
+                      border: "1px solid #EEF2F7",
                     }}
                   >
                     <BlockStack gap="600">
@@ -1869,15 +1870,16 @@ export default function Index() {
                         <InlineStack gap="400" blockAlign="center">
                           <div
                             style={{
-                              width: "48px",
-                              height: "48px",
-                              borderRadius: "12px",
+                              width: "56px",
+                              height: "56px",
+                              borderRadius: "14px",
                               backgroundColor: fetcher.data?.websiteData?.active
                                 ? "#E3F5E1"
                                 : "#FFF4E4",
                               display: "flex",
                               alignItems: "center",
                               justifyContent: "center",
+                              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.6)",
                             }}
                           >
                             <Icon
@@ -1914,8 +1916,9 @@ export default function Index() {
                               backgroundColor: fetcher.data?.websiteData?.active
                                 ? "#E3F5E1"
                                 : "#FFF4E4",
-                              padding: "6px 16px",
-                              borderRadius: "20px",
+                              padding: "6px 14px",
+                              borderRadius: "9999px",
+                              border: "1px solid #E5E7EB",
                             }}
                           >
                             <Text
@@ -2024,7 +2027,8 @@ export default function Index() {
                       <div
                         style={{
                           display: "grid",
-                          gridTemplateColumns: "repeat(3, 1fr)",
+                          gridTemplateColumns:
+                            "repeat(auto-fit, minmax(220px, 1fr))",
                           gap: "20px",
                         }}
                       >
@@ -2112,10 +2116,11 @@ export default function Index() {
                   {accessKey && fetcher.data?.success && (
                     <div
                       style={{
-                        backgroundColor: "white",
-                        borderRadius: "12px",
+                        background: "linear-gradient(180deg,#F8FAFC,#FFFFFF)",
+                        borderRadius: "16px",
                         padding: "24px",
-                        boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+                        boxShadow: "0 10px 20px rgba(16, 24, 40, 0.06)",
+                        border: "1px solid #EEF2F7",
                       }}
                     >
                       <BlockStack gap="600">
@@ -2155,7 +2160,8 @@ export default function Index() {
                               borderRadius: "12px",
                               padding: "20px",
                               display: "grid",
-                              gridTemplateColumns: "repeat(4, 1fr)",
+                              gridTemplateColumns:
+                                "repeat(auto-fit, minmax(200px, 1fr))",
                               gap: "20px",
                             }}
                           >
@@ -2307,6 +2313,19 @@ export default function Index() {
                                 backgroundColor: kpi.accent,
                                 borderRadius: 12,
                                 padding: 16,
+                                transition:
+                                  "transform 0.15s ease, box-shadow 0.15s ease",
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.transform =
+                                  "translateY(-2px)";
+                                e.currentTarget.style.boxShadow =
+                                  "0 8px 16px rgba(16,24,40,0.08)";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.transform =
+                                  "translateY(0)";
+                                e.currentTarget.style.boxShadow = "none";
                               }}
                             >
                               <InlineStack gap="300" blockAlign="center">
@@ -2434,125 +2453,6 @@ export default function Index() {
                               </div>
                             ))}
                           </div>
-                        </div>
-                      </BlockStack>
-                    </div>
-                  )}
-
-                  {/* NEW: Helpful Overview (static placeholder) */}
-                  {accessKey && fetcher.data?.success && (
-                    <div
-                      style={{
-                        backgroundColor: "white",
-                        borderRadius: "12px",
-                        padding: "24px",
-                        boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
-                      }}
-                    >
-                      <BlockStack gap="600">
-                        <BlockStack gap="200">
-                          <Text variant="headingLg" fontWeight="semibold">
-                            Helpful Overview
-                          </Text>
-                          <Text variant="bodyMd" color="subdued">
-                            Key support and sales metrics (demo data)
-                          </Text>
-                        </BlockStack>
-
-                        <div
-                          style={{
-                            display: "grid",
-                            gridTemplateColumns:
-                              "repeat(auto-fit, minmax(240px, 1fr))",
-                            gap: "20px",
-                          }}
-                        >
-                          {[
-                            {
-                              icon: DataPresentationIcon,
-                              label: "Total Revenue",
-                              value: formatCurrency(
-                                helpfulMetrics.totalRevenue,
-                              ),
-                              accent: "#EEF6FF",
-                            },
-                            {
-                              icon: CheckIcon,
-                              label: "Resolution Rate",
-                              value: `${Math.round(
-                                (helpfulMetrics.resolutionRate || 0) * 100,
-                              )}%`,
-                              accent: "#E8F5E9",
-                              progress: helpfulMetrics.resolutionRate || 0,
-                            },
-                            {
-                              icon: ChatIcon,
-                              label: "Avg Messages",
-                              value: (helpfulMetrics.avgMessages || 0).toFixed(
-                                1,
-                              ),
-                              accent: "#FFF7ED",
-                            },
-                          ].map((m, idx) => (
-                            <div
-                              key={idx}
-                              style={{
-                                backgroundColor: m.accent,
-                                borderRadius: "12px",
-                                padding: "20px",
-                              }}
-                            >
-                              <InlineStack gap="300" blockAlign="center">
-                                <div
-                                  style={{
-                                    width: "44px",
-                                    height: "44px",
-                                    backgroundColor: "white",
-                                    borderRadius: "10px",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
-                                  }}
-                                >
-                                  <Icon source={m.icon} color="base" />
-                                </div>
-                                <BlockStack gap="100">
-                                  <Text variant="bodySm" color="subdued">
-                                    {m.label}
-                                  </Text>
-                                  <Text variant="headingXl" fontWeight="bold">
-                                    {m.value}
-                                  </Text>
-                                  {typeof m.progress === "number" && (
-                                    <div style={{ width: "100%" }}>
-                                      <div
-                                        style={{
-                                          width: "100%",
-                                          height: "6px",
-                                          backgroundColor: "#E5E7EB",
-                                          borderRadius: "9999px",
-                                          overflow: "hidden",
-                                        }}
-                                      >
-                                        <div
-                                          style={{
-                                            width: `${Math.min(
-                                              100,
-                                              Math.max(0, m.progress * 100),
-                                            )}%`,
-                                            height: "100%",
-                                            background:
-                                              "linear-gradient(90deg,#22C55E,#16A34A)",
-                                          }}
-                                        />
-                                      </div>
-                                    </div>
-                                  )}
-                                </BlockStack>
-                              </InlineStack>
-                            </div>
-                          ))}
                         </div>
                       </BlockStack>
                     </div>
