@@ -262,34 +262,22 @@ export async function processOrderAction(request: Request) {
 
     // Return handling for both return and return_order
     if (data.action === "return" || data.action === "return_order") {
-      // If unfulfilled, accept a review request instead of hard-failing
+      // If unfulfilled, suggest cancel
       if (
         data.action === "return_order" &&
         order.displayFulfillmentStatus === "UNFULFILLED"
       ) {
-        const clientItems =
-          (data.items && Array.isArray(data.items) ? data.items : undefined) ||
-          (data.action_context && Array.isArray(data.action_context.items)
-            ? data.action_context.items
-            : undefined) ||
-          [];
-
         return json(
           {
-            success: true,
-            message:
-              "Your return request has been submitted for review. Since your order hasn't shipped yet, our team may cancel the order instead.",
-            status: "pending_review",
-            review_required: true,
-            approval_required: true,
+            success: false,
+            error: "This order hasn't shipped yet and cannot be returned",
             suggest_cancel: true,
+            message:
+              "Your order hasn't shipped yet. Instead of a return, you can cancel this order to get a full refund.",
             order_details: {
               order_number: order.name,
               status: order.displayFulfillmentStatus,
             },
-            requested_items: clientItems,
-            reason: data.returnReason || data.reason || "OTHER",
-            returnReason: data.returnReason || data.reason || "OTHER",
           },
           addCorsHeaders(),
         );
@@ -320,145 +308,101 @@ export async function processOrderAction(request: Request) {
         );
       }
 
-      try {
-        // Fetch fulfillments to build return line items
-        const getOrderQuery = `
-          query getOrder($id: ID!) {
-            order(id: $id) {
-              id
-              name
-              fulfillments { id status fulfillmentLineItems(first: 20) { edges { node { id quantity lineItem { id name quantity } } } } }
-              lineItems(first: 20) { edges { node { id name quantity refundableQuantity } } }
-            }
+      // Fetch fulfillments to build return line items
+      const getOrderQuery = `
+        query getOrder($id: ID!) {
+          order(id: $id) {
+            id
+            name
+            fulfillments { id status fulfillmentLineItems(first: 20) { edges { node { id quantity lineItem { id name quantity } } } } }
+            lineItems(first: 20) { edges { node { id name quantity refundableQuantity } } }
           }
-        `;
-        const orderResp = await (admin as any).graphql(getOrderQuery, {
-          variables: { id: order.id },
-        });
-        const orderDetails = await orderResp.json();
-
-        const fulfillmentsArray = orderDetails?.data?.order?.fulfillments;
-        if (
-          !Array.isArray(fulfillmentsArray) ||
-          fulfillmentsArray.length === 0
-        ) {
-          const clientItems =
-            (data.items && Array.isArray(data.items)
-              ? data.items
-              : undefined) ||
-            (data.action_context && Array.isArray(data.action_context.items)
-              ? data.action_context.items
-              : undefined) ||
-            [];
-
-          return json(
-            {
-              success: true,
-              message:
-                "Your return request has been submitted for review. Our team will evaluate your request and follow up by email.",
-              status: "pending_review",
-              review_required: true,
-              approval_required: true,
-              suggest_cancel: order.displayFulfillmentStatus === "UNFULFILLED",
-              order_details: {
-                order_number: order.name,
-                status: order.displayFulfillmentStatus,
-              },
-              requested_items: clientItems,
-              reason: normalizeReturnReason(returnReason) || "OTHER",
-              returnReason: normalizeReturnReason(returnReason) || "OTHER",
-            },
-            addCorsHeaders(),
-          );
         }
+      `;
+      const orderResp = await (admin as any).graphql(getOrderQuery, {
+        variables: { id: order.id },
+      });
+      const orderDetails = await orderResp.json();
 
-        // fulfillments is an array of objects already – do not access .node
-        const fulfillment = fulfillmentsArray[0];
-        const fulfillmentLineItems =
-          fulfillment?.fulfillmentLineItems?.edges?.map(
-            (edge: { node: any }) => edge.node,
-          ) || [];
-
-        if (
-          !Array.isArray(fulfillmentLineItems) ||
-          fulfillmentLineItems.length === 0
-        ) {
-          const clientItems =
-            (data.items && Array.isArray(data.items)
-              ? data.items
-              : undefined) ||
-            (data.action_context && Array.isArray(data.action_context.items)
-              ? data.action_context.items
-              : undefined) ||
-            [];
-
-          return json(
-            {
-              success: true,
-              message:
-                "Your return request has been submitted for review. Our team will evaluate your request and follow up by email.",
-              status: "pending_review",
-              review_required: true,
-              approval_required: true,
-              requested_items: clientItems,
-              reason: normalizeReturnReason(returnReason) || "OTHER",
-              returnReason: normalizeReturnReason(returnReason) || "OTHER",
-            },
-            addCorsHeaders(),
-          );
-        }
-
-        const returnLineItems = fulfillmentLineItems.map((item: any) => ({
-          fulfillmentLineItemId: item.id,
-          quantity: item.quantity,
-          returnReason: normalizeReturnReason(returnReason) || "OTHER",
-          returnReasonNote: returnReasonNote,
-        }));
-
-        // Instead of creating the Shopify return immediately, submit a review request
+      if (!orderDetails.data.order.fulfillments.length) {
         return json(
           {
-            success: true,
-            message: `Your return request for order ${order.name} has been submitted for review. You'll receive an update by email once it's processed.`,
-            status: "pending_review",
-            review_required: true,
-            approval_required: true,
-            order: { id: order.id, name: order.name },
-            requested_items: returnLineItems,
-            reason: normalizeReturnReason(returnReason) || "OTHER",
-            returnReason: normalizeReturnReason(returnReason) || "OTHER",
-            reason_note: returnReasonNote,
-            returnReasonNote: returnReasonNote,
-          },
-          addCorsHeaders(),
-        );
-      } catch (e) {
-        // Any failure fetching fulfillments still yields a pending review
-        const clientItems =
-          (data.items && Array.isArray(data.items) ? data.items : undefined) ||
-          (data.action_context && Array.isArray(data.action_context.items)
-            ? data.action_context.items
-            : undefined) ||
-          [];
-
-        return json(
-          {
-            success: true,
+            success: false,
+            error:
+              "This order doesn't have any fulfilled items that can be returned",
+            suggest_cancel: true,
             message:
-              "Your return request has been submitted for review. Our team will evaluate your request and follow up by email.",
-            status: "pending_review",
-            review_required: true,
-            approval_required: true,
-            order: { id: order.id, name: order.name },
-            requested_items: clientItems,
-            reason: normalizeReturnReason(returnReason) || "OTHER",
-            returnReason: normalizeReturnReason(returnReason) || "OTHER",
-            reason_note: returnReasonNote,
-            returnReasonNote: returnReasonNote,
+              "Your order hasn't shipped yet. Instead of a return, you can cancel this order to get a full refund.",
+            order_details: {
+              order_number: order.name,
+              status: order.displayFulfillmentStatus,
+            },
           },
           addCorsHeaders(),
         );
       }
+
+      // fulfillments is an array of objects already – do not access .node
+      const fulfillment = orderDetails.data.order.fulfillments[0];
+      const fulfillmentLineItems = fulfillment.fulfillmentLineItems.edges.map(
+        (edge: { node: any }) => edge.node,
+      );
+      if (fulfillmentLineItems.length === 0) {
+        return json(
+          {
+            success: false,
+            error: "No items available to return in this order",
+          },
+          addCorsHeaders(),
+        );
+      }
+
+      const returnLineItems = fulfillmentLineItems.map((item: any) => ({
+        fulfillmentLineItemId: item.id,
+        quantity: item.quantity,
+        returnReason: normalizeReturnReason(returnReason) || "OTHER",
+        returnReasonNote: returnReasonNote,
+      }));
+
+      const returnCreateMutation = `
+        mutation returnCreate($input: ReturnInput!) {
+          returnCreate(returnInput: $input) {
+            return { id status returnLineItems(first: 10) { edges { node { id returnReason quantity } } } }
+            userErrors { field message }
+          }
+        }
+      `;
+      const returnResponse = await (admin as any).graphql(
+        returnCreateMutation,
+        {
+          variables: {
+            input: { orderId: order.id, returnLineItems, notifyCustomer: true },
+          },
+        },
+      );
+      const returnResult = await returnResponse.json();
+
+      if (returnResult.data?.returnCreate?.userErrors?.length > 0) {
+        const errors = returnResult.data.returnCreate.userErrors;
+        return json(
+          { success: false, error: errors[0].message, details: errors },
+          addCorsHeaders(),
+        );
+      }
+
+      return json(
+        {
+          success: true,
+          message: `Return for order ${order.name} has been initiated successfully.`,
+          return: returnResult.data?.returnCreate?.return,
+          status: "approved",
+          reason: normalizeReturnReason(returnReason) || "OTHER",
+          returnReason: normalizeReturnReason(returnReason) || "OTHER",
+          reason_note: returnReasonNote,
+          returnReasonNote: returnReasonNote,
+        },
+        addCorsHeaders(),
+      );
     }
 
     return json(
