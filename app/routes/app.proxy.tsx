@@ -453,9 +453,16 @@ export const action: ActionFunction = async ({ request }) => {
     ) {
       console.log(`Processing ${data.action} request:`, data);
 
-      // Get the order_id or number
-      const orderIdentifier = data.order_id;
-      const email = data.email;
+      // Get the order_id or number (support various client formats and action_context)
+      const orderIdentifier =
+        data.order_id ||
+        data.orderNumber ||
+        data.order_number ||
+        (data.action_context && data.action_context.order_id);
+      const email =
+        data.email ||
+        data.order_email ||
+        (data.action_context && data.action_context.order_email);
 
       if (!orderIdentifier) {
         return json(
@@ -847,8 +854,8 @@ export const action: ActionFunction = async ({ request }) => {
                 }
 
                 // Get the fulfillment line items
-                const fulfillment =
-                  orderDetails.data.order.fulfillments[0].node;
+                // fulfillments is an array of objects – not edges; do not access .node
+                const fulfillment = orderDetails.data.order.fulfillments[0];
                 const fulfillmentLineItems =
                   fulfillment.fulfillmentLineItems.edges.map(
                     (edge: { node: any }) => edge.node,
@@ -1111,8 +1118,8 @@ export const action: ActionFunction = async ({ request }) => {
                 );
               }
 
-              // Get the fulfillment line items
-              const fulfillment = orderDetails.data.order.fulfillments[0].node;
+              // Get the fulfillment line items (first fulfillment object)
+              const fulfillment = orderDetails.data.order.fulfillments[0];
               const fulfillmentLineItems =
                 fulfillment.fulfillmentLineItems.edges.map(
                   (edge: { node: any }) => edge.node,

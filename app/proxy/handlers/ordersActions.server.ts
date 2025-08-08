@@ -40,8 +40,16 @@ export async function processOrderAction(request: Request) {
       );
     }
 
-    const orderIdentifier = data.order_id;
-    const email = data.email;
+    // Accept identifiers from various shapes (including action_context)
+    const orderIdentifier =
+      data.order_id ||
+      data.orderNumber ||
+      data.order_number ||
+      (data.action_context && data.action_context.order_id);
+    const email =
+      data.email ||
+      data.order_email ||
+      (data.action_context && data.action_context.order_email);
     if (!orderIdentifier) {
       return json(
         { success: false, error: "Missing order identifier" },
@@ -334,7 +342,8 @@ export async function processOrderAction(request: Request) {
         );
       }
 
-      const fulfillment = orderDetails.data.order.fulfillments[0].node;
+      // fulfillments is an array of objects already – do not access .node
+      const fulfillment = orderDetails.data.order.fulfillments[0];
       const fulfillmentLineItems = fulfillment.fulfillmentLineItems.edges.map(
         (edge: { node: any }) => edge.node,
       );
