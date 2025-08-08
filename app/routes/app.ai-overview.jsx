@@ -365,28 +365,86 @@ export default function AIOverviewPage() {
 
   const toggleToast = () => setShowToast(!showToast);
 
-  // Calculate usage percentages - use the correct property names
-  const monthlyUsage = websiteData?.monthlyQueries || 0;
+  // Hard-coded insights content for the report sections
+  const reviewTitle =
+    "Voicero AI – Post-Launch Chat Review (17 Jun – 3 Jul 2025)";
+  const goodThreads = [
+    "62ef08ab",
+    "e24c37d5",
+    "a89170e3",
+    "e5de4431",
+    "f02fe70b",
+    "093c065f",
+    "c2142524",
+    "5056a3ee",
+    "3ecbba0d",
+    "8e3b8588",
+    "1f1633ee",
+    "d5174671",
+    "6b26f4e0",
+    "3a7f1315",
+    "72f3acd3",
+  ];
+  const needsWorkThreads = [
+    "4389ad4b",
+    "75a5a22d",
+    "d897aa3c",
+    "b1284cb8",
+    "f7475a90",
+    "e4f6eca4",
+  ];
+  const goodOutcome =
+    "Clear answers, accurate product guidance, smooth order / account actions, or quick hand-offs to CS; users left satisfied and often thanked the bot.";
+  const needsWorkOutcome =
+    "Repetition, promo/price contradictions, inability to override simple fixes, or wrong shipping info led to stalled resolutions and visible user frustration.";
 
-  // Check for plan type with proper capitalization
-  const isPlan = (plan) =>
-    websiteData?.plan?.toLowerCase() === plan.toLowerCase();
-  const isEnterprisePlan = isPlan("Enterprise");
-  const isBetaPlan = isPlan("Beta");
-  const isStarterPlan = isPlan("Starter");
+  const whatsWorking = [
+    "Product expertise in context – Differences between SKUs (e.g., Women’s UT vs. standard) explained clearly and converted interest into future intent.",
+    "Action-oriented flows – Successful order cancellations, reward redemptions, and cart edits without human escalation.",
+    "Empathy & reassurance – Quick apologies for delays/confusion followed by specific next steps kept conversations friendly.",
+    "Cross-sell done right – When relevant (gut-health tips, pairing enzymes with probiotics) the bot recommended logical add-ons without sounding pushy.",
+  ];
 
-  // Determine quota based on plan
-  let monthlyQuota = 1000; // Default for Starter plan
-  if (isEnterprisePlan) {
-    monthlyQuota = "Unlimited"; // Enterprise has pay-per-query
-  } else if (isBetaPlan) {
-    monthlyQuota = "Unlimited"; // Beta has unlimited
-  }
+  const painPoints = [
+    {
+      issue:
+        "Promotion clashes (free gifts, $0.02 shipping gaps, discount-stack limits)",
+      impact:
+        "Loops of “add $X more” or “can you override?” with no resolution; five threads ended unresolved.",
+    },
+    {
+      issue: "Over-prompting (email-subscribe pop-ups, price blurbs)",
+      impact:
+        "In six threads, repetitive template replies buried the actual answer.",
+    },
+    {
+      issue: "Inconsistent policies (intl. shipping)",
+      impact:
+        "One thread incorrectly said Canada orders were possible, then reversed—loss of trust.",
+    },
+    {
+      issue: "Tracking / delivery status",
+      impact:
+        "Users asking “Where is my order?” got generic CS redirects plus unrelated upsell messages.",
+    },
+  ];
 
-  const usagePercentage =
-    isEnterprisePlan || isBetaPlan || monthlyQuota === "Unlimited"
-      ? 0
-      : Math.min(100, (monthlyUsage / monthlyQuota) * 100);
+  // Quick wins (AI-focused, distinct from provided examples)
+  const quickWins = [
+    "Confidence gating – When answer certainty is low, ask one clarifying question or offer a human handoff instead of guessing.",
+    "Template deduplication – Detect and suppress repeat promos/signup prompts within a session to keep answers concise.",
+    "Promo-eligibility explainer – Compute and state why an offer does/doesn’t apply with a one-tap fix (add/remove items, apply code).",
+    "Shipping guardrail – Validate destination and stock regions before promising availability.",
+    "Live order ETA – After an order number is provided, fetch ETA and pause upsell until a tracking answer is delivered.",
+  ];
+
+  const kpis = [
+    { label: "Total threads", value: "21" },
+    { label: "Helpful (per manual audit)", value: "15 (71%)" },
+    { label: "Needs-work", value: "6 (29%)" },
+    { label: "Avg. user messages when good", value: "4" },
+    { label: "Avg. user messages when bad", value: "10" },
+  ];
 
   if (disconnected) {
     return null; // Don't render anything while redirecting
@@ -422,60 +480,6 @@ export default function AIOverviewPage() {
       <BlockStack gap="500">
         <Layout>
           <Layout.Section>
-            {/* Main Usage Card */}
-            <Card>
-              <BlockStack gap="400">
-                <InlineStack align="space-between">
-                  <InlineStack gap="200">
-                    <Icon source={DataPresentationIcon} color="highlight" />
-                    <Text as="h3" variant="headingMd">
-                      Monthly Query Usage
-                    </Text>
-                  </InlineStack>
-                  {!isEnterprisePlan && !isBetaPlan && (
-                    <Badge
-                      status={usagePercentage < 90 ? "success" : "critical"}
-                    >
-                      {usagePercentage < 90 ? "Good" : "Near Limit"}
-                    </Badge>
-                  )}
-                </InlineStack>
-                <Divider />
-                <BlockStack gap="300">
-                  <Box padding="400">
-                    <BlockStack gap="400">
-                      <Text variant="headingLg" as="h2" alignment="center">
-                        {monthlyUsage} /{" "}
-                        {isBetaPlan
-                          ? "Unlimited"
-                          : isEnterprisePlan
-                            ? "Pay per query"
-                            : monthlyQuota}{" "}
-                        queries used this month
-                      </Text>
-                      {!isEnterprisePlan && !isBetaPlan && (
-                        <div>
-                          <CustomProgressBar
-                            progress={usagePercentage}
-                            tone={usagePercentage < 90 ? "success" : "critical"}
-                          />
-                        </div>
-                      )}
-                      <Text variant="bodyMd" as="p" alignment="center">
-                        {isBetaPlan
-                          ? "Beta plan includes unlimited queries"
-                          : isEnterprisePlan
-                            ? "Enterprise plan includes pay-per-query pricing"
-                            : 100 - usagePercentage > 0
-                              ? `${(100 - usagePercentage).toFixed(1)}% remaining`
-                              : "Quota exceeded"}
-                      </Text>
-                    </BlockStack>
-                  </Box>
-                </BlockStack>
-              </BlockStack>
-            </Card>
-
             {/* AI Analysis Card */}
             <Card>
               <BlockStack gap="400">
@@ -684,53 +688,191 @@ export default function AIOverviewPage() {
               </BlockStack>
             </Card>
 
-            {/* Usage Statistics */}
+            {/* 1-Month Chat Quality Snapshot */}
+            <Card>
+              <BlockStack gap="400">
+                <InlineStack align="space-between">
+                  <InlineStack gap="200">
+                    <Icon source={DataPresentationIcon} color="highlight" />
+                    <Text as="h3" variant="headingMd">
+                      {reviewTitle}
+                    </Text>
+                  </InlineStack>
+                </InlineStack>
+                <Divider />
+                <BlockStack gap="400">
+                  <Box
+                    padding="400"
+                    background="bg-surface-secondary"
+                    borderRadius="200"
+                    style={{ borderLeft: "4px solid #008060" }}
+                  >
+                    <BlockStack gap="200">
+                      <InlineStack align="space-between">
+                        <InlineStack gap="200">
+                          <Badge status="success">Good (15 / 21)</Badge>
+                        </InlineStack>
+                      </InlineStack>
+                      <Text variant="bodyMd" as="p">
+                        {goodOutcome}
+                      </Text>
+                      <InlineStack gap="100" wrap>
+                        {goodThreads.map((id) => (
+                          <Badge key={id}>{id}</Badge>
+                        ))}
+                      </InlineStack>
+                    </BlockStack>
+                  </Box>
+                  <Box
+                    padding="400"
+                    background="bg-surface-secondary"
+                    borderRadius="200"
+                    style={{ borderLeft: "4px solid #d82c0d" }}
+                  >
+                    <BlockStack gap="200">
+                      <InlineStack gap="200">
+                        <Badge status="critical">Needs-Work (6 / 21)</Badge>
+                      </InlineStack>
+                      <Text variant="bodyMd" as="p">
+                        {needsWorkOutcome}
+                      </Text>
+                      <InlineStack gap="100" wrap>
+                        {needsWorkThreads.map((id) => (
+                          <Badge key={id}>{id}</Badge>
+                        ))}
+                      </InlineStack>
+                    </BlockStack>
+                  </Box>
+                </BlockStack>
+              </BlockStack>
+            </Card>
+
+            {/* What's Working */}
+            <Card>
+              <BlockStack gap="400">
+                <InlineStack align="space-between">
+                  <InlineStack gap="200">
+                    <Icon source={DataPresentationIcon} color="highlight" />
+                    <Text as="h3" variant="headingMd">
+                      What’s Working
+                    </Text>
+                  </InlineStack>
+                </InlineStack>
+                <Divider />
+                <BlockStack gap="200">
+                  {whatsWorking.map((item, idx) => (
+                    <Text key={idx} variant="bodyMd" as="p">
+                      • {item}
+                    </Text>
+                  ))}
+                </BlockStack>
+              </BlockStack>
+            </Card>
+
+            {/* Pain-Points */}
             <Card>
               <BlockStack gap="400">
                 <InlineStack align="space-between">
                   <InlineStack gap="200">
                     <Icon source={ChartVerticalIcon} color="highlight" />
                     <Text as="h3" variant="headingMd">
-                      Usage Statistics
+                      Pain-Points
                     </Text>
                   </InlineStack>
                 </InlineStack>
                 <Divider />
                 <BlockStack gap="300">
-                  <InlineStack gap="200" align="start">
-                    <Box width="24px">
-                      <Icon source={ChatIcon} color="base" />
-                    </Box>
-                    <BlockStack gap="0">
-                      <InlineStack gap="200">
-                        <Text as="p" variant="bodyMd" fontWeight="bold">
-                          Total Queries:
-                        </Text>
-                        <Text as="p">{websiteData?.monthlyQueries || 0}</Text>
-                      </InlineStack>
-                    </BlockStack>
+                  {/* Table header */}
+                  <div style={{ display: "flex", gap: 12 }}>
+                    <div style={{ flex: 1, fontWeight: 600 }}>Issue</div>
+                    <div style={{ flex: 2, fontWeight: 600 }}>
+                      Observed impact
+                    </div>
+                  </div>
+                  {painPoints.map((row, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        display: "flex",
+                        gap: 12,
+                        padding: "8px 0",
+                        borderTop: idx === 0 ? "1px solid #e1e3e5" : "none",
+                        borderBottom: "1px solid #e1e3e5",
+                      }}
+                    >
+                      <div style={{ flex: 1 }}>
+                        <Text variant="bodyMd">{row.issue}</Text>
+                      </div>
+                      <div style={{ flex: 2 }}>
+                        <Text variant="bodyMd">{row.impact}</Text>
+                      </div>
+                    </div>
+                  ))}
+                </BlockStack>
+              </BlockStack>
+            </Card>
+
+            {/* Quick Wins */}
+            <Card>
+              <BlockStack gap="400">
+                <InlineStack align="space-between">
+                  <InlineStack gap="200">
+                    <Icon source={DataPresentationIcon} color="highlight" />
+                    <Text as="h3" variant="headingMd">
+                      Quick Wins to lift “Bad” → “Good”
+                    </Text>
                   </InlineStack>
-                  <InlineStack gap="200" align="start">
-                    <Box width="24px">
-                      <Icon source={GlobeIcon} color="base" />
-                    </Box>
-                    <BlockStack gap="0">
-                      <InlineStack gap="200">
-                        <Text as="p" variant="bodyMd" fontWeight="bold">
-                          Current Plan:
-                        </Text>
-                        <Badge>
-                          {websiteData?.plan
-                            ? websiteData.plan.charAt(0).toUpperCase() +
-                              websiteData.plan.slice(1)
-                            : "Basic"}
-                        </Badge>
-                      </InlineStack>
-                    </BlockStack>
+                </InlineStack>
+                <Divider />
+                <BlockStack gap="200">
+                  {quickWins.map((item, idx) => (
+                    <Text key={idx} variant="bodyMd" as="p">
+                      • {item}
+                    </Text>
+                  ))}
+                </BlockStack>
+              </BlockStack>
+            </Card>
+
+            {/* KPI Snapshot */}
+            <Card>
+              <BlockStack gap="400">
+                <InlineStack align="space-between">
+                  <InlineStack gap="200">
+                    <Icon source={ChartVerticalIcon} color="highlight" />
+                    <Text as="h3" variant="headingMd">
+                      KPI Snapshot
+                    </Text>
+                  </InlineStack>
+                </InlineStack>
+                <Divider />
+                <BlockStack gap="300">
+                  <InlineStack gap="300" wrap>
+                    {kpis.map((stat, idx) => (
+                      <Box
+                        key={idx}
+                        padding="300"
+                        background="bg-surface-secondary"
+                        borderRadius="200"
+                        minWidth="220px"
+                        style={{ borderLeft: "4px solid #5c6ac4" }}
+                      >
+                        <BlockStack gap="100">
+                          <Text variant="bodySm" color="subdued">
+                            {stat.label}
+                          </Text>
+                          <Text variant="headingLg" as="h4">
+                            {stat.value}
+                          </Text>
+                        </BlockStack>
+                      </Box>
+                    ))}
                   </InlineStack>
                 </BlockStack>
               </BlockStack>
             </Card>
+
+            {/* Recent AI Queries remains below */}
 
             {/* AI Query History */}
             <Card>
