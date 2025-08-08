@@ -297,9 +297,20 @@ Would you like me to help you initiate a return request once you receive your or
         console.log("Direct return response:", response);
 
         if (response.success) {
-          this.notifyUser(
-            `✅ Your return for order #${orderIdentifier} has been processed successfully! You will receive confirmation via email shortly.`,
-          );
+          // Respect pending review flow from server
+          if (
+            response.status === "pending_review" ||
+            response.review_required ||
+            response.approval_required
+          ) {
+            this.notifyUser(
+              `📝 Your return request for order #${orderIdentifier} has been submitted for review. You'll receive an update by email once it's processed.`,
+            );
+          } else {
+            this.notifyUser(
+              `✅ Your return for order #${orderIdentifier} has been processed successfully! You will receive confirmation via email shortly.`,
+            );
+          }
         } else {
           this.notifyUser(
             "❌ There was a problem with your return: " +
@@ -368,9 +379,19 @@ Would you like me to help you initiate a return request once you receive your or
             );
 
             if (response.success) {
-              this.notifyUser(
-                `✅ Your return for order #${orderIdentifier} has been processed successfully! You will receive confirmation via email shortly.`,
-              );
+              if (
+                response.status === "pending_review" ||
+                response.review_required ||
+                response.approval_required
+              ) {
+                this.notifyUser(
+                  `📝 Your return request for order #${orderIdentifier} has been submitted for review. You'll receive an update by email once it's processed.`,
+                );
+              } else {
+                this.notifyUser(
+                  `✅ Your return for order #${orderIdentifier} has been processed successfully! You will receive confirmation via email shortly.`,
+                );
+              }
               return; // Exit early since we've completed the return
             } else {
               this.notifyUser(
@@ -498,9 +519,19 @@ Would you like me to help you initiate a return request once you receive your or
         console.log("Direct return response:", response);
 
         if (response.success) {
-          this.notifyUser(
-            `✅ Your return for order #${orderIdentifier} has been processed successfully!\n\n${itemsList}\n\nYou will receive confirmation via email shortly.`,
-          );
+          if (
+            response.status === "pending_review" ||
+            response.review_required ||
+            response.approval_required
+          ) {
+            this.notifyUser(
+              `📝 Your return request for order #${orderIdentifier} has been submitted for review.\n\n${itemsList}\n\nYou'll receive an update by email once it's processed.`,
+            );
+          } else {
+            this.notifyUser(
+              `✅ Your return for order #${orderIdentifier} has been processed successfully!\n\n${itemsList}\n\nYou will receive confirmation via email shortly.`,
+            );
+          }
         } else {
           this.notifyUser(
             "❌ There was a problem with your return: " +
@@ -554,9 +585,19 @@ Would you like me to help you initiate a return request once you receive your or
           });
 
           if (response.success) {
-            this.notifyUser(
-              `✅ Your return for order #${orderIdentifier} has been processed successfully!`,
-            );
+            if (
+              response.status === "pending_review" ||
+              response.review_required ||
+              response.approval_required
+            ) {
+              this.notifyUser(
+                `📝 Your return request for order #${orderIdentifier} has been submitted for review. You'll receive an update by email once it's processed.`,
+              );
+            } else {
+              this.notifyUser(
+                `✅ Your return for order #${orderIdentifier} has been processed successfully!`,
+              );
+            }
           } else {
             this.notifyUser(
               "❌ There was a problem with your return: " +
