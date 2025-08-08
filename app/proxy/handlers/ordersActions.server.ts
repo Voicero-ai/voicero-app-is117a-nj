@@ -364,38 +364,16 @@ export async function processOrderAction(request: Request) {
         returnReasonNote: returnReasonNote,
       }));
 
-      const returnCreateMutation = `
-        mutation returnCreate($input: ReturnInput!) {
-          returnCreate(returnInput: $input) {
-            return { id status returnLineItems(first: 10) { edges { node { id returnReason quantity } } } }
-            userErrors { field message }
-          }
-        }
-      `;
-      const returnResponse = await (admin as any).graphql(
-        returnCreateMutation,
-        {
-          variables: {
-            input: { orderId: order.id, returnLineItems, notifyCustomer: true },
-          },
-        },
-      );
-      const returnResult = await returnResponse.json();
-
-      if (returnResult.data?.returnCreate?.userErrors?.length > 0) {
-        const errors = returnResult.data.returnCreate.userErrors;
-        return json(
-          { success: false, error: errors[0].message, details: errors },
-          addCorsHeaders(),
-        );
-      }
-
+      // Instead of creating the Shopify return immediately, submit a review request
       return json(
         {
           success: true,
-          message: `Return for order ${order.name} has been initiated successfully.`,
-          return: returnResult.data?.returnCreate?.return,
-          status: "approved",
+          message: `Your return request for order ${order.name} has been submitted for review. You'll receive an update by email once it's processed.`,
+          status: "pending_review",
+          review_required: true,
+          approval_required: true,
+          order: { id: order.id, name: order.name },
+          requested_items: returnLineItems,
           reason: normalizeReturnReason(returnReason) || "OTHER",
           returnReason: normalizeReturnReason(returnReason) || "OTHER",
           reason_note: returnReasonNote,

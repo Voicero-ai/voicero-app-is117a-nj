@@ -882,67 +882,16 @@ export const action: ActionFunction = async ({ request }) => {
                   }),
                 );
 
-                // Execute the return create mutation
-                const returnCreateMutation = `
-                  mutation returnCreate($input: ReturnInput!) {
-                    returnCreate(returnInput: $input) {
-                      return {
-                        id
-                        status
-                        returnLineItems(first: 10) {
-                          edges {
-                            node {
-                              id
-                              returnReason
-                              quantity
-                            }
-                          }
-                        }
-                      }
-                      userErrors {
-                        field
-                        message
-                      }
-                    }
-                  }
-                `;
-
-                const returnResponse = await admin.graphql(
-                  returnCreateMutation,
-                  {
-                    variables: {
-                      input: {
-                        orderId: order.id,
-                        returnLineItems: returnLineItems,
-                        notifyCustomer: true,
-                      },
-                    },
-                  },
-                );
-
-                const returnResult = await returnResponse.json();
-                console.log("Return creation result:", returnResult);
-
-                // Check for errors
-                if (returnResult.data?.returnCreate?.userErrors?.length > 0) {
-                  const errors = returnResult.data.returnCreate.userErrors;
-                  return json(
-                    {
-                      success: false,
-                      error: errors[0].message,
-                      details: errors,
-                    },
-                    addCorsHeaders(),
-                  );
-                }
-
-                // Return success with return details
+                // Do not create Shopify return immediately; submit pending review response
                 return json(
                   {
                     success: true,
-                    message: `Return for order ${order.name} has been initiated successfully.`,
-                    return: returnResult.data?.returnCreate?.return,
-                    status: "approved",
+                    message: `Your return request for order ${order.name} has been submitted for review. You'll receive an update by email once it's processed.`,
+                    status: "pending_review",
+                    review_required: true,
+                    approval_required: true,
+                    order: { id: order.id, name: order.name },
+                    requested_items: returnLineItems,
                     reason: returnReason,
                     returnReason: returnReason,
                     reason_note: returnReasonNote,
@@ -1144,64 +1093,16 @@ export const action: ActionFunction = async ({ request }) => {
                 returnReasonNote: returnReasonNote,
               }));
 
-              // Execute the return create mutation
-              const returnCreateMutation = `
-                mutation returnCreate($input: ReturnInput!) {
-                  returnCreate(returnInput: $input) {
-                    return {
-                      id
-                      status
-                      returnLineItems(first: 10) {
-                        edges {
-                          node {
-                            id
-                            returnReason
-                            quantity
-                          }
-                        }
-                      }
-                    }
-                    userErrors {
-                      field
-                      message
-                    }
-                  }
-                }
-              `;
-
-              const returnResponse = await admin.graphql(returnCreateMutation, {
-                variables: {
-                  input: {
-                    orderId: order.id,
-                    returnLineItems: returnLineItems,
-                    notifyCustomer: true,
-                  },
-                },
-              });
-
-              const returnResult = await returnResponse.json();
-              console.log("Return creation result:", returnResult);
-
-              // Check for errors
-              if (returnResult.data?.returnCreate?.userErrors?.length > 0) {
-                const errors = returnResult.data.returnCreate.userErrors;
-                return json(
-                  {
-                    success: false,
-                    error: errors[0].message,
-                    details: errors,
-                  },
-                  addCorsHeaders(),
-                );
-              }
-
-              // Return success with return details - include BOTH reason and returnReason to match all client expectations
+              // Do not create Shopify return immediately; submit pending review response
               return json(
                 {
                   success: true,
-                  message: `Return for order ${order.name} has been initiated successfully.`,
-                  return: returnResult.data?.returnCreate?.return,
-                  status: "approved",
+                  message: `Your return request for order ${order.name} has been submitted for review. You'll receive an update by email once it's processed.`,
+                  status: "pending_review",
+                  review_required: true,
+                  approval_required: true,
+                  order: { id: order.id, name: order.name },
+                  requested_items: returnLineItems,
                   reason: returnReason, // For client compatibility
                   returnReason: returnReason, // For server compatibility
                   reason_note: returnReasonNote, // Additional compatibility format
