@@ -197,6 +197,12 @@ export default function AIOverviewPage() {
   const [aiHistoryData, setAiHistoryData] = useState(null);
   const [aiHistoryError, setAiHistoryError] = useState(false);
   const [updatedAnalysis, setUpdatedAnalysis] = useState(analysis);
+  const [showFullAnalysis, setShowFullAnalysis] = useState(false);
+  const [showMoreWorking, setShowMoreWorking] = useState(false);
+  const [showMoreQuickWins, setShowMoreQuickWins] = useState(false);
+  const [showGoodOpen, setShowGoodOpen] = useState(false);
+  const [showNeedsWorkOpen, setShowNeedsWorkOpen] = useState(false);
+  const [visibleThreads, setVisibleThreads] = useState(5);
 
   // Track which thread is expanded
   const [expandedThreadId, setExpandedThreadId] = useState(null);
@@ -331,6 +337,31 @@ export default function AIOverviewPage() {
     }
 
     return <>{parts}</>;
+  };
+
+  // Compact helpers for a friendlier, skimmable UI
+  const truncateText = (text, maxChars = 600) => {
+    if (!text) return "";
+    const trimmed = text.trim();
+    return trimmed.length > maxChars
+      ? trimmed.substring(0, maxChars).trim() + "..."
+      : trimmed;
+  };
+
+  const getAnalysisHighlights = (text) => {
+    if (typeof text !== "string") return [];
+    const lines = text.split("\n");
+    const bullets = lines
+      .filter((l) => l.trim().match(/^(-|\d+\.)\s+/))
+      .map((l) => l.replace(/^(-|\d+\.)\s+/, "").trim())
+      .filter(Boolean);
+    if (bullets.length > 0) return bullets.slice(0, 4);
+
+    const sentences = text
+      .replace(/\n+/g, " ")
+      .split(/(?<=[.!?])\s+/)
+      .filter(Boolean);
+    return sentences.slice(0, 3);
   };
 
   // Redirect if disconnected
@@ -712,15 +743,23 @@ export default function AIOverviewPage() {
                         <InlineStack gap="200">
                           <Badge status="success">Good (15 / 21)</Badge>
                         </InlineStack>
+                        <Button
+                          size="slim"
+                          onClick={() => setShowGoodOpen((v) => !v)}
+                        >
+                          {showGoodOpen ? "Hide IDs" : "Show IDs"}
+                        </Button>
                       </InlineStack>
                       <Text variant="bodyMd" as="p">
                         {goodOutcome}
                       </Text>
-                      <InlineStack gap="100" wrap>
-                        {goodThreads.map((id) => (
-                          <Badge key={id}>{id}</Badge>
-                        ))}
-                      </InlineStack>
+                      <Collapsible open={showGoodOpen} id="good-threads">
+                        <InlineStack gap="100" wrap>
+                          {goodThreads.map((id) => (
+                            <Badge key={id}>{id}</Badge>
+                          ))}
+                        </InlineStack>
+                      </Collapsible>
                     </BlockStack>
                   </Box>
                   <Box
@@ -730,17 +769,30 @@ export default function AIOverviewPage() {
                     style={{ borderLeft: "4px solid #d82c0d" }}
                   >
                     <BlockStack gap="200">
-                      <InlineStack gap="200">
-                        <Badge status="critical">Needs-Work (6 / 21)</Badge>
+                      <InlineStack align="space-between">
+                        <InlineStack gap="200">
+                          <Badge status="critical">Needs-Work (6 / 21)</Badge>
+                        </InlineStack>
+                        <Button
+                          size="slim"
+                          onClick={() => setShowNeedsWorkOpen((v) => !v)}
+                        >
+                          {showNeedsWorkOpen ? "Hide IDs" : "Show IDs"}
+                        </Button>
                       </InlineStack>
                       <Text variant="bodyMd" as="p">
                         {needsWorkOutcome}
                       </Text>
-                      <InlineStack gap="100" wrap>
-                        {needsWorkThreads.map((id) => (
-                          <Badge key={id}>{id}</Badge>
-                        ))}
-                      </InlineStack>
+                      <Collapsible
+                        open={showNeedsWorkOpen}
+                        id="needswork-threads"
+                      >
+                        <InlineStack gap="100" wrap>
+                          {needsWorkThreads.map((id) => (
+                            <Badge key={id}>{id}</Badge>
+                          ))}
+                        </InlineStack>
+                      </Collapsible>
                     </BlockStack>
                   </Box>
                 </BlockStack>
@@ -760,11 +812,26 @@ export default function AIOverviewPage() {
                 </InlineStack>
                 <Divider />
                 <BlockStack gap="200">
-                  {whatsWorking.map((item, idx) => (
+                  {(showMoreWorking
+                    ? whatsWorking
+                    : whatsWorking.slice(0, 3)
+                  ).map((item, idx) => (
                     <Text key={idx} variant="bodyMd" as="p">
                       • {item}
                     </Text>
                   ))}
+                  {whatsWorking.length > 3 && (
+                    <InlineStack align="end">
+                      <Button
+                        size="slim"
+                        onClick={() => setShowMoreWorking((v) => !v)}
+                      >
+                        {showMoreWorking
+                          ? "Show less"
+                          : `Show ${whatsWorking.length - 3} more`}
+                      </Button>
+                    </InlineStack>
+                  )}
                 </BlockStack>
               </BlockStack>
             </Card>
@@ -781,33 +848,35 @@ export default function AIOverviewPage() {
                   </InlineStack>
                 </InlineStack>
                 <Divider />
-                <BlockStack gap="300">
-                  {/* Table header */}
-                  <div style={{ display: "flex", gap: 12 }}>
-                    <div style={{ flex: 1, fontWeight: 600 }}>Issue</div>
-                    <div style={{ flex: 2, fontWeight: 600 }}>
-                      Observed impact
-                    </div>
+                <BlockStack gap="200">
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns:
+                        "repeat(auto-fit, minmax(260px, 1fr))",
+                      gap: 12,
+                    }}
+                  >
+                    {painPoints.map((row, idx) => (
+                      <div
+                        key={idx}
+                        style={{
+                          backgroundColor: "#F9FAFB",
+                          borderRadius: 10,
+                          border: "1px solid #EEF2F7",
+                          padding: 12,
+                        }}
+                      >
+                        <Text variant="bodyMd" fontWeight="semibold">
+                          {row.issue}
+                        </Text>
+                        <div style={{ height: 6 }} />
+                        <Text variant="bodySm" color="subdued">
+                          {row.impact}
+                        </Text>
+                      </div>
+                    ))}
                   </div>
-                  {painPoints.map((row, idx) => (
-                    <div
-                      key={idx}
-                      style={{
-                        display: "flex",
-                        gap: 12,
-                        padding: "8px 0",
-                        borderTop: idx === 0 ? "1px solid #e1e3e5" : "none",
-                        borderBottom: "1px solid #e1e3e5",
-                      }}
-                    >
-                      <div style={{ flex: 1 }}>
-                        <Text variant="bodyMd">{row.issue}</Text>
-                      </div>
-                      <div style={{ flex: 2 }}>
-                        <Text variant="bodyMd">{row.impact}</Text>
-                      </div>
-                    </div>
-                  ))}
                 </BlockStack>
               </BlockStack>
             </Card>
@@ -825,11 +894,25 @@ export default function AIOverviewPage() {
                 </InlineStack>
                 <Divider />
                 <BlockStack gap="200">
-                  {quickWins.map((item, idx) => (
-                    <Text key={idx} variant="bodyMd" as="p">
-                      • {item}
-                    </Text>
-                  ))}
+                  {(showMoreQuickWins ? quickWins : quickWins.slice(0, 3)).map(
+                    (item, idx) => (
+                      <Text key={idx} variant="bodyMd" as="p">
+                        • {item}
+                      </Text>
+                    ),
+                  )}
+                  {quickWins.length > 3 && (
+                    <InlineStack align="end">
+                      <Button
+                        size="slim"
+                        onClick={() => setShowMoreQuickWins((v) => !v)}
+                      >
+                        {showMoreQuickWins
+                          ? "Show less"
+                          : `Show ${quickWins.length - 3} more`}
+                      </Button>
+                    </InlineStack>
+                  )}
                 </BlockStack>
               </BlockStack>
             </Card>
@@ -934,7 +1017,7 @@ export default function AIOverviewPage() {
                     // Data loaded successfully
                     <>
                       {aiHistoryData
-                        .slice(0, 10) // Show top 10 threads
+                        .slice(0, visibleThreads)
                         .map((thread, index) => {
                           // Find first user message for the query text
                           const firstUserMessage =
@@ -1132,9 +1215,21 @@ export default function AIOverviewPage() {
                           );
                         })}
 
-                      {/* View All button at the bottom - always show it */}
+                      {/* Actions */}
                       <Box paddingBlock="300">
-                        <InlineStack align="center">
+                        <InlineStack align="center" gap="300">
+                          {aiHistoryData.length > visibleThreads && (
+                            <Button
+                              size="slim"
+                              onClick={() =>
+                                setVisibleThreads((n) =>
+                                  Math.min(n + 5, aiHistoryData.length),
+                                )
+                              }
+                            >
+                              Show more
+                            </Button>
+                          )}
                           <Button
                             url="https://www.voicero.ai/app/chats"
                             external={true}
