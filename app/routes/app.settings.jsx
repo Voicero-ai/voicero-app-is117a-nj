@@ -6,6 +6,19 @@ import urls from "../config/urls";
 
 export const dynamic = "force-dynamic";
 
+// Normalize backend flags that may arrive as 1/0, "1"/"0", "true"/"false", or booleans
+function toBoolean(value, defaultValue = false) {
+  if (value === undefined || value === null) return defaultValue;
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value === 1;
+  if (typeof value === "string") {
+    const v = value.trim().toLowerCase();
+    if (v === "true" || v === "1" || v === "yes" || v === "on") return true;
+    if (v === "false" || v === "0" || v === "no" || v === "off") return false;
+  }
+  return Boolean(value);
+}
+
 export const loader = async ({ request }) => {
   const { admin } = await authenticate.admin(request);
 
@@ -185,36 +198,30 @@ export default function SettingsPage() {
 
   // Auto features state
   const [autoFeatures, setAutoFeatures] = useState({
-    allowAutoRedirect: websiteData
-      ? websiteData.allowAutoRedirect === true
-      : false,
-    allowAutoScroll: websiteData ? websiteData.allowAutoScroll === true : false,
-    allowAutoHighlight: websiteData
-      ? websiteData.allowAutoHighlight === true
-      : false,
-    allowAutoClick: websiteData ? websiteData.allowAutoClick === true : false,
-    allowAutoCancel: websiteData ? websiteData.allowAutoCancel === true : false,
-    allowAutoReturn: websiteData ? websiteData.allowAutoReturn === true : false,
-    allowAutoExchange: websiteData
-      ? websiteData.allowAutoExchange === true
-      : false,
-    allowAutoGetUserOrders: websiteData
-      ? websiteData.allowAutoGetUserOrders === true
-      : false,
-    allowAutoUpdateUserInfo: websiteData
-      ? websiteData.allowAutoUpdateUserInfo === true
-      : false,
-    allowAutoFillForm: websiteData
-      ? websiteData.allowAutoFillForm !== false
-      : true,
-    allowAutoTrackOrder: websiteData
-      ? websiteData.allowAutoTrackOrder !== false
-      : true,
-    allowAutoLogout: websiteData ? websiteData.allowAutoLogout !== false : true,
-    allowAutoLogin: websiteData ? websiteData.allowAutoLogin !== false : true,
-    allowAutoGenerateImage: websiteData
-      ? websiteData.allowAutoGenerateImage !== false
-      : true,
+    allowAutoRedirect: toBoolean(websiteData?.allowAutoRedirect, false),
+    allowAutoScroll: toBoolean(websiteData?.allowAutoScroll, false),
+    allowAutoHighlight: toBoolean(websiteData?.allowAutoHighlight, false),
+    allowAutoClick: toBoolean(websiteData?.allowAutoClick, false),
+    allowAutoCancel: toBoolean(websiteData?.allowAutoCancel, false),
+    allowAutoReturn: toBoolean(websiteData?.allowAutoReturn, false),
+    allowAutoExchange: toBoolean(websiteData?.allowAutoExchange, false),
+    allowAutoGetUserOrders: toBoolean(
+      websiteData?.allowAutoGetUserOrders,
+      false,
+    ),
+    allowAutoUpdateUserInfo: toBoolean(
+      websiteData?.allowAutoUpdateUserInfo,
+      false,
+    ),
+    // Defaults true where UI indicates enabled-by-default
+    allowAutoFillForm: toBoolean(websiteData?.allowAutoFillForm, true),
+    allowAutoTrackOrder: toBoolean(websiteData?.allowAutoTrackOrder, true),
+    allowAutoLogout: toBoolean(websiteData?.allowAutoLogout, true),
+    allowAutoLogin: toBoolean(websiteData?.allowAutoLogin, true),
+    allowAutoGenerateImage: toBoolean(
+      websiteData?.allowAutoGenerateImage,
+      true,
+    ),
   });
 
   // User data state
@@ -570,35 +577,25 @@ export default function SettingsPage() {
 
         // Update auto features if they are part of the response
         if (fetcher.data.data.autoFeatures) {
+          const f = fetcher.data.data.autoFeatures;
           setAutoFeatures({
-            allowAutoRedirect:
-              fetcher.data.data.autoFeatures.allowAutoRedirect === true,
-            allowAutoScroll:
-              fetcher.data.data.autoFeatures.allowAutoScroll === true,
-            allowAutoHighlight:
-              fetcher.data.data.autoFeatures.allowAutoHighlight === true,
-            allowAutoClick:
-              fetcher.data.data.autoFeatures.allowAutoClick === true,
-            allowAutoCancel:
-              fetcher.data.data.autoFeatures.allowAutoCancel === true,
-            allowAutoReturn:
-              fetcher.data.data.autoFeatures.allowAutoReturn === true,
-            allowAutoExchange:
-              fetcher.data.data.autoFeatures.allowAutoExchange === true,
-            allowAutoGetUserOrders:
-              fetcher.data.data.autoFeatures.allowAutoGetUserOrders === true,
-            allowAutoUpdateUserInfo:
-              fetcher.data.data.autoFeatures.allowAutoUpdateUserInfo === true,
-            allowAutoFillForm:
-              fetcher.data.data.autoFeatures.allowAutoFillForm !== false,
-            allowAutoTrackOrder:
-              fetcher.data.data.autoFeatures.allowAutoTrackOrder !== false,
-            allowAutoLogout:
-              fetcher.data.data.autoFeatures.allowAutoLogout !== false,
-            allowAutoLogin:
-              fetcher.data.data.autoFeatures.allowAutoLogin !== false,
-            allowAutoGenerateImage:
-              fetcher.data.data.autoFeatures.allowAutoGenerateImage !== false,
+            allowAutoRedirect: toBoolean(f.allowAutoRedirect, false),
+            allowAutoScroll: toBoolean(f.allowAutoScroll, false),
+            allowAutoHighlight: toBoolean(f.allowAutoHighlight, false),
+            allowAutoClick: toBoolean(f.allowAutoClick, false),
+            allowAutoCancel: toBoolean(f.allowAutoCancel, false),
+            allowAutoReturn: toBoolean(f.allowAutoReturn, false),
+            allowAutoExchange: toBoolean(f.allowAutoExchange, false),
+            allowAutoGetUserOrders: toBoolean(f.allowAutoGetUserOrders, false),
+            allowAutoUpdateUserInfo: toBoolean(
+              f.allowAutoUpdateUserInfo,
+              false,
+            ),
+            allowAutoFillForm: toBoolean(f.allowAutoFillForm, true),
+            allowAutoTrackOrder: toBoolean(f.allowAutoTrackOrder, true),
+            allowAutoLogout: toBoolean(f.allowAutoLogout, true),
+            allowAutoLogin: toBoolean(f.allowAutoLogin, true),
+            allowAutoGenerateImage: toBoolean(f.allowAutoGenerateImage, true),
           });
         }
       }
