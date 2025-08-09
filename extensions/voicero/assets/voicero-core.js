@@ -4,7 +4,7 @@
 
 (function (window, document) {
   var VoiceroCore = {
-    apiBaseUrls: ["https://1d3818d4ade1.ngrok-free.app"],
+    apiBaseUrls: ["https://www.voicero.ai"],
     apiBaseUrl: null,
     apiConnected: false,
     session: null,
@@ -480,7 +480,7 @@
         return;
       }
 
-      var proxyUrl = "https://1d3818d4ade1.ngrok-free.app/api/session";
+      var proxyUrl = "https://www.voicero.ai/api/session";
       var currentPageUrl = window.location.href;
       var shopifyCustomerId = window.__VoiceroCustomerId || null;
 
@@ -501,7 +501,7 @@
             error,
           );
           return this.callSessionAPI(
-            "https://1d3818d4ade1.ngrok-free.app/api/session",
+            "https://www.voicero.ai/api/session",
             requestBody,
           );
         })
@@ -523,7 +523,7 @@
       console.log("VoiceroCore: Fetching existing session:", sessionId);
 
       // Build the URL with query parameters
-      var baseUrl = "https://1d3818d4ade1.ngrok-free.app/api/session";
+      var baseUrl = "https://www.voicero.ai/api/session";
       var url = `${baseUrl}?sessionId=${encodeURIComponent(sessionId)}&websiteId=${encodeURIComponent(this.websiteId)}&pageUrl=${encodeURIComponent(window.location.href)}`;
 
       // Get auth headers
@@ -543,7 +543,7 @@
           );
 
           // Try production URL as fallback
-          var prodUrl = `https://1d3818d4ade1.ngrok-free.app/api/session?sessionId=${encodeURIComponent(sessionId)}&websiteId=${encodeURIComponent(this.websiteId)}&pageUrl=${encodeURIComponent(window.location.href)}`;
+          var prodUrl = `https://www.voicero.ai/api/session?sessionId=${encodeURIComponent(sessionId)}&websiteId=${encodeURIComponent(this.websiteId)}&pageUrl=${encodeURIComponent(window.location.href)}`;
           return this.callSessionGetAPI(prodUrl, headers);
         })
         .catch((error) => {

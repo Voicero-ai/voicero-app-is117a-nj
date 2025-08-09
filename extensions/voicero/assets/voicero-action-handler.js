@@ -2665,7 +2665,7 @@ To make changes, please specify what you'd like to update.
 
           // Only proceed if we have a valid API URL
           if (apiBaseUrl) {
-            fetch(`https://1d3818d4ade1.ngrok-free.app/api/session/message`, {
+            fetch(`https://www.voicero.ai/api/session/message`, {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",

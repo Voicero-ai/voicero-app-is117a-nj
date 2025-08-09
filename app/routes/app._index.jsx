@@ -1818,7 +1818,7 @@ export default function Index() {
                             </Text>
                           </div>
                         )}
-                        <Link url="https://1d3818d4ade1.ngrok-free.app/app/contacts">
+                        <Link url="https://www.voicero.ai/app/contacts">
                           <Button primary={unreadContacts > 0} icon={ChatIcon}>
                             View Contacts
                           </Button>

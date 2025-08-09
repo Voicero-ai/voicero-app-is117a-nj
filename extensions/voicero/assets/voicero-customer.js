@@ -911,7 +911,7 @@
         console.log("VoiceroUserData: Formatted payload for API:", payload);
 
         // Send the data to the external API
-        fetch("https://1d3818d4ade1.ngrok-free.app/api/shopify/setCustomer", {
+        fetch("https://www.voicero.ai/api/shopify/setCustomer", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

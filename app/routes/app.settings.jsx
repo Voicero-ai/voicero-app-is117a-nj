@@ -124,7 +124,7 @@ export const action = async ({ request }) => {
 
       // Call the editInfoFromShopify API
       const response = await fetch(
-        `https://1d3818d4ade1.ngrok-free.app/api/shopify/editInfoFromShopify`,
+        `https://www.voicero.ai/api/shopify/editInfoFromShopify`,
         {
           method: "POST",
           headers: {
@@ -482,7 +482,7 @@ export default function SettingsPage() {
     try {
       // Call the toggle-status API
       const response = await fetch(
-        `https://1d3818d4ade1.ngrok-free.app/api/websites/toggle-status`,
+        `https://www.voicero.ai/api/websites/toggle-status`,
         {
           method: "POST",
           headers: {
@@ -760,10 +760,7 @@ export default function SettingsPage() {
             <button
               style={styles.destructiveButton}
               onClick={() =>
-                window.open(
-                  "https://1d3818d4ade1.ngrok-free.app/app/settings",
-                  "_blank",
-                )
+                window.open("https://www.voicero.ai/app/settings", "_blank")
               }
             >
               Delete Website
@@ -1326,7 +1323,7 @@ export default function SettingsPage() {
             style={styles.secondaryButton}
             onClick={() =>
               window.open(
-                `https://1d3818d4ade1.ngrok-free.app/app/websites/website?id=${websiteData.id}`,
+                `https://www.voicero.ai/app/websites/website?id=${websiteData.id}`,
                 "_blank",
               )
             }
