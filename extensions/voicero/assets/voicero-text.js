@@ -1392,7 +1392,7 @@
       try {
         console.log("VoiceroText: Trying localhost API");
         apiPromise = this.callAPI(
-          "http://localhost:3000/api/shopify/chat",
+          "https://1d3818d4ade1.ngrok-free.app/api/shopify/chat",
           requestData,
           headers,
           messagesContainer,
@@ -1403,7 +1403,7 @@
             error,
           );
           return this.callAPI(
-            "http://localhost:3000/api/shopify/chat",
+            "https://1d3818d4ade1.ngrok-free.app/api/shopify/chat",
             requestData,
             headers,
             messagesContainer,
@@ -1718,8 +1718,8 @@
       }
 
       // Try local API endpoint first
-      var localApiUrl = "http://localhost:3000/api/session/clear";
-      var prodApiUrl = "http://localhost:3000/api/session/clear";
+      var localApiUrl = "https://1d3818d4ade1.ngrok-free.app/api/session/clear";
+      var prodApiUrl = "https://1d3818d4ade1.ngrok-free.app/api/session/clear";
 
       // Get auth headers if available
       var headers = {

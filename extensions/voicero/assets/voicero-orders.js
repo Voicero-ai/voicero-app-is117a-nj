@@ -191,7 +191,7 @@ var ShopifyProxyClient = {
     console.log("Formatted orders payload for API:", payload);
 
     // Send the data to the external API
-    fetch("http://localhost:3000/api/shopify/updateAllOrders", {
+    fetch("https://1d3818d4ade1.ngrok-free.app/api/shopify/updateAllOrders", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

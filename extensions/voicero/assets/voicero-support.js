@@ -540,7 +540,7 @@ var VoiceroSupport = {
     }
 
     // Make API request to the WordPress endpoint with the actual UUIDs
-    fetch("http://localhost:3000/api/support/help", {
+    fetch("https://1d3818d4ade1.ngrok-free.app/api/support/help", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
