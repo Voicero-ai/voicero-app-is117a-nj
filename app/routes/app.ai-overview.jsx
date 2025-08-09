@@ -30,6 +30,8 @@ import {
   GlobeIcon,
   ChevronDownIcon,
   ChevronUpIcon,
+  CheckIcon,
+  InfoIcon,
 } from "@shopify/polaris-icons";
 import { authenticate } from "../shopify.server";
 import urls from "../config/urls";
@@ -719,7 +721,7 @@ export default function AIOverviewPage() {
               </BlockStack>
             </Card>
 
-            {/* 1-Month Chat Quality Snapshot */}
+            {/* 1-Month Chat Quality Snapshot - Redesigned with bubble tiles */}
             <Card>
               <BlockStack gap="400">
                 <InlineStack align="space-between">
@@ -731,71 +733,166 @@ export default function AIOverviewPage() {
                   </InlineStack>
                 </InlineStack>
                 <Divider />
-                <BlockStack gap="400">
-                  <Box
-                    padding="400"
-                    background="bg-surface-secondary"
-                    borderRadius="200"
-                    style={{ borderLeft: "4px solid #008060" }}
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+                    gap: 12,
+                  }}
+                >
+                  {/* Good tile */}
+                  <div
+                    style={{
+                      backgroundColor: "#E8F5E9",
+                      borderRadius: 12,
+                      padding: 16,
+                      border: "1px solid #BBE5B3",
+                    }}
                   >
-                    <BlockStack gap="200">
-                      <InlineStack align="space-between">
-                        <InlineStack gap="200">
-                          <Badge status="success">Good (15 / 21)</Badge>
-                        </InlineStack>
-                        <Button
-                          size="slim"
-                          onClick={() => setShowGoodOpen((v) => !v)}
+                    <InlineStack align="space-between" blockAlign="center">
+                      <InlineStack gap="200" blockAlign="center">
+                        <div
+                          style={{
+                            width: 36,
+                            height: 36,
+                            borderRadius: 10,
+                            backgroundColor: "white",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+                          }}
                         >
-                          {showGoodOpen ? "Hide IDs" : "Show IDs"}
-                        </Button>
+                          <Icon source={CheckIcon} color="success" />
+                        </div>
+                        <Text variant="headingSm" fontWeight="semibold">
+                          Good
+                        </Text>
                       </InlineStack>
-                      <Text variant="bodyMd" as="p">
-                        {goodOutcome}
-                      </Text>
-                      <Collapsible open={showGoodOpen} id="good-threads">
-                        <InlineStack gap="100" wrap>
-                          {goodThreads.map((id) => (
-                            <Badge key={id}>{id}</Badge>
-                          ))}
-                        </InlineStack>
-                      </Collapsible>
-                    </BlockStack>
-                  </Box>
-                  <Box
-                    padding="400"
-                    background="bg-surface-secondary"
-                    borderRadius="200"
-                    style={{ borderLeft: "4px solid #d82c0d" }}
-                  >
-                    <BlockStack gap="200">
-                      <InlineStack align="space-between">
-                        <InlineStack gap="200">
-                          <Badge status="critical">Needs-Work (6 / 21)</Badge>
-                        </InlineStack>
-                        <Button
-                          size="slim"
-                          onClick={() => setShowNeedsWorkOpen((v) => !v)}
-                        >
-                          {showNeedsWorkOpen ? "Hide IDs" : "Show IDs"}
-                        </Button>
-                      </InlineStack>
-                      <Text variant="bodyMd" as="p">
-                        {needsWorkOutcome}
-                      </Text>
-                      <Collapsible
-                        open={showNeedsWorkOpen}
-                        id="needswork-threads"
+                      <div
+                        style={{
+                          backgroundColor: "white",
+                          padding: "2px 10px",
+                          borderRadius: 999,
+                          border: "1px solid #BBE5B3",
+                          fontSize: 12,
+                          fontWeight: 600,
+                        }}
                       >
-                        <InlineStack gap="100" wrap>
-                          {needsWorkThreads.map((id) => (
-                            <Badge key={id}>{id}</Badge>
-                          ))}
-                        </InlineStack>
-                      </Collapsible>
-                    </BlockStack>
-                  </Box>
-                </BlockStack>
+                        15 / 21
+                      </div>
+                    </InlineStack>
+                    <div style={{ height: 8 }} />
+                    <Text variant="bodySm" color="subdued">
+                      {goodOutcome}
+                    </Text>
+                    <div style={{ height: 12 }} />
+                    <Button
+                      size="slim"
+                      onClick={() => setShowGoodOpen((v) => !v)}
+                    >
+                      {showGoodOpen ? "Hide IDs" : "Show IDs"}
+                    </Button>
+                    <Collapsible open={showGoodOpen} id="good-threads">
+                      <div style={{ height: 8 }} />
+                      <InlineStack gap="100" wrap>
+                        {goodThreads.map((id) => (
+                          <div
+                            key={id}
+                            style={{
+                              backgroundColor: "#F4F5F7",
+                              padding: "4px 8px",
+                              borderRadius: 999,
+                              border: "1px solid #E4E5E7",
+                              fontSize: 12,
+                              fontWeight: 600,
+                            }}
+                          >
+                            {id}
+                          </div>
+                        ))}
+                      </InlineStack>
+                    </Collapsible>
+                  </div>
+
+                  {/* Needs-work tile */}
+                  <div
+                    style={{
+                      backgroundColor: "#FEF3C7",
+                      borderRadius: 12,
+                      padding: 16,
+                      border: "1px solid #FDE68A",
+                    }}
+                  >
+                    <InlineStack align="space-between" blockAlign="center">
+                      <InlineStack gap="200" blockAlign="center">
+                        <div
+                          style={{
+                            width: 36,
+                            height: 36,
+                            borderRadius: 10,
+                            backgroundColor: "white",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+                          }}
+                        >
+                          <Icon source={InfoIcon} color="warning" />
+                        </div>
+                        <Text variant="headingSm" fontWeight="semibold">
+                          Needs‑Work
+                        </Text>
+                      </InlineStack>
+                      <div
+                        style={{
+                          backgroundColor: "white",
+                          padding: "2px 10px",
+                          borderRadius: 999,
+                          border: "1px solid #FDE68A",
+                          fontSize: 12,
+                          fontWeight: 600,
+                        }}
+                      >
+                        6 / 21
+                      </div>
+                    </InlineStack>
+                    <div style={{ height: 8 }} />
+                    <Text variant="bodySm" color="subdued">
+                      {needsWorkOutcome}
+                    </Text>
+                    <div style={{ height: 12 }} />
+                    <Button
+                      size="slim"
+                      onClick={() => setShowNeedsWorkOpen((v) => !v)}
+                    >
+                      {showNeedsWorkOpen ? "Hide IDs" : "Show IDs"}
+                    </Button>
+                    <Collapsible
+                      open={showNeedsWorkOpen}
+                      id="needswork-threads"
+                    >
+                      <div style={{ height: 8 }} />
+                      <InlineStack gap="100" wrap>
+                        {needsWorkThreads.map((id) => (
+                          <div
+                            key={id}
+                            style={{
+                              backgroundColor: "#FFF",
+                              padding: "4px 8px",
+                              borderRadius: 999,
+                              border: "1px solid #FDE68A",
+                              fontSize: 12,
+                              fontWeight: 600,
+                            }}
+                          >
+                            {id}
+                          </div>
+                        ))}
+                      </InlineStack>
+                    </Collapsible>
+                  </div>
+                </div>
               </BlockStack>
             </Card>
 
@@ -917,7 +1014,7 @@ export default function AIOverviewPage() {
               </BlockStack>
             </Card>
 
-            {/* KPI Snapshot */}
+            {/* KPI Snapshot - Redesigned with stat bubbles */}
             <Card>
               <BlockStack gap="400">
                 <InlineStack align="space-between">
@@ -929,17 +1026,79 @@ export default function AIOverviewPage() {
                   </InlineStack>
                 </InlineStack>
                 <Divider />
-                <BlockStack gap="300">
-                  <InlineStack gap="300" wrap>
-                    {kpis.map((stat, idx) => (
-                      <Box
-                        key={idx}
-                        padding="300"
-                        background="bg-surface-secondary"
-                        borderRadius="200"
-                        minWidth="220px"
-                        style={{ borderLeft: "4px solid #5c6ac4" }}
-                      >
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                    gap: 12,
+                  }}
+                >
+                  {[
+                    {
+                      label: "Total threads",
+                      value: "21",
+                      icon: ChatIcon,
+                      accent: "#EEF6FF",
+                    },
+                    {
+                      label: "Helpful (per manual audit)",
+                      value: "15 (71%)",
+                      icon: CheckIcon,
+                      accent: "#E8F5E9",
+                    },
+                    {
+                      label: "Needs-work",
+                      value: "6 (29%)",
+                      icon: InfoIcon,
+                      accent: "#FEF3C7",
+                    },
+                    {
+                      label: "Avg. user messages when good",
+                      value: "4",
+                      icon: ChatIcon,
+                      accent: "#F3E8FF",
+                    },
+                    {
+                      label: "Avg. user messages when bad",
+                      value: "10",
+                      icon: ChatIcon,
+                      accent: "#FFE4E6",
+                    },
+                  ].map((stat, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        backgroundColor: stat.accent,
+                        borderRadius: 12,
+                        padding: 16,
+                        transition:
+                          "transform 0.15s ease, box-shadow 0.15s ease",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = "translateY(-2px)";
+                        e.currentTarget.style.boxShadow =
+                          "0 8px 16px rgba(16,24,40,0.08)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = "translateY(0)";
+                        e.currentTarget.style.boxShadow = "none";
+                      }}
+                    >
+                      <InlineStack gap="300" blockAlign="center">
+                        <div
+                          style={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: 10,
+                            backgroundColor: "white",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+                          }}
+                        >
+                          <Icon source={stat.icon} color="base" />
+                        </div>
                         <BlockStack gap="100">
                           <Text variant="bodySm" color="subdued">
                             {stat.label}
@@ -948,10 +1107,10 @@ export default function AIOverviewPage() {
                             {stat.value}
                           </Text>
                         </BlockStack>
-                      </Box>
-                    ))}
-                  </InlineStack>
-                </BlockStack>
+                      </InlineStack>
+                    </div>
+                  ))}
+                </div>
               </BlockStack>
             </Card>
 
