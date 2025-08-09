@@ -47,6 +47,7 @@ export const loader = async ({ request }) => {
     }
 
     const data = await response.json();
+    console.log(data);
     if (!data.website) {
       return json({
         error: "No website data found",
