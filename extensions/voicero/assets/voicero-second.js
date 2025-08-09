@@ -927,6 +927,23 @@
         timestamp: new Date().toISOString(),
       };
 
+      // Attach latest responseId if available
+      try {
+        var lastResponseId = null;
+        if (window.VoiceroCore && window.VoiceroCore.lastResponseId) {
+          lastResponseId = window.VoiceroCore.lastResponseId;
+        } else {
+          var storedResponseId = localStorage.getItem(
+            "voicero_last_response_id",
+          );
+          if (storedResponseId) lastResponseId = storedResponseId;
+        }
+        if (lastResponseId) {
+          payload.responseId = lastResponseId;
+          console.log("VoiceroSecond: Using last responseId:", lastResponseId);
+        }
+      } catch (_) {}
+
       console.log("VoiceroSecond: Prepared payload for API", {
         sessionId,
         url: payload.url,
@@ -970,6 +987,20 @@
           // Make the analysis available to other Voicero modules
           if (window.VoiceroCore) {
             window.VoiceroCore.secondLookData = data;
+            // Store latest responseId if returned
+            try {
+              if (data && data.responseId) {
+                window.VoiceroCore.lastResponseId = data.responseId;
+                localStorage.setItem(
+                  "voicero_last_response_id",
+                  data.responseId,
+                );
+                console.log(
+                  "VoiceroSecond: Saved latest responseId:",
+                  data.responseId,
+                );
+              }
+            } catch (_) {}
           }
 
           // Extract the AI message from the response

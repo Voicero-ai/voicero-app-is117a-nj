@@ -1251,6 +1251,25 @@
         requestData.threadId = threadId;
       }
 
+      // Attach latest responseId if available
+      try {
+        let lastResponseId = null;
+        if (window.VoiceroCore && window.VoiceroCore.lastResponseId) {
+          lastResponseId = window.VoiceroCore.lastResponseId;
+        } else {
+          var storedResponseId = localStorage.getItem(
+            "voicero_last_response_id",
+          );
+          if (storedResponseId) {
+            lastResponseId = storedResponseId;
+          }
+        }
+        if (lastResponseId) {
+          requestData.responseId = lastResponseId;
+          console.log("VoiceroText: Using last responseId:", lastResponseId);
+        }
+      } catch (_) {}
+
       // Add page data if available - ensure it matches the expected structure
       if (window.VoiceroCore && window.VoiceroCore.pageData) {
         // Make sure pageData has the expected structure
@@ -1558,15 +1577,24 @@
 
           // Handle different response formats
           if (typeof data === "object") {
-            // Handle JSON object response with answer and action fields
-            if (data.answer) {
+            // Preferred structure: { response: { answer, action, action_context, ... }, responseId, threadId, ... }
+            if (data.response && typeof data.response === "object") {
+              messageText =
+                data.response.answer ||
+                data.response.message ||
+                data.response.content ||
+                "";
+              action = data.response.action || "none";
+              action_context =
+                data.response.action_context || data.context || {};
+            }
+            // Fallbacks
+            else if (data.answer) {
               messageText = data.answer;
               action = data.action || "none";
               action_context = data.action_context || {};
             } else if (data.message) {
               messageText = data.message;
-            } else if (data.response) {
-              messageText = data.response;
             } else if (data.content) {
               messageText = data.content;
             } else {
@@ -1616,6 +1644,23 @@
           if (data && data.threadId && window.VoiceroCore) {
             window.VoiceroCore.thread = window.VoiceroCore.thread || {};
             window.VoiceroCore.thread.id = data.threadId;
+            try {
+              localStorage.setItem("voicero_thread_id", data.threadId);
+            } catch (_) {}
+          }
+
+          // Store latest responseId if returned
+          if (data && data.responseId) {
+            try {
+              if (window.VoiceroCore) {
+                window.VoiceroCore.lastResponseId = data.responseId;
+              }
+              localStorage.setItem("voicero_last_response_id", data.responseId);
+              console.log(
+                "VoiceroText: Saved latest responseId:",
+                data.responseId,
+              );
+            } catch (_) {}
           }
 
           // Render updated messages
