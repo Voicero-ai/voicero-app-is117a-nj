@@ -32,7 +32,7 @@ export const loader = async ({ request }) => {
 
   try {
     // Fetch website data from the connect API
-    const response = await fetch(`${config.voiceroApi}/api/connect`, {
+    const response = await fetch(`${urls.voiceroApi}/api/connect`, {
       method: "GET",
       headers: {
         Accept: "application/json",
