@@ -1238,7 +1238,7 @@ export default function Index() {
 
       // Step 2: Send data to backend
       const syncResponse = await fetch(
-        `https://train.voicero.ai/api/shopify/sync`,
+        `http://localhost:3001/api/shopify/sync`,
         {
           method: "POST",
           headers: {
@@ -1305,7 +1305,7 @@ export default function Index() {
       );
 
       // Fire and forget approach - don't wait for completion
-      fetch(`https://train.voicero.ai/api/shopify/vectorize`, {
+      fetch(`http://localhost:3001/api/shopify/vectorize`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
