@@ -13,6 +13,15 @@ export async function loader({ request }) {
   const { admin, session } = await authenticate.admin(request);
 
   try {
+    const urlObj = new URL(request.url);
+    const bypassCache = urlObj.searchParams.get("bypassCache");
+    const clearCache = urlObj.searchParams.get("clearCache");
+    const clearAllCache = urlObj.searchParams.get("clearAllCache");
+
+    // Optional: clear all cache entries
+    if (clearAllCache) {
+      WEBSITE_CACHE.clear();
+    }
     // Get access key from metafields
     const metafieldResponse = await admin.graphql(`
       query {
@@ -62,7 +71,11 @@ export async function loader({ request }) {
     // Serve from cache if available and not expired
     const cacheKey = websiteId;
     const now = Date.now();
-    const bypassCache = new URL(request.url).searchParams.get("bypassCache");
+
+    // Optional: clear cache for this websiteId
+    if (clearCache) {
+      WEBSITE_CACHE.delete(cacheKey);
+    }
 
     if (!bypassCache) {
       const cached = WEBSITE_CACHE.get(cacheKey);
