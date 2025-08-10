@@ -205,6 +205,13 @@ export default function AIOverviewPage() {
   const [showGoodOpen, setShowGoodOpen] = useState(false);
   const [showNeedsWorkOpen, setShowNeedsWorkOpen] = useState(false);
   const [visibleThreads, setVisibleThreads] = useState(5);
+  // Data derived from API response
+  const [chatReview, setChatReview] = useState(null);
+  const [kpiSnapshot, setKpiSnapshot] = useState(null);
+  const [whatsWorkingItems, setWhatsWorkingItems] = useState([]);
+  const [painPointsItems, setPainPointsItems] = useState([]);
+  const [quickWinsItems, setQuickWinsItems] = useState([]);
+  const [windowRange, setWindowRange] = useState(null);
 
   // Track which thread is expanded
   const [expandedThreadId, setExpandedThreadId] = useState(null);
@@ -243,44 +250,50 @@ export default function AIOverviewPage() {
           // Check the shape of the historyData response
           console.log("History data has keys:", Object.keys(historyData));
 
-          // Improved extraction of analysis from AI history response
-          let analysisFromHistory = null;
+          // Normalize shapes from new API
+          const analysisBlock =
+            historyData.analysis || historyData.report || {};
 
-          if (historyData.analysis) {
-            analysisFromHistory = historyData.analysis;
-            console.log("Found analysis in history 'analysis' property");
-          } else if (historyData.insights) {
-            analysisFromHistory = historyData.insights;
-            console.log("Found analysis in history 'insights' property");
-          } else if (historyData.summary) {
-            analysisFromHistory = historyData.summary;
-            console.log("Found analysis in history 'summary' property");
+          // Prefer string analysis if provided
+          if (
+            analysisBlock &&
+            typeof analysisBlock.ai_usage_analysis === "string"
+          ) {
+            setUpdatedAnalysis(analysisBlock.ai_usage_analysis);
+          } else if (typeof historyData.analysis === "string") {
+            setUpdatedAnalysis(historyData.analysis);
           }
 
-          // Check if we have data in the expected format
-          const formattedHistoryData = Array.isArray(historyData)
+          // Threads
+          const threads = Array.isArray(historyData)
             ? historyData
-            : historyData.threads || historyData.queries || [];
+            : historyData.threads || [];
+          setAiHistoryData(threads);
 
-          setAiHistoryData(formattedHistoryData);
+          // Chat review details
+          const chatReview =
+            analysisBlock.chat_review || historyData.chat_review || null;
+          setChatReview(chatReview);
 
-          // If we found analysis in the history response and we don't already have analysis, use that
-          if (analysisFromHistory && !updatedAnalysis) {
-            // Make sure it's a string before assigning
-            if (typeof analysisFromHistory === "string") {
-              setUpdatedAnalysis(analysisFromHistory);
-              console.log(
-                "Found analysis in aiHistory response: " +
-                  analysisFromHistory.substring(0, 100) +
-                  "...",
-              );
-            } else if (typeof analysisFromHistory === "object") {
-              // If it's an object, stringify it
-              const analysisText = JSON.stringify(analysisFromHistory, null, 2);
-              setUpdatedAnalysis(analysisText);
-              console.log("Analysis was an object, stringified it");
-            }
-          }
+          // KPI snapshot
+          const kpi =
+            analysisBlock.kpi_snapshot || historyData.kpi_snapshot || null;
+          setKpiSnapshot(kpi);
+
+          // Window range
+          setWindowRange(
+            historyData.windowStart || historyData.windowEnd
+              ? {
+                  start: historyData.windowStart || null,
+                  end: historyData.windowEnd || null,
+                }
+              : null,
+          );
+
+          // Arrays
+          setWhatsWorkingItems(analysisBlock.whats_working || []);
+          setPainPointsItems(analysisBlock.pain_points || []);
+          setQuickWinsItems(analysisBlock.quick_wins || []);
         } else {
           console.error(
             "Failed to fetch AI history data:",
@@ -398,86 +411,20 @@ export default function AIOverviewPage() {
 
   const toggleToast = () => setShowToast(!showToast);
 
-  // Hard-coded insights content for the report sections
-  const reviewTitle =
-    "Voicero AI – Chat Review (17 Jun – 3 Jul 2025)";
-  const goodThreads = [
-    "62ef08ab",
-    "e24c37d5",
-    "a89170e3",
-    "e5de4431",
-    "f02fe70b",
-    "093c065f",
-    "c2142524",
-    "5056a3ee",
-    "3ecbba0d",
-    "8e3b8588",
-    "1f1633ee",
-    "d5174671",
-    "6b26f4e0",
-    "3a7f1315",
-    "72f3acd3",
-  ];
-  const needsWorkThreads = [
-    "4389ad4b",
-    "75a5a22d",
-    "d897aa3c",
-    "b1284cb8",
-    "f7475a90",
-    "e4f6eca4",
-  ];
-  const goodOutcome =
-    "Clear answers, accurate product guidance, smooth order / account actions, or quick hand-offs to CS; users left satisfied and often thanked the bot.";
-  const needsWorkOutcome =
-    "Repetition, promo/price contradictions, inability to override simple fixes, or wrong shipping info led to stalled resolutions and visible user frustration.";
-
-  const whatsWorking = [
-    "Product expertise in context – Differences between SKUs (e.g., Women’s UT vs. standard) explained clearly and converted interest into future intent.",
-    "Action-oriented flows – Successful order cancellations, reward redemptions, and cart edits without human escalation.",
-    "Empathy & reassurance – Quick apologies for delays/confusion followed by specific next steps kept conversations friendly.",
-    "Cross-sell done right – When relevant (gut-health tips, pairing enzymes with probiotics) the bot recommended logical add-ons without sounding pushy.",
-  ];
-
-  const painPoints = [
-    {
-      issue:
-        "Promotion clashes (free gifts, $0.02 shipping gaps, discount-stack limits)",
-      impact:
-        "Loops of “add $X more” or “can you override?” with no resolution; five threads ended unresolved.",
-    },
-    {
-      issue: "Over-prompting (email-subscribe pop-ups, price blurbs)",
-      impact:
-        "In six threads, repetitive template replies buried the actual answer.",
-    },
-    {
-      issue: "Inconsistent policies (intl. shipping)",
-      impact:
-        "One thread incorrectly said Canada orders were possible, then reversed—loss of trust.",
-    },
-    {
-      issue: "Tracking / delivery status",
-      impact:
-        "Users asking “Where is my order?” got generic CS redirects plus unrelated upsell messages.",
-    },
-  ];
-
-  // Quick wins (AI-focused, distinct from provided examples)
-  const quickWins = [
-    "Confidence gating – When answer certainty is low, ask one clarifying question or offer a human handoff instead of guessing.",
-    "Template deduplication – Detect and suppress repeat promos/signup prompts within a session to keep answers concise.",
-    "Promo-eligibility explainer – Compute and state why an offer does/doesn’t apply with a one-tap fix (add/remove items, apply code).",
-    "Shipping guardrail – Validate destination and stock regions before promising availability.",
-    "Live order ETA – After an order number is provided, fetch ETA and pause upsell until a tracking answer is delivered.",
-  ];
-
-  const kpis = [
-    { label: "Total threads", value: "21" },
-    { label: "Helpful (per manual audit)", value: "15 (71%)" },
-    { label: "Needs-work", value: "6 (29%)" },
-    { label: "Avg. user messages when good", value: "4" },
-    { label: "Avg. user messages when bad", value: "10" },
-  ];
+  // API-driven values and helpers
+  const totalThreads =
+    (kpiSnapshot && kpiSnapshot.total_threads) ||
+    (aiHistoryData && aiHistoryData.length) ||
+    0;
+  const goodThreads = chatReview?.good_thread_ids || [];
+  const needsWorkThreads = chatReview?.needs_work_thread_ids || [];
+  const goodOutcome = chatReview?.good_definition || "";
+  const needsWorkOutcome = chatReview?.needs_work_definition || "";
+  const reviewTitle = windowRange
+    ? `Chat Review (${new Date(windowRange.start).toLocaleDateString()} – ${new Date(
+        windowRange.end,
+      ).toLocaleDateString()})`
+    : "Chat Review";
 
   if (disconnected) {
     return null; // Don't render anything while redirecting
@@ -721,7 +668,7 @@ export default function AIOverviewPage() {
               </BlockStack>
             </Card>
 
-            {/* 1-Month Chat Quality Snapshot - Redesigned with bubble tiles */}
+            {/* Chat Quality Snapshot from API */}
             <Card>
               <BlockStack gap="400">
                 <InlineStack align="space-between">
@@ -779,7 +726,7 @@ export default function AIOverviewPage() {
                           fontWeight: 600,
                         }}
                       >
-                        15 / 21
+                        {goodThreads.length} / {totalThreads}
                       </div>
                     </InlineStack>
                     <div style={{ height: 8 }} />
@@ -796,9 +743,9 @@ export default function AIOverviewPage() {
                     <Collapsible open={showGoodOpen} id="good-threads">
                       <div style={{ height: 8 }} />
                       <InlineStack gap="100" wrap>
-                        {goodThreads.map((id) => (
+                        {(goodThreads || []).map((id, idx) => (
                           <div
-                            key={id}
+                            key={`${id}-${idx}`}
                             style={{
                               backgroundColor: "#F4F5F7",
                               padding: "4px 8px",
@@ -808,7 +755,7 @@ export default function AIOverviewPage() {
                               fontWeight: 600,
                             }}
                           >
-                            {id}
+                            {id || "(empty)"}
                           </div>
                         ))}
                       </InlineStack>
@@ -854,7 +801,7 @@ export default function AIOverviewPage() {
                           fontWeight: 600,
                         }}
                       >
-                        6 / 21
+                        {needsWorkThreads.length} / {totalThreads}
                       </div>
                     </InlineStack>
                     <div style={{ height: 8 }} />
@@ -874,9 +821,9 @@ export default function AIOverviewPage() {
                     >
                       <div style={{ height: 8 }} />
                       <InlineStack gap="100" wrap>
-                        {needsWorkThreads.map((id) => (
+                        {(needsWorkThreads || []).map((id, idx) => (
                           <div
-                            key={id}
+                            key={`${id}-${idx}`}
                             style={{
                               backgroundColor: "#FFF",
                               padding: "4px 8px",
@@ -896,7 +843,7 @@ export default function AIOverviewPage() {
               </BlockStack>
             </Card>
 
-            {/* What's Working */}
+            {/* What's Working from API */}
             <Card>
               <BlockStack gap="400">
                 <InlineStack align="space-between">
@@ -910,14 +857,14 @@ export default function AIOverviewPage() {
                 <Divider />
                 <BlockStack gap="200">
                   {(showMoreWorking
-                    ? whatsWorking
-                    : whatsWorking.slice(0, 3)
+                    ? whatsWorkingItems
+                    : whatsWorkingItems.slice(0, 3)
                   ).map((item, idx) => (
                     <Text key={idx} variant="bodyMd" as="p">
                       • {item}
                     </Text>
                   ))}
-                  {whatsWorking.length > 3 && (
+                  {whatsWorkingItems.length > 3 && (
                     <InlineStack align="end">
                       <Button
                         size="slim"
@@ -925,7 +872,7 @@ export default function AIOverviewPage() {
                       >
                         {showMoreWorking
                           ? "Show less"
-                          : `Show ${whatsWorking.length - 3} more`}
+                          : `Show ${whatsWorkingItems.length - 3} more`}
                       </Button>
                     </InlineStack>
                   )}
@@ -933,7 +880,7 @@ export default function AIOverviewPage() {
               </BlockStack>
             </Card>
 
-            {/* Pain-Points */}
+            {/* Pain-Points from API */}
             <Card>
               <BlockStack gap="400">
                 <InlineStack align="space-between">
@@ -954,7 +901,7 @@ export default function AIOverviewPage() {
                       gap: 12,
                     }}
                   >
-                    {painPoints.map((row, idx) => (
+                    {painPointsItems.map((row, idx) => (
                       <div
                         key={idx}
                         style={{
@@ -965,11 +912,11 @@ export default function AIOverviewPage() {
                         }}
                       >
                         <Text variant="bodyMd" fontWeight="semibold">
-                          {row.issue}
+                          {row.title || row.issue || `Pain-Point ${idx + 1}`}
                         </Text>
                         <div style={{ height: 6 }} />
                         <Text variant="bodySm" color="subdued">
-                          {row.impact}
+                          {row.description || row.impact || ""}
                         </Text>
                       </div>
                     ))}
@@ -991,14 +938,15 @@ export default function AIOverviewPage() {
                 </InlineStack>
                 <Divider />
                 <BlockStack gap="200">
-                  {(showMoreQuickWins ? quickWins : quickWins.slice(0, 3)).map(
-                    (item, idx) => (
-                      <Text key={idx} variant="bodyMd" as="p">
-                        • {item}
-                      </Text>
-                    ),
-                  )}
-                  {quickWins.length > 3 && (
+                  {(showMoreQuickWins
+                    ? quickWinsItems
+                    : quickWinsItems.slice(0, 3)
+                  ).map((item, idx) => (
+                    <Text key={idx} variant="bodyMd" as="p">
+                      • {item}
+                    </Text>
+                  ))}
+                  {quickWinsItems.length > 3 && (
                     <InlineStack align="end">
                       <Button
                         size="slim"
@@ -1006,7 +954,7 @@ export default function AIOverviewPage() {
                       >
                         {showMoreQuickWins
                           ? "Show less"
-                          : `Show ${quickWins.length - 3} more`}
+                          : `Show ${quickWinsItems.length - 3} more`}
                       </Button>
                     </InlineStack>
                   )}
@@ -1014,7 +962,7 @@ export default function AIOverviewPage() {
               </BlockStack>
             </Card>
 
-            {/* KPI Snapshot - Redesigned with stat bubbles */}
+            {/* KPI Snapshot from API */}
             <Card>
               <BlockStack gap="400">
                 <InlineStack align="space-between">
@@ -1036,31 +984,45 @@ export default function AIOverviewPage() {
                   {[
                     {
                       label: "Total threads",
-                      value: "21",
+                      value:
+                        (kpiSnapshot && kpiSnapshot.total_threads) ||
+                        totalThreads,
                       icon: ChatIcon,
                       accent: "#EEF6FF",
                     },
                     {
-                      label: "Helpful (per manual audit)",
-                      value: "15 (71%)",
+                      label: "Helpful (%)",
+                      value:
+                        kpiSnapshot?.helpful_percent !== undefined
+                          ? `${kpiSnapshot.helpful_percent.toFixed(2)}%`
+                          : "-",
                       icon: CheckIcon,
                       accent: "#E8F5E9",
                     },
                     {
-                      label: "Needs-work",
-                      value: "6 (29%)",
+                      label: "Needs-work (%)",
+                      value:
+                        kpiSnapshot?.needs_work_percent !== undefined
+                          ? `${kpiSnapshot.needs_work_percent.toFixed(2)}%`
+                          : "-",
                       icon: InfoIcon,
                       accent: "#FEF3C7",
                     },
                     {
                       label: "Avg. user messages when good",
-                      value: "4",
+                      value:
+                        kpiSnapshot?.avg_user_messages_when_good !== undefined
+                          ? `${kpiSnapshot.avg_user_messages_when_good}`
+                          : "-",
                       icon: ChatIcon,
                       accent: "#F3E8FF",
                     },
                     {
                       label: "Avg. user messages when bad",
-                      value: "10",
+                      value:
+                        kpiSnapshot?.avg_user_messages_when_bad !== undefined
+                          ? `${kpiSnapshot.avg_user_messages_when_bad}`
+                          : "-",
                       icon: ChatIcon,
                       accent: "#FFE4E6",
                     },
@@ -1178,21 +1140,23 @@ export default function AIOverviewPage() {
                       {aiHistoryData
                         .slice(0, visibleThreads)
                         .map((thread, index) => {
+                          // Normalize messages
+                          const messages = Array.isArray(thread.messages)
+                            ? thread.messages
+                            : [];
                           // Find first user message for the query text
-                          const firstUserMessage =
-                            thread.messages && thread.messages.length > 0
-                              ? thread.messages.find(
-                                  (msg) => msg.role === "user",
-                                )
-                              : null;
+                          const firstUserMessage = messages.find(
+                            (msg) => msg.role === "user",
+                          );
 
-                          const queryText = firstUserMessage
-                            ? firstUserMessage.content
-                            : thread.initialQuery || "Untitled conversation";
+                          const queryText =
+                            (firstUserMessage && firstUserMessage.content) ||
+                            thread.initialQuery ||
+                            "Untitled conversation";
 
                           // Sort messages with most recent first
-                          const sortedMessages = thread.messages
-                            ? [...thread.messages].sort(
+                          const sortedMessages = messages.length
+                            ? [...messages].sort(
                                 (a, b) =>
                                   new Date(b.createdAt) - new Date(a.createdAt),
                               )
@@ -1232,8 +1196,14 @@ export default function AIOverviewPage() {
                                   </BlockStack>
                                   <InlineStack gap="200" align="center">
                                     <Badge>
-                                      {thread.messageCount > 0
-                                        ? `${thread.messageCount} messages`
+                                      {(thread.messageCount !== undefined
+                                        ? thread.messageCount
+                                        : messages.length) > 0
+                                        ? `${
+                                            thread.messageCount !== undefined
+                                              ? thread.messageCount
+                                              : messages.length
+                                          } messages`
                                         : "New"}
                                     </Badge>
                                     <Button
