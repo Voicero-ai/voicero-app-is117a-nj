@@ -780,6 +780,10 @@ export default function Index() {
   // Action details UI state
   const [selectedActionType, setSelectedActionType] = useState(null); // 'redirect' | 'purchase' | 'click' | 'scroll'
   const [selectedThreadId, setSelectedThreadId] = useState(null);
+  useEffect(() => {
+    // Reset selected thread whenever action type changes
+    setSelectedThreadId(null);
+  }, [selectedActionType]);
 
   // Helpers for action details
   const parseActionPayload = useCallback((content) => {
@@ -2885,25 +2889,29 @@ export default function Index() {
                                                   </Text>
                                                 </InlineStack>
                                                 <div style={{ height: 6 }} />
-                                                <Text
-                                                  variant="bodySm"
-                                                  color="subdued"
-                                                >
-                                                  {(() => {
-                                                    if (
-                                                      typeof m.content ===
-                                                      "string"
-                                                    )
-                                                      return m.content;
-                                                    try {
-                                                      return JSON.stringify(
-                                                        m.content,
-                                                      );
-                                                    } catch {
-                                                      return String(m.content);
-                                                    }
-                                                  })()}
-                                                </Text>
+                                                {!isActionMsg && (
+                                                  <Text
+                                                    variant="bodySm"
+                                                    color="subdued"
+                                                  >
+                                                    {(() => {
+                                                      if (
+                                                        typeof m.content ===
+                                                        "string"
+                                                      )
+                                                        return m.content;
+                                                      try {
+                                                        return JSON.stringify(
+                                                          m.content,
+                                                        );
+                                                      } catch {
+                                                        return String(
+                                                          m.content,
+                                                        );
+                                                      }
+                                                    })()}
+                                                  </Text>
+                                                )}
                                                 {isActionMsg && (
                                                   <div
                                                     style={{
