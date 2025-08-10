@@ -781,6 +781,66 @@ export default function Index() {
   const [selectedActionType, setSelectedActionType] = useState(null); // 'redirect' | 'purchase' | 'click' | 'scroll'
   const [selectedThreadId, setSelectedThreadId] = useState(null);
 
+  // Helpers for action details
+  const parseActionPayload = useCallback((content) => {
+    try {
+      if (typeof content !== "string") return null;
+      const trimmed = content.trim();
+      if (!trimmed.startsWith("{")) return null;
+      const parsed = JSON.parse(trimmed);
+      const action = (parsed.action || "").toString().toLowerCase();
+      if (!action) return null;
+      return {
+        answer: parsed.answer,
+        action,
+        context: parsed.action_context || {},
+      };
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const getThreadsForAction = useCallback(
+    (actionType) => {
+      if (!extendedWebsiteData) return [];
+      const details = extendedWebsiteData.actionDetails || {};
+      const fromDetails = Array.isArray(details[actionType])
+        ? details[actionType]
+        : [];
+      let threads = fromDetails;
+
+      // If we somehow have an unfiltered list, filter by messages containing the action
+      if (threads.length) {
+        threads = threads.filter((t) =>
+          Array.isArray(t.messages)
+            ? t.messages.some((m) => {
+                const payload = parseActionPayload(m.content);
+                return payload && payload.action === actionType;
+              })
+            : false,
+        );
+      }
+
+      // Fallback to actionConversations if details are empty
+      if (!threads.length && extendedWebsiteData.actionConversations) {
+        const conv = extendedWebsiteData.actionConversations[actionType] || [];
+        // conv may or may not include messages; if it does, filter similarly
+        const filtered = conv.filter((t) =>
+          Array.isArray(t.messages)
+            ? t.messages.some((m) => {
+                const payload = parseActionPayload(m.content);
+                return payload && payload.action === actionType;
+              })
+            : true,
+        );
+        return filtered;
+      }
+
+      return threads;
+    },
+    [extendedWebsiteData, parseActionPayload],
+  );
+
   // State for UI and data
   const fetcher = useFetcher();
   const app = useAppBridge();
@@ -2679,11 +2739,10 @@ export default function Index() {
                                   >
                                     <BlockStack gap="100">
                                       {(() => {
-                                        const details =
-                                          extendedWebsiteData?.actionDetails ||
-                                          {};
                                         const threads =
-                                          details[selectedActionType] || [];
+                                          getThreadsForAction(
+                                            selectedActionType,
+                                          );
                                         if (!threads.length) {
                                           return (
                                             <Text
@@ -2759,11 +2818,8 @@ export default function Index() {
                                     }}
                                   >
                                     {(() => {
-                                      const details =
-                                        extendedWebsiteData?.actionDetails ||
-                                        {};
                                       const threads =
-                                        details[selectedActionType] || [];
+                                        getThreadsForAction(selectedActionType);
                                       const thread = threads.find(
                                         (t) =>
                                           (t.threadId || t.messageId) ===
@@ -2790,34 +2846,13 @@ export default function Index() {
                                       return (
                                         <BlockStack gap="150">
                                           {messages.map((m, idx) => {
-                                            const isActionMsg = (() => {
-                                              try {
-                                                if (!m.content) return false;
-                                                // Detect if content includes action JSON referencing selected action
-                                                if (
-                                                  typeof m.content ===
-                                                    "string" &&
-                                                  m.content
-                                                    .trim()
-                                                    .startsWith("{")
-                                                ) {
-                                                  const parsed = JSON.parse(
-                                                    m.content,
-                                                  );
-                                                  return (
-                                                    parsed.action &&
-                                                    String(parsed.action)
-                                                      .toLowerCase()
-                                                      .includes(
-                                                        String(
-                                                          selectedActionType,
-                                                        ),
-                                                      )
-                                                  );
-                                                }
-                                              } catch {}
-                                              return false;
-                                            })();
+                                            const payload = parseActionPayload(
+                                              m.content,
+                                            );
+                                            const isActionMsg =
+                                              payload &&
+                                              payload.action ===
+                                                selectedActionType;
                                             return (
                                               <div
                                                 key={m.id || idx}
@@ -2869,6 +2904,73 @@ export default function Index() {
                                                     }
                                                   })()}
                                                 </Text>
+                                                {isActionMsg && (
+                                                  <div
+                                                    style={{
+                                                      marginTop: 8,
+                                                      backgroundColor:
+                                                        "#F0FDF4",
+                                                      border:
+                                                        "1px solid #86EFAC",
+                                                      borderRadius: 8,
+                                                      padding: 8,
+                                                    }}
+                                                  >
+                                                    <Text
+                                                      variant="bodySm"
+                                                      fontWeight="semibold"
+                                                    >
+                                                      Action Details
+                                                    </Text>
+                                                    <div
+                                                      style={{ height: 4 }}
+                                                    />
+                                                    <BlockStack gap="050">
+                                                      {payload?.answer && (
+                                                        <Text
+                                                          variant="bodySm"
+                                                          color="subdued"
+                                                        >
+                                                          Answer:{" "}
+                                                          {payload.answer}
+                                                        </Text>
+                                                      )}
+                                                      <Text
+                                                        variant="bodySm"
+                                                        color="subdued"
+                                                      >
+                                                        Action:{" "}
+                                                        {payload?.action}
+                                                      </Text>
+                                                      {(() => {
+                                                        const ctx =
+                                                          payload?.context ||
+                                                          {};
+                                                        const extra =
+                                                          ctx.url ||
+                                                          ctx.product_name ||
+                                                          ctx.button_text ||
+                                                          ctx.exact_text;
+                                                        if (!extra) return null;
+                                                        const label = ctx.url
+                                                          ? "URL"
+                                                          : ctx.product_name
+                                                            ? "Product"
+                                                            : ctx.button_text
+                                                              ? "Button"
+                                                              : "Text";
+                                                        return (
+                                                          <Text
+                                                            variant="bodySm"
+                                                            color="subdued"
+                                                          >
+                                                            {label}: {extra}
+                                                          </Text>
+                                                        );
+                                                      })()}
+                                                    </BlockStack>
+                                                  </div>
+                                                )}
                                               </div>
                                             );
                                           })}
