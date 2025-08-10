@@ -810,40 +810,86 @@ export default function Index() {
 
   const getThreadsForAction = useCallback(
     (actionType) => {
-      if (!extendedWebsiteData || !actionType) return [];
+      if (!extendedWebsiteData || !actionType) {
+        console.log('getThreadsForAction: No data or actionType', { extendedWebsiteData: !!extendedWebsiteData, actionType });
+        return [];
+      }
+      
+      console.log('getThreadsForAction called with actionType:', actionType);
+      
       const details = extendedWebsiteData.actionDetails || {};
       const fromDetails = Array.isArray(details[actionType])
         ? details[actionType]
         : [];
+      
+      console.log('Raw details for', actionType, ':', fromDetails.length, 'threads');
+      
       let threads = fromDetails;
 
-      // If we somehow have an unfiltered list, filter by messages containing the action
+      // Always filter threads to ensure they contain the correct action type
       if (threads.length) {
-        threads = threads.filter((t) =>
-          Array.isArray(t.messages)
-            ? t.messages.some((m) => {
-                const payload = parseActionPayload(m.content);
-                return payload && payload.action === actionType;
-              })
-            : false,
-        );
+        const beforeFilter = threads.length;
+        threads = threads.filter((t) => {
+          // Thread must have messages
+          if (!Array.isArray(t.messages) || t.messages.length === 0) {
+            return false;
+          }
+          
+          // Thread must contain at least one message with the matching action type
+          const hasMatchingAction = t.messages.some((m) => {
+            const payload = parseActionPayload(m.content);
+            return payload && payload.action === actionType;
+          });
+          
+          if (!hasMatchingAction) {
+            // Log threads that don't match to debug
+            const threadActions = t.messages.map(m => {
+              const payload = parseActionPayload(m.content);
+              return payload ? payload.action : 'no-action';
+            }).filter(a => a !== 'no-action');
+            console.log('Filtered out thread with actions:', threadActions, 'looking for:', actionType);
+          }
+          
+          return hasMatchingAction;
+        });
+        
+        console.log('After filtering actionDetails:', beforeFilter, '->', threads.length, 'threads for', actionType);
       }
 
       // Fallback to actionConversations if details are empty
       if (!threads.length && extendedWebsiteData.actionConversations) {
+        console.log('Falling back to actionConversations for', actionType);
         const conv = extendedWebsiteData.actionConversations[actionType] || [];
-        // conv may or may not include messages; if it does, filter similarly
-        const filtered = conv.filter((t) =>
-          Array.isArray(t.messages)
-            ? t.messages.some((m) => {
-                const payload = parseActionPayload(m.content);
-                return payload && payload.action === actionType;
-              })
-            : true,
-        );
+        console.log('Raw actionConversations for', actionType, ':', conv.length, 'threads');
+        
+        // Always filter by messages containing the action - don't allow threads without messages
+        const filtered = conv.filter((t) => {
+          if (!Array.isArray(t.messages) || t.messages.length === 0) {
+            return false;
+          }
+          
+          const hasMatchingAction = t.messages.some((m) => {
+            const payload = parseActionPayload(m.content);
+            return payload && payload.action === actionType;
+          });
+          
+          if (!hasMatchingAction) {
+            // Log threads that don't match to debug
+            const threadActions = t.messages.map(m => {
+              const payload = parseActionPayload(m.content);
+              return payload ? payload.action : 'no-action';
+            }).filter(a => a !== 'no-action');
+            console.log('Filtered out conversation thread with actions:', threadActions, 'looking for:', actionType);
+          }
+          
+          return hasMatchingAction;
+        });
+        
+        console.log('After filtering actionConversations:', conv.length, '->', filtered.length, 'threads for', actionType);
         return filtered;
       }
 
+      console.log('Returning', threads.length, 'threads for', actionType);
       return threads;
     },
     [extendedWebsiteData, parseActionPayload],
@@ -2557,7 +2603,7 @@ export default function Index() {
                             </Text>
                           </InlineStack>
                           <Text variant="bodyMd" color="subdued">
-                            How customers are interacting with your AI assistant
+                            How customers are interacting with your AI assistant (click on each one to see threads)
                           </Text>
                         </BlockStack>
 
@@ -2639,10 +2685,13 @@ export default function Index() {
                                     cursor: "pointer",
                                   }}
                                   onClick={() => {
+                                    console.log('Action button clicked:', stat.type, 'current:', selectedActionType);
                                     // Toggle selection; reset thread on change
                                     const newActionType = selectedActionType === stat.type ? null : stat.type;
+                                    console.log('Setting new action type:', newActionType);
                                     setSelectedActionType(newActionType);
                                     // Always reset thread when action type changes
+                                    console.log('Resetting selectedThreadId to null');
                                     setSelectedThreadId(null);
                                   }}
                                   onMouseEnter={(e) => {
@@ -2751,6 +2800,20 @@ export default function Index() {
                                           getThreadsForAction(
                                             selectedActionType,
                                           );
+                                        
+                                        console.log('UI: Rendering threads for', selectedActionType, ':', threads.length);
+                                        
+                                        // Debug log each thread's actions
+                                        threads.forEach((t, idx) => {
+                                          if (t.messages) {
+                                            const actions = t.messages.map(m => {
+                                              const payload = parseActionPayload(m.content);
+                                              return payload ? payload.action : 'no-action';
+                                            }).filter(a => a !== 'no-action');
+                                            console.log(`Thread ${idx} (${t.threadId || t.messageId}):`, actions);
+                                          }
+                                        });
+                                        
                                         if (!threads.length) {
                                           return (
                                             <Text
@@ -2828,11 +2891,17 @@ export default function Index() {
                                     {(() => {
                                       const threads =
                                         getThreadsForAction(selectedActionType);
+                                      
+                                      console.log('UI: Message timeline - threads for', selectedActionType, ':', threads.length);
+                                      console.log('UI: Looking for selectedThreadId:', selectedThreadId);
+                                      
                                       const thread = threads.find(
                                         (t) =>
                                           (t.threadId || t.messageId) ===
                                           selectedThreadId,
                                       );
+                                      
+                                      console.log('UI: Found thread:', thread ? (thread.threadId || thread.messageId) : 'none');
                                       
                                       // If no thread is selected or the selected thread doesn't exist in current action
                                       if (!thread || !selectedThreadId) {
