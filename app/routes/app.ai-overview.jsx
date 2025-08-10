@@ -400,7 +400,7 @@ export default function AIOverviewPage() {
 
   // Hard-coded insights content for the report sections
   const reviewTitle =
-    "Voicero AI – Post-Launch Chat Review (17 Jun – 3 Jul 2025)";
+    "Voicero AI – Chat Review (17 Jun – 3 Jul 2025)";
   const goodThreads = [
     "62ef08ab",
     "e24c37d5",

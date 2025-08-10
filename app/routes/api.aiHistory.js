@@ -24,17 +24,20 @@ export async function action({ request }) {
 
   try {
     // Forward the request to the external Next.js API
-    const response = await fetch(`${urls.voiceroApi}/api/aiHistory`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        Authorization: `Bearer ${accessKey}`,
+    const response = await fetch(
+      `https://1d3818d4ade1.ngrok-free.app/api/aiHistory`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${accessKey}`,
+        },
+        body: JSON.stringify({
+          websiteId,
+        }),
       },
-      body: JSON.stringify({
-        websiteId,
-      }),
-    });
+    );
 
     // If the external API is not available, return a fallback response with mock data
     if (!response.ok) {
