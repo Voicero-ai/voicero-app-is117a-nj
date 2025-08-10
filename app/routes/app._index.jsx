@@ -853,7 +853,7 @@ export default function Index() {
             setExtendedWebsiteData(cached.data);
             setIsLoadingExtendedData(false);
             // Kick off a background refresh to keep it fresh
-            fetch("/api/website/get")
+            fetch("/api/website/get?bypassCache=true")
               .then(() => {})
               .catch(() => {});
             return;
@@ -863,7 +863,7 @@ export default function Index() {
         // Ignore cache parsing errors
       }
 
-      const response = await fetch("/api/website/get");
+      const response = await fetch("/api/website/get?bypassCache=true");
       const data = await response.json();
       console.log("websites/get data: ", data);
 
