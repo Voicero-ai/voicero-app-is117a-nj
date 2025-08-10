@@ -24,15 +24,18 @@ export async function action({ request }) {
 
   try {
     // Forward the request to the external API
-    const response = await fetch(`${urls.voiceroApi}/api/aiHistory`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        Authorization: `Bearer ${accessKey}`,
+    const response = await fetch(
+      `https://1d3818d4ade1.ngrok-free.app/api/aiHistory`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${accessKey}`,
+        },
+        body: JSON.stringify({ websiteId }),
       },
-      body: JSON.stringify({ websiteId }),
-    });
+    );
 
     const text = await response.text();
     let data;
@@ -81,7 +84,7 @@ export async function loader({ request }) {
   try {
     // Forward the request to the external API
     const response = await fetch(
-      `${urls.voiceroApi}/api/aiHistory?websiteId=${websiteId}`,
+      `https://1d3818d4ade1.ngrok-free.app/api/aiHistory?websiteId=${websiteId}`,
       {
         method: "GET",
         headers: {
