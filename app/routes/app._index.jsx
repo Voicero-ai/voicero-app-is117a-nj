@@ -782,7 +782,11 @@ export default function Index() {
   const [selectedThreadId, setSelectedThreadId] = useState(null);
   useEffect(() => {
     // Reset selected thread whenever action type changes
-    setSelectedThreadId(null);
+    // This ensures that when switching between action types, 
+    // we don't show threads from the previous action type
+    if (selectedActionType !== null) {
+      setSelectedThreadId(null);
+    }
   }, [selectedActionType]);
 
   // Helpers for action details
@@ -806,7 +810,7 @@ export default function Index() {
 
   const getThreadsForAction = useCallback(
     (actionType) => {
-      if (!extendedWebsiteData) return [];
+      if (!extendedWebsiteData || !actionType) return [];
       const details = extendedWebsiteData.actionDetails || {};
       const fromDetails = Array.isArray(details[actionType])
         ? details[actionType]
@@ -2636,9 +2640,9 @@ export default function Index() {
                                   }}
                                   onClick={() => {
                                     // Toggle selection; reset thread on change
-                                    setSelectedActionType((prev) =>
-                                      prev === stat.type ? null : stat.type,
-                                    );
+                                    const newActionType = selectedActionType === stat.type ? null : stat.type;
+                                    setSelectedActionType(newActionType);
+                                    // Always reset thread when action type changes
                                     setSelectedThreadId(null);
                                   }}
                                   onMouseEnter={(e) => {
@@ -2829,7 +2833,9 @@ export default function Index() {
                                           (t.threadId || t.messageId) ===
                                           selectedThreadId,
                                       );
-                                      if (!thread) {
+                                      
+                                      // If no thread is selected or the selected thread doesn't exist in current action
+                                      if (!thread || !selectedThreadId) {
                                         return (
                                           <Text
                                             variant="bodySm"
@@ -2837,6 +2843,25 @@ export default function Index() {
                                           >
                                             Select a conversation to view
                                             messages.
+                                          </Text>
+                                        );
+                                      }
+
+                                      // Validate that the thread actually contains messages for the selected action type
+                                      const hasMatchingAction = thread.messages && 
+                                        Array.isArray(thread.messages) &&
+                                        thread.messages.some((m) => {
+                                          const payload = parseActionPayload(m.content);
+                                          return payload && payload.action === selectedActionType;
+                                        });
+
+                                      if (!hasMatchingAction) {
+                                        return (
+                                          <Text
+                                            variant="bodySm"
+                                            color="subdued"
+                                          >
+                                            No messages found for this action in the selected conversation.
                                           </Text>
                                         );
                                       }
@@ -2898,9 +2923,23 @@ export default function Index() {
                                                       if (
                                                         typeof m.content ===
                                                         "string"
-                                                      )
-                                                        return m.content;
+                                                      ) {
+                                                        // Try to parse as JSON first to extract just the answer
+                                                        try {
+                                                          const parsed = JSON.parse(m.content);
+                                                          if (parsed.answer) {
+                                                            return parsed.answer;
+                                                          }
+                                                          return m.content;
+                                                        } catch {
+                                                          return m.content;
+                                                        }
+                                                      }
                                                       try {
+                                                        // If content is already an object, check for answer field
+                                                        if (m.content && typeof m.content === 'object' && m.content.answer) {
+                                                          return m.content.answer;
+                                                        }
                                                         return JSON.stringify(
                                                           m.content,
                                                         );
