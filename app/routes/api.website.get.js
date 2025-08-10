@@ -4,24 +4,10 @@ import urls from "../config/urls";
 
 export const dynamic = "force-dynamic";
 
-// Simple in-memory cache for website data
-// Keyed by websiteId; entries expire after 1 hour
-const WEBSITE_CACHE = new Map();
-const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
-
 export async function loader({ request }) {
   const { admin, session } = await authenticate.admin(request);
 
   try {
-    const urlObj = new URL(request.url);
-    const bypassCache = urlObj.searchParams.get("bypassCache");
-    const clearCache = urlObj.searchParams.get("clearCache");
-    const clearAllCache = urlObj.searchParams.get("clearAllCache");
-
-    // Optional: clear all cache entries
-    if (clearAllCache) {
-      WEBSITE_CACHE.clear();
-    }
     // Get access key from metafields
     const metafieldResponse = await admin.graphql(`
       query {
@@ -68,22 +54,6 @@ export async function loader({ request }) {
       );
     }
 
-    // Serve from cache if available and not expired
-    const cacheKey = websiteId;
-    const now = Date.now();
-
-    // Optional: clear cache for this websiteId
-    if (clearCache) {
-      WEBSITE_CACHE.delete(cacheKey);
-    }
-
-    if (!bypassCache) {
-      const cached = WEBSITE_CACHE.get(cacheKey);
-      if (cached && now < cached.expiresAt) {
-        return json({ success: true, websiteData: cached.data, cached: true });
-      }
-    }
-
     // Fetch website data from the API using the website ID
     const websiteResponse = await fetch(
       `https://1d3818d4ade1.ngrok-free.app/api/websites/get?id=${websiteId}`,
@@ -112,14 +82,7 @@ export async function loader({ request }) {
       JSON.stringify(websiteData, null, 2),
     );
 
-    // Store in cache
-    WEBSITE_CACHE.set(cacheKey, {
-      data: websiteData,
-      storedAt: now,
-      expiresAt: now + CACHE_TTL_MS,
-    });
-
-    return json({ success: true, websiteData, cached: false });
+    return json({ success: true, websiteData });
   } catch (error) {
     console.error("API website get error:", error);
     return json(
