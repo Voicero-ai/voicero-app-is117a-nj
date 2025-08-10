@@ -777,6 +777,9 @@ export default function Index() {
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [syncStatusText, setSyncStatusText] = useState("");
   const [showActivationGuide, setShowActivationGuide] = useState(false);
+  // Action details UI state
+  const [selectedActionType, setSelectedActionType] = useState(null); // 'redirect' | 'purchase' | 'click' | 'scroll'
+  const [selectedThreadId, setSelectedThreadId] = useState(null);
 
   // State for UI and data
   const fetcher = useFetcher();
@@ -2523,6 +2526,7 @@ export default function Index() {
                                       ?.totalAiRedirects || 0,
                                   label: "Redirects",
                                   accent: "#EEF6FF",
+                                  type: "redirect",
                                 },
                                 {
                                   icon: CheckIcon,
@@ -2531,6 +2535,7 @@ export default function Index() {
                                       ?.totalAiPurchases || 0,
                                   label: "Purchases",
                                   accent: "#E8F5E9",
+                                  type: "purchase",
                                 },
                                 {
                                   icon: InfoIcon,
@@ -2539,6 +2544,7 @@ export default function Index() {
                                       ?.totalAiClicks || 0,
                                   label: "Clicks",
                                   accent: "#FEF3C7",
+                                  type: "click",
                                 },
                                 {
                                   icon: RefreshIcon,
@@ -2547,6 +2553,7 @@ export default function Index() {
                                       ?.totalAiScrolls || 0,
                                   label: "Scrolls",
                                   accent: "#F3E8FF",
+                                  type: "scroll",
                                 },
                               ].map((stat, idx) => (
                                 <div
@@ -2557,6 +2564,18 @@ export default function Index() {
                                     padding: 16,
                                     transition:
                                       "transform 0.15s ease, box-shadow 0.15s ease",
+                                    border:
+                                      selectedActionType === stat.type
+                                        ? "2px solid #1E3A8A"
+                                        : "1px solid transparent",
+                                    cursor: "pointer",
+                                  }}
+                                  onClick={() => {
+                                    // Toggle selection; reset thread on change
+                                    setSelectedActionType((prev) =>
+                                      prev === stat.type ? null : stat.type,
+                                    );
+                                    setSelectedThreadId(null);
                                   }}
                                   onMouseEnter={(e) => {
                                     e.currentTarget.style.transform =
@@ -2600,6 +2619,266 @@ export default function Index() {
                                 </div>
                               ))}
                             </div>
+
+                            {/* Action Details Drawer */}
+                            {selectedActionType && (
+                              <div
+                                style={{
+                                  marginTop: 16,
+                                  backgroundColor: "white",
+                                  border: "1px solid #EEF2F7",
+                                  borderRadius: 12,
+                                  padding: 16,
+                                }}
+                              >
+                                <InlineStack
+                                  align="space-between"
+                                  blockAlign="center"
+                                >
+                                  <Text
+                                    variant="headingMd"
+                                    fontWeight="semibold"
+                                  >
+                                    {selectedActionType
+                                      .charAt(0)
+                                      .toUpperCase() +
+                                      selectedActionType.slice(1)}{" "}
+                                    Conversations
+                                  </Text>
+                                  <Button
+                                    size="slim"
+                                    onClick={() => {
+                                      setSelectedActionType(null);
+                                      setSelectedThreadId(null);
+                                    }}
+                                  >
+                                    Close
+                                  </Button>
+                                </InlineStack>
+
+                                <div style={{ height: 12 }} />
+
+                                <div
+                                  style={{
+                                    display: "grid",
+                                    gridTemplateColumns:
+                                      "minmax(240px, 360px) 1fr",
+                                    gap: 16,
+                                  }}
+                                >
+                                  {/* Left: Thread list */}
+                                  <div
+                                    style={{
+                                      backgroundColor: "#F9FAFB",
+                                      borderRadius: 10,
+                                      border: "1px solid #EEF2F7",
+                                      padding: 12,
+                                      maxHeight: 360,
+                                      overflow: "auto",
+                                    }}
+                                  >
+                                    <BlockStack gap="100">
+                                      {(() => {
+                                        const details =
+                                          extendedWebsiteData?.actionDetails ||
+                                          {};
+                                        const threads =
+                                          details[selectedActionType] || [];
+                                        if (!threads.length) {
+                                          return (
+                                            <Text
+                                              variant="bodySm"
+                                              color="subdued"
+                                            >
+                                              No conversations found for this
+                                              action.
+                                            </Text>
+                                          );
+                                        }
+                                        return threads.map((t, i) => {
+                                          const active =
+                                            selectedThreadId ===
+                                            (t.threadId || t.messageId);
+                                          const created = new Date(
+                                            t.createdAt,
+                                          ).toLocaleString();
+                                          return (
+                                            <div
+                                              key={
+                                                (t.threadId ||
+                                                  t.messageId ||
+                                                  i) + "-row"
+                                              }
+                                              style={{
+                                                backgroundColor: active
+                                                  ? "#EEF6FF"
+                                                  : "white",
+                                                border: `1px solid ${active ? "#B3D7FF" : "#EEF2F7"}`,
+                                                borderRadius: 8,
+                                                padding: 10,
+                                                cursor: "pointer",
+                                              }}
+                                              onClick={() =>
+                                                setSelectedThreadId(
+                                                  t.threadId || t.messageId,
+                                                )
+                                              }
+                                            >
+                                              <BlockStack gap="050">
+                                                <Text
+                                                  variant="bodySm"
+                                                  fontWeight="semibold"
+                                                >
+                                                  Thread{" "}
+                                                  {t.threadId?.slice(0, 8) ||
+                                                    t.messageId?.slice(0, 8)}
+                                                </Text>
+                                                <Text
+                                                  variant="bodySm"
+                                                  color="subdued"
+                                                >
+                                                  {created}
+                                                </Text>
+                                              </BlockStack>
+                                            </div>
+                                          );
+                                        });
+                                      })()}
+                                    </BlockStack>
+                                  </div>
+
+                                  {/* Right: Messages timeline */}
+                                  <div
+                                    style={{
+                                      backgroundColor: "#F9FAFB",
+                                      borderRadius: 10,
+                                      border: "1px solid #EEF2F7",
+                                      padding: 12,
+                                      maxHeight: 360,
+                                      overflow: "auto",
+                                    }}
+                                  >
+                                    {(() => {
+                                      const details =
+                                        extendedWebsiteData?.actionDetails ||
+                                        {};
+                                      const threads =
+                                        details[selectedActionType] || [];
+                                      const thread = threads.find(
+                                        (t) =>
+                                          (t.threadId || t.messageId) ===
+                                          selectedThreadId,
+                                      );
+                                      if (!thread) {
+                                        return (
+                                          <Text
+                                            variant="bodySm"
+                                            color="subdued"
+                                          >
+                                            Select a conversation to view
+                                            messages.
+                                          </Text>
+                                        );
+                                      }
+                                      const messages = (thread.messages || [])
+                                        .slice()
+                                        .sort(
+                                          (a, b) =>
+                                            new Date(a.createdAt) -
+                                            new Date(b.createdAt),
+                                        );
+                                      return (
+                                        <BlockStack gap="150">
+                                          {messages.map((m, idx) => {
+                                            const isActionMsg = (() => {
+                                              try {
+                                                if (!m.content) return false;
+                                                // Detect if content includes action JSON referencing selected action
+                                                if (
+                                                  typeof m.content ===
+                                                    "string" &&
+                                                  m.content
+                                                    .trim()
+                                                    .startsWith("{")
+                                                ) {
+                                                  const parsed = JSON.parse(
+                                                    m.content,
+                                                  );
+                                                  return (
+                                                    parsed.action &&
+                                                    String(parsed.action)
+                                                      .toLowerCase()
+                                                      .includes(
+                                                        String(
+                                                          selectedActionType,
+                                                        ),
+                                                      )
+                                                  );
+                                                }
+                                              } catch {}
+                                              return false;
+                                            })();
+                                            return (
+                                              <div
+                                                key={m.id || idx}
+                                                style={{
+                                                  backgroundColor: "white",
+                                                  border: `2px solid ${isActionMsg ? "#16A34A" : "#EEF2F7"}`,
+                                                  borderRadius: 8,
+                                                  padding: 10,
+                                                }}
+                                              >
+                                                <InlineStack
+                                                  align="space-between"
+                                                  blockAlign="center"
+                                                >
+                                                  <Text
+                                                    variant="bodySm"
+                                                    fontWeight="semibold"
+                                                  >
+                                                    {m.role === "assistant"
+                                                      ? "Assistant"
+                                                      : "User"}
+                                                  </Text>
+                                                  <Text
+                                                    variant="bodySm"
+                                                    color="subdued"
+                                                  >
+                                                    {new Date(
+                                                      m.createdAt,
+                                                    ).toLocaleString()}
+                                                  </Text>
+                                                </InlineStack>
+                                                <div style={{ height: 6 }} />
+                                                <Text
+                                                  variant="bodySm"
+                                                  color="subdued"
+                                                >
+                                                  {(() => {
+                                                    if (
+                                                      typeof m.content ===
+                                                      "string"
+                                                    )
+                                                      return m.content;
+                                                    try {
+                                                      return JSON.stringify(
+                                                        m.content,
+                                                      );
+                                                    } catch {
+                                                      return String(m.content);
+                                                    }
+                                                  })()}
+                                                </Text>
+                                              </div>
+                                            );
+                                          })}
+                                        </BlockStack>
+                                      );
+                                    })()}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         ) : (
                           <div style={{ padding: "32px", textAlign: "center" }}>
