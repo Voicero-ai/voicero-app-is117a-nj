@@ -839,12 +839,47 @@ export default function Index() {
       }
 
       setIsLoadingExtendedData(true);
+
+      // Client-side cache in sessionStorage for 1 hour
+      const CACHE_KEY = "voicero:website:get";
+      const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+      const now = Date.now();
+
+      try {
+        const cachedRaw = sessionStorage.getItem(CACHE_KEY);
+        if (cachedRaw) {
+          const cached = JSON.parse(cachedRaw);
+          if (cached.expiresAt && now < cached.expiresAt && cached.data) {
+            setExtendedWebsiteData(cached.data);
+            setIsLoadingExtendedData(false);
+            // Kick off a background refresh to keep it fresh
+            fetch("/api/website/get")
+              .then(() => {})
+              .catch(() => {});
+            return;
+          }
+        }
+      } catch (e) {
+        // Ignore cache parsing errors
+      }
+
       const response = await fetch("/api/website/get");
       const data = await response.json();
       console.log("websites/get data: ", data);
 
       if (data.success && data.websiteData) {
         setExtendedWebsiteData(data.websiteData);
+        try {
+          sessionStorage.setItem(
+            CACHE_KEY,
+            JSON.stringify({
+              data: data.websiteData,
+              expiresAt: now + CACHE_TTL_MS,
+            }),
+          );
+        } catch (e) {
+          // Ignore storage quota errors
+        }
       } else {
         console.error("Failed to fetch extended website data:", data.error);
       }
