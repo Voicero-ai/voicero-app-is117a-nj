@@ -2086,223 +2086,264 @@ export default function Index() {
                     </BlockStack>
                   </div>
 
-                  {/* NEW: 1-Month Check-In Summary (static placeholder) */}
-                  {accessKey && fetcher.data?.success && (
-                    <div
-                      style={{
-                        backgroundColor: "white",
-                        borderRadius: "12px",
-                        padding: "24px",
-                        boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
-                      }}
-                    >
-                      <BlockStack gap="600">
-                        <InlineStack gap="300" blockAlign="center">
-                          <div
-                            style={{
-                              width: 40,
-                              height: 40,
-                              backgroundColor: "#F4F5F7",
-                              borderRadius: 10,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                            }}
-                          >
-                            <Icon source={CalendarIcon} color="base" />
-                          </div>
-                          <BlockStack gap="100">
-                            <Text variant="headingLg" fontWeight="semibold">
-                              Month Past Performance
-                            </Text>
-                            <Text variant="bodySm" color="subdued">
-                              {extendedWebsiteData?.aiOverview?.period_label ||
-                                "Based on the last 4 weeks"}
+                  {/* 1-Month Check-In Summary */}
+                  {accessKey &&
+                    fetcher.data?.success &&
+                    (isLoadingExtendedData &&
+                    !extendedWebsiteData?.aiOverview ? (
+                      <div
+                        style={{
+                          backgroundColor: "white",
+                          borderRadius: "12px",
+                          padding: "24px",
+                          boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+                        }}
+                      >
+                        <div style={{ padding: "32px", textAlign: "center" }}>
+                          <BlockStack gap="400" align="center">
+                            <Spinner size="large" />
+                            <Text variant="bodyMd" color="subdued">
+                              Loading AI overview...
                             </Text>
                           </BlockStack>
-                        </InlineStack>
-
-                        {/* Top-line KPIs */}
-                        <div
-                          style={{
-                            display: "grid",
-                            gridTemplateColumns:
-                              "repeat(auto-fit, minmax(240px, 1fr))",
-                            gap: 16,
-                          }}
-                        >
-                          {(() => {
-                            const ai = extendedWebsiteData?.aiOverview || {};
-                            const tri = ai.total_revenue_increase || {};
-                            const breakdown = tri.breakdown || {};
-                            const currency = tri.currency || "USD";
-                            const kpis = [
-                              {
-                                label: "Total Message Threads",
-                                value: ai.total_message_threads ?? 0,
-                                accent: "#EEF6FF",
-                                icon: ChatIcon,
-                              },
-                              {
-                                label: "Total Revenue Increase",
-                                value: formatCurrency(
-                                  tri.amount || 0,
-                                  currency,
-                                ),
-                                sub: `${breakdown.threads || 0} threads • ${
-                                  breakdown.percent_of_total_threads != null
-                                    ? breakdown.percent_of_total_threads
-                                    : 0
-                                }% • AOV ${formatCurrency(breakdown.aov || 0, currency)}`,
-                                accent: "#E8F5E9",
-                                icon: DataPresentationIcon,
-                              },
-                              {
-                                label: "Problem Resolution Rate",
-                                value: `${(ai.problem_resolution_rate?.percent ?? 0).toFixed(2)}%`,
-                                sub: `${ai.problem_resolution_rate?.resolved_threads ?? 0} of ${ai.problem_resolution_rate?.total_threads ?? 0} threads`,
-                                accent: "#FEF3C7",
-                                icon: CheckIcon,
-                              },
-                              {
-                                label: "Avg Messages/Thread",
-                                value: (
-                                  ai.avg_messages_per_thread ?? 0
-                                ).toFixed(2),
-                                accent: "#F3E8FF",
-                                icon: ChatIcon,
-                              },
-                            ];
-                            return kpis;
-                          })().map((kpi, idx) => (
+                        </div>
+                      </div>
+                    ) : extendedWebsiteData?.aiOverview ? (
+                      <div
+                        style={{
+                          backgroundColor: "white",
+                          borderRadius: "12px",
+                          padding: "24px",
+                          boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+                        }}
+                      >
+                        <BlockStack gap="600">
+                          <InlineStack gap="300" blockAlign="center">
                             <div
-                              key={idx}
                               style={{
-                                backgroundColor: kpi.accent,
-                                borderRadius: 12,
-                                padding: 16,
-                                transition:
-                                  "transform 0.15s ease, box-shadow 0.15s ease",
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.transform =
-                                  "translateY(-2px)";
-                                e.currentTarget.style.boxShadow =
-                                  "0 8px 16px rgba(16,24,40,0.08)";
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.transform =
-                                  "translateY(0)";
-                                e.currentTarget.style.boxShadow = "none";
+                                width: 40,
+                                height: 40,
+                                backgroundColor: "#F4F5F7",
+                                borderRadius: 10,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
                               }}
                             >
-                              <InlineStack gap="300" blockAlign="center">
-                                <div
-                                  style={{
-                                    width: 40,
-                                    height: 40,
-                                    borderRadius: 10,
-                                    backgroundColor: "white",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
-                                  }}
-                                >
-                                  <Icon source={kpi.icon} color="base" />
-                                </div>
-                                <BlockStack gap="100">
-                                  <Text variant="bodySm" color="subdued">
-                                    {kpi.label}
-                                  </Text>
-                                  <Text variant="headingXl" fontWeight="bold">
-                                    {kpi.value}
-                                  </Text>
-                                  {kpi.sub ? (
-                                    <Text variant="bodySm" color="subdued">
-                                      {kpi.sub}
-                                    </Text>
-                                  ) : null}
-                                </BlockStack>
-                              </InlineStack>
+                              <Icon source={CalendarIcon} color="base" />
                             </div>
-                          ))}
-                        </div>
+                            <BlockStack gap="100">
+                              <Text variant="headingLg" fontWeight="semibold">
+                                Month Past Performance
+                              </Text>
+                              <Text variant="bodySm" color="subdued">
+                                {extendedWebsiteData?.aiOverview
+                                  ?.period_label || "Based on the last 4 weeks"}
+                              </Text>
+                            </BlockStack>
+                          </InlineStack>
 
-                        {/* Most Common Asked Questions from aiOverview */}
-                        <div
-                          style={{
-                            backgroundColor: "#F9FAFB",
-                            borderRadius: 12,
-                            padding: 16,
-                          }}
-                        >
-                          <Text variant="headingSm" fontWeight="semibold">
-                            Most Common Asked Questions
-                          </Text>
-                          <div style={{ height: 12 }} />
+                          {/* Top-line KPIs */}
                           <div
                             style={{
                               display: "grid",
                               gridTemplateColumns:
-                                "repeat(auto-fit, minmax(260px, 1fr))",
-                              gap: 12,
+                                "repeat(auto-fit, minmax(240px, 1fr))",
+                              gap: 16,
                             }}
                           >
-                            {(
-                              extendedWebsiteData?.aiOverview
-                                ?.most_common_questions || []
-                            ).map((cat, i) => (
+                            {(() => {
+                              const ai = extendedWebsiteData?.aiOverview || {};
+                              const tri = ai.total_revenue_increase || {};
+                              const breakdown = tri.breakdown || {};
+                              const currency = tri.currency || "USD";
+                              const kpis = [
+                                {
+                                  label: "Total Message Threads",
+                                  value: ai.total_message_threads ?? 0,
+                                  accent: "#EEF6FF",
+                                  icon: ChatIcon,
+                                },
+                                {
+                                  label: "Total Revenue Increase",
+                                  value: formatCurrency(
+                                    tri.amount || 0,
+                                    currency,
+                                  ),
+                                  sub: `${breakdown.threads || 0} threads • ${
+                                    breakdown.percent_of_total_threads != null
+                                      ? breakdown.percent_of_total_threads
+                                      : 0
+                                  }% • AOV ${formatCurrency(breakdown.aov || 0, currency)}`,
+                                  accent: "#E8F5E9",
+                                  icon: DataPresentationIcon,
+                                },
+                                {
+                                  label: "Problem Resolution Rate",
+                                  value: `${(ai.problem_resolution_rate?.percent ?? 0).toFixed(2)}%`,
+                                  sub: `${ai.problem_resolution_rate?.resolved_threads ?? 0} of ${ai.problem_resolution_rate?.total_threads ?? 0} threads`,
+                                  accent: "#FEF3C7",
+                                  icon: CheckIcon,
+                                },
+                                {
+                                  label: "Avg Messages/Thread",
+                                  value: (
+                                    ai.avg_messages_per_thread ?? 0
+                                  ).toFixed(2),
+                                  accent: "#F3E8FF",
+                                  icon: ChatIcon,
+                                },
+                              ];
+                              return kpis;
+                            })().map((kpi, idx) => (
                               <div
-                                key={i}
+                                key={idx}
                                 style={{
-                                  backgroundColor: "white",
-                                  borderRadius: 10,
+                                  backgroundColor: kpi.accent,
+                                  borderRadius: 12,
                                   padding: 16,
-                                  border: "1px solid #EEF2F7",
+                                  transition:
+                                    "transform 0.15s ease, box-shadow 0.15s ease",
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.transform =
+                                    "translateY(-2px)";
+                                  e.currentTarget.style.boxShadow =
+                                    "0 8px 16px rgba(16,24,40,0.08)";
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.transform =
+                                    "translateY(0)";
+                                  e.currentTarget.style.boxShadow = "none";
                                 }}
                               >
-                                <InlineStack
-                                  align="space-between"
-                                  blockAlign="center"
-                                >
-                                  <Text
-                                    variant="headingSm"
-                                    fontWeight="semibold"
-                                  >
-                                    {cat.category}
-                                  </Text>
+                                <InlineStack gap="300" blockAlign="center">
                                   <div
                                     style={{
-                                      backgroundColor: "#EEF6FF",
-                                      padding: "2px 10px",
-                                      borderRadius: 999,
-                                      border: "1px solid #B3D7FF",
-                                      fontSize: 12,
-                                      fontWeight: 600,
-                                      color: "#1E3A8A",
+                                      width: 40,
+                                      height: 40,
+                                      borderRadius: 10,
+                                      backgroundColor: "white",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                      boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
                                     }}
                                   >
-                                    {cat.threads || 0} threads
+                                    <Icon source={kpi.icon} color="base" />
                                   </div>
+                                  <BlockStack gap="100">
+                                    <Text variant="bodySm" color="subdued">
+                                      {kpi.label}
+                                    </Text>
+                                    <Text variant="headingXl" fontWeight="bold">
+                                      {kpi.value}
+                                    </Text>
+                                    {kpi.sub ? (
+                                      <Text variant="bodySm" color="subdued">
+                                        {kpi.sub}
+                                      </Text>
+                                    ) : null}
+                                  </BlockStack>
                                 </InlineStack>
-                                <div style={{ height: 8 }} />
-                                <Text variant="bodySm" color="subdued">
-                                  {cat.description}
-                                </Text>
                               </div>
                             ))}
                           </div>
-                        </div>
-                      </BlockStack>
-                    </div>
-                  )}
+
+                          {/* Most Common Asked Questions from aiOverview */}
+                          <div
+                            style={{
+                              backgroundColor: "#F9FAFB",
+                              borderRadius: 12,
+                              padding: 16,
+                            }}
+                          >
+                            <Text variant="headingSm" fontWeight="semibold">
+                              Most Common Asked Questions
+                            </Text>
+                            <div style={{ height: 12 }} />
+                            <div
+                              style={{
+                                display: "grid",
+                                gridTemplateColumns:
+                                  "repeat(auto-fit, minmax(260px, 1fr))",
+                                gap: 12,
+                              }}
+                            >
+                              {(
+                                extendedWebsiteData?.aiOverview
+                                  ?.most_common_questions || []
+                              ).map((cat, i) => (
+                                <div
+                                  key={i}
+                                  style={{
+                                    backgroundColor: "white",
+                                    borderRadius: 10,
+                                    padding: 16,
+                                    border: "1px solid #EEF2F7",
+                                  }}
+                                >
+                                  <InlineStack
+                                    align="space-between"
+                                    blockAlign="center"
+                                  >
+                                    <Text
+                                      variant="headingSm"
+                                      fontWeight="semibold"
+                                    >
+                                      {cat.category}
+                                    </Text>
+                                    <div
+                                      style={{
+                                        backgroundColor: "#EEF6FF",
+                                        padding: "2px 10px",
+                                        borderRadius: 999,
+                                        border: "1px solid #B3D7FF",
+                                        fontSize: 12,
+                                        fontWeight: 600,
+                                        color: "#1E3A8A",
+                                      }}
+                                    >
+                                      {cat.threads || 0} threads
+                                    </div>
+                                  </InlineStack>
+                                  <div style={{ height: 8 }} />
+                                  <Text variant="bodySm" color="subdued">
+                                    {cat.description}
+                                  </Text>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </BlockStack>
+                      </div>
+                    ) : null)}
 
                   {/* Recent Questions by Topic from aiOverview */}
                   {accessKey &&
                     fetcher.data?.success &&
-                    extendedWebsiteData?.aiOverview
-                      ?.recent_questions_by_topic && (
+                    (isLoadingExtendedData &&
+                    !extendedWebsiteData?.aiOverview
+                      ?.recent_questions_by_topic ? (
+                      <div
+                        style={{
+                          backgroundColor: "white",
+                          borderRadius: "12px",
+                          padding: "24px",
+                          boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+                        }}
+                      >
+                        <div style={{ padding: "32px", textAlign: "center" }}>
+                          <BlockStack gap="400" align="center">
+                            <Spinner size="large" />
+                            <Text variant="bodyMd" color="subdued">
+                              Loading recent questions...
+                            </Text>
+                          </BlockStack>
+                        </div>
+                      </div>
+                    ) : extendedWebsiteData?.aiOverview
+                        ?.recent_questions_by_topic ? (
                       <div
                         style={{
                           backgroundColor: "white",
@@ -2408,7 +2449,7 @@ export default function Index() {
                           </div>
                         </BlockStack>
                       </div>
-                    )}
+                    ) : null)}
 
                   {/* NEW: Top Content Card - REPLACING with Action Statistics */}
                   {accessKey && fetcher.data?.success && (
