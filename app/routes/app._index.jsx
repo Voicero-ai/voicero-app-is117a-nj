@@ -960,93 +960,13 @@ export default function Index() {
   const apiKey = savedKey;
 
   // Static helper metrics and datasets (placeholder until wired to backend)
-  const formatCurrency = (amount) =>
+  const formatCurrency = (amount, currency = "USD") =>
     new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: "USD",
+      currency,
     }).format(amount || 0);
 
-  const helpfulMetrics = {
-    totalRevenue: 12340, // USD
-    resolutionRate: 0.92, // 92%
-    avgMessages: 3.2, // per conversation
-  };
-
-  const recentQuestionsByTopic = {
-    products: [
-      {
-        text: "Does the hoodie run true to size?",
-        status: "resolved",
-        purchased: "Fleece Hoodie",
-      },
-      {
-        text: "What material is the yoga mat?",
-        status: "resolved",
-        purchased: null,
-      },
-      {
-        text: "Is the water bottle dishwasher safe?",
-        status: "attention",
-        purchased: null,
-      },
-    ],
-    subscription: [
-      {
-        text: "How do I pause my subscription?",
-        status: "resolved",
-        purchased: null,
-      },
-      {
-        text: "Can I change delivery frequency?",
-        status: "resolved",
-        purchased: null,
-      },
-      { text: "Why was I billed twice?", status: "attention", purchased: null },
-    ],
-    orders: [
-      { text: "Where is my order?", status: "resolved", purchased: null },
-      {
-        text: "Can I update my shipping address?",
-        status: "attention",
-        purchased: null,
-      },
-      { text: "How to request a return?", status: "resolved", purchased: null },
-    ],
-    discounts: [
-      {
-        text: "Can I stack discount codes?",
-        status: "attention",
-        purchased: null,
-      },
-      {
-        text: "Why isn't my code working?",
-        status: "resolved",
-        purchased: null,
-      },
-      {
-        text: "Any bundle deals available?",
-        status: "resolved",
-        purchased: "Bundle: Starter Kit",
-      },
-    ],
-    account: [
-      {
-        text: "I can't access my account",
-        status: "attention",
-        purchased: null,
-      },
-      {
-        text: "How do I reset my password?",
-        status: "resolved",
-        purchased: null,
-      },
-      {
-        text: "How to update payment method?",
-        status: "resolved",
-        purchased: null,
-      },
-    ],
-  };
+  // Removed static demo datasets; replaced by extendedWebsiteData.aiOverview
 
   // Modify the useEffect that handles successful connection
   useEffect(() => {
@@ -2196,7 +2116,8 @@ export default function Index() {
                               Month Past Performance
                             </Text>
                             <Text variant="bodySm" color="subdued">
-                              Based on the last 4 weeks
+                              {extendedWebsiteData?.aiOverview?.period_label ||
+                                "Based on the last 4 weeks"}
                             </Text>
                           </BlockStack>
                         </InlineStack>
@@ -2210,34 +2131,50 @@ export default function Index() {
                             gap: 16,
                           }}
                         >
-                          {[
-                            {
-                              label: "Total Message Threads",
-                              value: "44",
-                              accent: "#EEF6FF",
-                              icon: ChatIcon,
-                            },
-                            {
-                              label: "Total Revenue Increase",
-                              value: "$330",
-                              sub: "6 threads • 14% • AOV $55",
-                              accent: "#E8F5E9",
-                              icon: DataPresentationIcon,
-                            },
-                            {
-                              label: "Problem Resolution Rate",
-                              value: "67%",
-                              sub: "29 of 44 threads",
-                              accent: "#FEF3C7",
-                              icon: CheckIcon,
-                            },
-                            {
-                              label: "Avg Messages/Thread",
-                              value: "3.5",
-                              accent: "#F3E8FF",
-                              icon: ChatIcon,
-                            },
-                          ].map((kpi, idx) => (
+                          {(() => {
+                            const ai = extendedWebsiteData?.aiOverview || {};
+                            const tri = ai.total_revenue_increase || {};
+                            const breakdown = tri.breakdown || {};
+                            const currency = tri.currency || "USD";
+                            const kpis = [
+                              {
+                                label: "Total Message Threads",
+                                value: ai.total_message_threads ?? 0,
+                                accent: "#EEF6FF",
+                                icon: ChatIcon,
+                              },
+                              {
+                                label: "Total Revenue Increase",
+                                value: formatCurrency(
+                                  tri.amount || 0,
+                                  currency,
+                                ),
+                                sub: `${breakdown.threads || 0} threads • ${
+                                  breakdown.percent_of_total_threads != null
+                                    ? breakdown.percent_of_total_threads
+                                    : 0
+                                }% • AOV ${formatCurrency(breakdown.aov || 0, currency)}`,
+                                accent: "#E8F5E9",
+                                icon: DataPresentationIcon,
+                              },
+                              {
+                                label: "Problem Resolution Rate",
+                                value: `${(ai.problem_resolution_rate?.percent ?? 0).toFixed(2)}%`,
+                                sub: `${ai.problem_resolution_rate?.resolved_threads ?? 0} of ${ai.problem_resolution_rate?.total_threads ?? 0} threads`,
+                                accent: "#FEF3C7",
+                                icon: CheckIcon,
+                              },
+                              {
+                                label: "Avg Messages/Thread",
+                                value: (
+                                  ai.avg_messages_per_thread ?? 0
+                                ).toFixed(2),
+                                accent: "#F3E8FF",
+                                icon: ChatIcon,
+                              },
+                            ];
+                            return kpis;
+                          })().map((kpi, idx) => (
                             <div
                               key={idx}
                               style={{
@@ -2281,18 +2218,18 @@ export default function Index() {
                                   <Text variant="headingXl" fontWeight="bold">
                                     {kpi.value}
                                   </Text>
-                                  {kpi.sub && (
+                                  {kpi.sub ? (
                                     <Text variant="bodySm" color="subdued">
                                       {kpi.sub}
                                     </Text>
-                                  )}
+                                  ) : null}
                                 </BlockStack>
                               </InlineStack>
                             </div>
                           ))}
                         </div>
 
-                        {/* Most Common Asked Questions */}
+                        {/* Most Common Asked Questions from aiOverview */}
                         <div
                           style={{
                             backgroundColor: "#F9FAFB",
@@ -2312,38 +2249,10 @@ export default function Index() {
                               gap: 12,
                             }}
                           >
-                            {[
-                              {
-                                title: "Product Related Questions",
-                                count: 13,
-                                summary:
-                                  "Detailed strain lists, ingredients, suitability (lactose, vegetarian); assurance on efficacy & safety before purchase.",
-                              },
-                              {
-                                title: "Order / Shipping Information",
-                                count: 8,
-                                summary:
-                                  "Where’s my order, delayed packages, international availability; need tracking links & realistic ETAs.",
-                              },
-                              {
-                                title: "Subscription / Order Changes",
-                                count: 7,
-                                summary:
-                                  "Skip, reschedule, upgrade/cancel subscriptions; fix duplicate orders with back‑end actions.",
-                              },
-                              {
-                                title: "Discounts / Promotions",
-                                count: 6,
-                                summary:
-                                  "Stacking codes, loyalty points, free item pricing logic; clarify promotion rules & cart behavior.",
-                              },
-                              {
-                                title: "Account Access / Login",
-                                count: 4,
-                                summary:
-                                  "Reset emails not received, account lockouts blocking purchases & rewards; need quick recovery path.",
-                              },
-                            ].map((cat, i) => (
+                            {(
+                              extendedWebsiteData?.aiOverview
+                                ?.most_common_questions || []
+                            ).map((cat, i) => (
                               <div
                                 key={i}
                                 style={{
@@ -2361,7 +2270,7 @@ export default function Index() {
                                     variant="headingSm"
                                     fontWeight="semibold"
                                   >
-                                    {cat.title}
+                                    {cat.category}
                                   </Text>
                                   <div
                                     style={{
@@ -2374,12 +2283,12 @@ export default function Index() {
                                       color: "#1E3A8A",
                                     }}
                                   >
-                                    {cat.count} threads
+                                    {cat.threads || 0} threads
                                   </div>
                                 </InlineStack>
                                 <div style={{ height: 8 }} />
                                 <Text variant="bodySm" color="subdued">
-                                  {cat.summary}
+                                  {cat.description}
                                 </Text>
                               </div>
                             ))}
@@ -2389,116 +2298,117 @@ export default function Index() {
                     </div>
                   )}
 
-                  {/* NEW: Recent Questions by Topic (static placeholder) */}
-                  {accessKey && fetcher.data?.success && (
-                    <div
-                      style={{
-                        backgroundColor: "white",
-                        borderRadius: "12px",
-                        padding: "24px",
-                        boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
-                      }}
-                    >
-                      <BlockStack gap="600">
-                        <BlockStack gap="200">
-                          <Text variant="headingLg" fontWeight="semibold">
-                            Recent Questions by Topic
-                          </Text>
-                          <Text variant="bodyMd" color="subdued">
-                            What shoppers are asking (demo data)
-                          </Text>
-                        </BlockStack>
-
-                        <div
-                          style={{
-                            display: "grid",
-                            gridTemplateColumns:
-                              "repeat(auto-fit, minmax(220px, 1fr))",
-                            gap: "16px",
-                          }}
-                        >
-                          {[
-                            { key: "products", label: "Products" },
-                            { key: "subscription", label: "Subscription" },
-                            { key: "orders", label: "Orders" },
-                            { key: "discounts", label: "Discounts" },
-                            { key: "account", label: "Account Access" },
-                          ].map((topic) => (
-                            <div
-                              key={topic.key}
-                              style={{
-                                backgroundColor: "#F9FAFB",
-                                borderRadius: "12px",
-                                padding: "16px",
-                              }}
-                            >
-                              <Text variant="headingSm" fontWeight="semibold">
-                                {topic.label}
+                  {/* Recent Questions by Topic from aiOverview */}
+                  {accessKey &&
+                    fetcher.data?.success &&
+                    extendedWebsiteData?.aiOverview
+                      ?.recent_questions_by_topic && (
+                      <div
+                        style={{
+                          backgroundColor: "white",
+                          borderRadius: "12px",
+                          padding: "24px",
+                          boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+                        }}
+                      >
+                        <BlockStack gap="600">
+                          <BlockStack gap="200">
+                            <Text variant="headingLg" fontWeight="semibold">
+                              Recent Questions by Topic
+                            </Text>
+                            {extendedWebsiteData?.aiOverview?.period_label && (
+                              <Text variant="bodyMd" color="subdued">
+                                {extendedWebsiteData.aiOverview.period_label}
                               </Text>
-                              <div style={{ height: 8 }} />
-                              <BlockStack gap="200">
-                                {(recentQuestionsByTopic[topic.key] || []).map(
-                                  (q, i) => (
-                                    <div
-                                      key={i}
-                                      style={{
-                                        backgroundColor: "white",
-                                        borderRadius: "10px",
-                                        padding: "12px",
-                                        border: "1px solid #EEF2F7",
-                                      }}
-                                    >
-                                      <BlockStack gap="100">
-                                        <Text variant="bodySm">{q.text}</Text>
-                                        <InlineStack
-                                          gap="200"
-                                          blockAlign="center"
-                                        >
-                                          <div
-                                            style={{
-                                              backgroundColor:
-                                                q.status === "resolved"
+                            )}
+                          </BlockStack>
+
+                          <div
+                            style={{
+                              display: "grid",
+                              gridTemplateColumns:
+                                "repeat(auto-fit, minmax(220px, 1fr))",
+                              gap: "16px",
+                            }}
+                          >
+                            {(
+                              extendedWebsiteData.aiOverview
+                                .recent_questions_by_topic || []
+                            ).map((topic, idx) => (
+                              <div
+                                key={idx}
+                                style={{
+                                  backgroundColor: "#F9FAFB",
+                                  borderRadius: "12px",
+                                  padding: "16px",
+                                }}
+                              >
+                                <Text variant="headingSm" fontWeight="semibold">
+                                  {topic.topic}
+                                </Text>
+                                <div style={{ height: 8 }} />
+                                <BlockStack gap="200">
+                                  {(topic.items || []).map((q, i) => {
+                                    const isResolved =
+                                      (q.status || "").toLowerCase() ===
+                                      "resolved";
+                                    return (
+                                      <div
+                                        key={i}
+                                        style={{
+                                          backgroundColor: "white",
+                                          borderRadius: "10px",
+                                          padding: "12px",
+                                          border: "1px solid #EEF2F7",
+                                        }}
+                                      >
+                                        <BlockStack gap="100">
+                                          <Text variant="bodySm">
+                                            {q.question}
+                                          </Text>
+                                          <InlineStack
+                                            gap="200"
+                                            blockAlign="center"
+                                          >
+                                            <div
+                                              style={{
+                                                backgroundColor: isResolved
                                                   ? "#E8F5E9"
                                                   : "#FEF3C7",
-                                              border: `1px solid ${
-                                                q.status === "resolved"
-                                                  ? "#86EFAC"
-                                                  : "#FDE68A"
-                                              }`,
-                                              color:
-                                                q.status === "resolved"
+                                                border: `1px solid ${isResolved ? "#86EFAC" : "#FDE68A"}`,
+                                                color: isResolved
                                                   ? "#065F46"
                                                   : "#92400E",
-                                              padding: "2px 8px",
-                                              borderRadius: 999,
-                                              fontSize: 12,
-                                              fontWeight: 600,
-                                            }}
-                                          >
-                                            {q.status === "resolved"
-                                              ? "Resolved"
-                                              : "Needs attention"}
-                                          </div>
-                                          {q.purchased && (
-                                            <Text
-                                              variant="bodySm"
-                                              color="subdued"
+                                                padding: "2px 8px",
+                                                borderRadius: 999,
+                                                fontSize: 12,
+                                                fontWeight: 600,
+                                              }}
                                             >
-                                              Purchased: {q.purchased}
-                                            </Text>
-                                          )}
-                                        </InlineStack>
-                                      </BlockStack>
-                                    </div>
-                                  ),
-                                )}
-                              </BlockStack>
-                            </div>
-                          ))}
-                        </div>
-                      </BlockStack>
-                    </div>
-                  )}
+                                              {isResolved
+                                                ? "Resolved"
+                                                : "Needs attention"}
+                                            </div>
+                                            {q.note && (
+                                              <Text
+                                                variant="bodySm"
+                                                color="subdued"
+                                              >
+                                                {q.note}
+                                              </Text>
+                                            )}
+                                          </InlineStack>
+                                        </BlockStack>
+                                      </div>
+                                    );
+                                  })}
+                                </BlockStack>
+                              </div>
+                            ))}
+                          </div>
+                        </BlockStack>
+                      </div>
+                    )}
 
                   {/* NEW: Top Content Card - REPLACING with Action Statistics */}
                   {accessKey && fetcher.data?.success && (
