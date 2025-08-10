@@ -886,11 +886,31 @@ export default function Index() {
         });
         
         console.log('After filtering actionConversations:', conv.length, '->', filtered.length, 'threads for', actionType);
-        return filtered;
+        
+        // Deduplicate threads in fallback as well
+        const uniqueFiltered = filtered.reduce((unique, thread) => {
+          const id = thread.threadId || thread.messageId;
+          if (!unique.find(t => (t.threadId || t.messageId) === id)) {
+            unique.push(thread);
+          }
+          return unique;
+        }, []);
+        
+        console.log('After deduplication (fallback):', filtered.length, '->', uniqueFiltered.length, 'threads for', actionType);
+        return uniqueFiltered;
       }
 
-      console.log('Returning', threads.length, 'threads for', actionType);
-      return threads;
+      // Deduplicate threads by threadId or messageId to avoid showing the same thread multiple times
+      const uniqueThreads = threads.reduce((unique, thread) => {
+        const id = thread.threadId || thread.messageId;
+        if (!unique.find(t => (t.threadId || t.messageId) === id)) {
+          unique.push(thread);
+        }
+        return unique;
+      }, []);
+
+      console.log('After deduplication:', threads.length, '->', uniqueThreads.length, 'threads for', actionType);
+      return uniqueThreads;
     },
     [extendedWebsiteData, parseActionPayload],
   );
