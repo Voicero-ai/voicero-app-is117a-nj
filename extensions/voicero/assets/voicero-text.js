@@ -30,6 +30,17 @@
 
       console.log("VoiceroText: Initializing");
 
+      // If we're starting a fresh chat (not loading existing), do not carry previous responseId
+      if (initialMessage !== null) {
+        try {
+          localStorage.removeItem("voicero_last_response_id");
+          if (window.VoiceroCore) delete window.VoiceroCore.lastResponseId;
+          console.log(
+            "VoiceroText: Fresh init detected, cleared saved responseId",
+          );
+        } catch (_) {}
+      }
+
       // Debug: Log VoiceroCore session data
       this.debugLogSessionData();
 
@@ -542,30 +553,39 @@
           opacity: 0.8;
         }
         .ai-message p {
-          margin: 0 0 8px 0;
+          margin: 8px 0 10px 0;
         }
         .ai-message p:last-child {
           margin-bottom: 0;
         }
         .ai-message h1, .ai-message h2, .ai-message h3 {
-          margin: 10px 0 5px 0;
+          margin: 12px 0 6px 0;
           font-weight: bold;
+          line-height: 1.2;
         }
         .ai-message h1 {
-          font-size: 18px;
+          font-size: 22px;
         }
         .ai-message h2 {
-          font-size: 16px;
+          font-size: 18px;
         }
         .ai-message h3 {
-          font-size: 15px;
+          font-size: 16px;
         }
         .ai-message ul, .ai-message ol {
-          margin: 5px 0;
-          padding-left: 20px;
+          margin: 8px 0 12px 0;
+          padding-left: 26px;
+          list-style-position: outside;
+        }
+        .ai-message ul { list-style-type: disc; }
+        .ai-message ol { list-style-type: decimal; }
+        .ai-message ul ul, .ai-message ol ol {
+          margin-top: 4px;
+          margin-bottom: 4px;
         }
         .ai-message li {
-          margin: 3px 0;
+          margin: 4px 0;
+          display: list-item;
         }
         .ai-message code {
           background-color: rgba(0,0,0,0.05);
@@ -699,6 +719,15 @@
             console.error("VoiceroText: Error clearing session:", error);
           })
           .finally(() => {
+            // Ensure we never reuse a past responseId after closing chat
+            try {
+              localStorage.removeItem("voicero_last_response_id");
+              if (window.VoiceroCore) {
+                delete window.VoiceroCore.lastResponseId;
+              }
+              console.log("VoiceroText: Cleared saved responseId on close");
+            } catch (_) {}
+
             // Remove the chat container regardless of API success/failure
             var chatContainer = document.getElementById(
               "voicero-chat-container",
@@ -952,63 +981,132 @@
       return messageText;
     },
 
-    // Format markdown text to HTML
+    // Format markdown text to HTML with grouped lists and cleaner headings/spacing
     formatMarkdown: function (text) {
       if (!text) return "";
 
-      let formattedText = text;
+      // Normalize common bullet styles that come back inline like
+      // "... what we carry: • Item A • Item B" to proper markdown lines
+      let normalized = String(text).replace(/\r\n/g, "\n");
+      // Convert inline middle-dot bullets (including NBSP) into newline list items.
+      // Example input:
+      //   Hey David — here’s what we carry:\n• **R35** ...\n• **370Z** ...
+      //   or on one line: "carry: • **R35** ... • **370Z** ..."
+      normalized = normalized
+        .replace(/(^|[^\n])[\s\u00A0]*•[\s\u00A0]+/g, (m, p1) => {
+          return p1 && p1 !== "\n" ? p1 + "\n- " : "- ";
+        })
+        .replace(/\n[\s\u00A0]*•[\s\u00A0]+/g, "\n- ");
+      // If a line starts with a middle-dot bullet, turn it into a markdown dash
+      normalized = normalized.replace(/^[\s\u00A0]*•[\s\u00A0]+/gm, "- ");
 
-      // Handle bold text with **text**
-      formattedText = formattedText.replace(
-        /\*\*(.*?)\*\*/g,
-        "<strong>$1</strong>",
-      );
-
-      // Handle italic text with *text*
-      formattedText = formattedText.replace(/\*(.*?)\*/g, "<em>$1</em>");
-
-      // Handle links with [text](url)
-      formattedText = formattedText.replace(
-        /\[(.*?)\]\((.*?)\)/g,
-        '<a href="$2">$1</a>',
-      );
-
-      // Handle headers
-      formattedText = formattedText.replace(/^### (.*?)$/gm, "<h3>$1</h3>");
-      formattedText = formattedText.replace(/^## (.*?)$/gm, "<h2>$1</h2>");
-      formattedText = formattedText.replace(/^# (.*?)$/gm, "<h1>$1</h1>");
-
-      // Handle lists
-      formattedText = formattedText.replace(/^\s*[-*] (.*?)$/gm, "<li>$1</li>");
-
-      // Wrap lists in <ul> tags
-      if (formattedText.includes("<li>")) {
-        formattedText = formattedText.replace(
-          /(<li>.*?<\/li>)/gs,
-          "<ul>$1</ul>",
-        );
-        // Fix nested lists
-        formattedText = formattedText.replace(/<\/ul>\s*<ul>/g, "");
+      // Inline formatter for bold/italic/code/links
+      function formatInline(inlineText) {
+        if (!inlineText) return "";
+        let s = inlineText;
+        // Preserve angle brackets by escaping first
+        s = s
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+        s = s.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+        s = s.replace(/\*(.+?)\*/g, "<em>$1</em>");
+        s = s.replace(/`([^`]+)`/g, "<code>$1</code>");
+        s = s.replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2">$1</a>');
+        return s;
       }
 
-      // Handle horizontal rules with ---
-      formattedText = formattedText.replace(/^---$/gm, "<hr>");
+      const lines = String(normalized).split(/\n/);
+      let htmlParts = [];
+      let inUl = false;
+      let inOl = false;
+      let paragraphBuffer = [];
 
-      // Handle code blocks
-      formattedText = formattedText.replace(/`([^`]+)`/g, "<code>$1</code>");
-
-      // Handle paragraphs - convert double newlines to paragraph breaks
-      formattedText = formattedText.replace(/\n\n/g, "</p><p>");
-
-      // Handle single newlines
-      formattedText = formattedText.replace(/\n/g, "<br>");
-
-      // Wrap in paragraphs if not already wrapped
-      if (!formattedText.includes("<p>")) {
-        formattedText = "<p>" + formattedText + "</p>";
+      function closeParagraph() {
+        if (paragraphBuffer.length > 0) {
+          htmlParts.push("<p>" + paragraphBuffer.join(" ") + "</p>");
+          paragraphBuffer = [];
+        }
+      }
+      function closeLists() {
+        if (inUl) {
+          htmlParts.push("</ul>");
+          inUl = false;
+        }
+        if (inOl) {
+          htmlParts.push("</ol>");
+          inOl = false;
+        }
       }
 
-      return formattedText;
+      for (let i = 0; i < lines.length; i += 1) {
+        const rawLine = lines[i];
+        const line = rawLine.replace(/\s+$/g, "");
+        // Headings
+        const headingMatch = line.match(/^\s{0,3}(#{1,3})\s+(.*)$/);
+        if (headingMatch) {
+          closeParagraph();
+          closeLists();
+          const level = headingMatch[1].length;
+          const content = formatInline(headingMatch[2]);
+          htmlParts.push(`<h${level}>${content}</h${level}>`);
+          continue;
+        }
+
+        // Unordered list item
+        const ulMatch = line.match(/^\s*[-*]\s+(.*)$/);
+        if (ulMatch) {
+          closeParagraph();
+          if (!inUl) {
+            closeLists();
+            htmlParts.push("<ul>");
+            inUl = true;
+          }
+          htmlParts.push(`<li>${formatInline(ulMatch[1])}</li>`);
+          continue;
+        }
+
+        // Ordered list item
+        const olMatch = line.match(/^\s*(\d+)\.\s+(.*)$/);
+        if (olMatch) {
+          closeParagraph();
+          if (!inOl) {
+            closeLists();
+            htmlParts.push("<ol>");
+            inOl = true;
+          }
+          htmlParts.push(`<li>${formatInline(olMatch[2])}</li>`);
+          continue;
+        }
+
+        // Horizontal rule
+        if (/^\s*---\s*$/.test(line)) {
+          closeParagraph();
+          closeLists();
+          htmlParts.push("<hr>");
+          continue;
+        }
+
+        // Blank line => end paragraph/lists
+        if (line.trim() === "") {
+          closeParagraph();
+          closeLists();
+          continue;
+        }
+
+        // Transition out of lists when a normal line appears
+        if (inUl || inOl) {
+          closeLists();
+        }
+        // Regular paragraph text
+        paragraphBuffer.push(formatInline(line));
+      }
+
+      // Close any open structures
+      closeParagraph();
+      closeLists();
+
+      return htmlParts.join("");
     },
 
     // Render all messages in the container
@@ -1706,6 +1804,15 @@
     // Clear session and create a new thread
     clearSession: function () {
       console.log("VoiceroText: Clearing session");
+
+      // Starting a new session: do not carry over any previous responseId
+      try {
+        localStorage.removeItem("voicero_last_response_id");
+        if (window.VoiceroCore) {
+          delete window.VoiceroCore.lastResponseId;
+        }
+        console.log("VoiceroText: Cleared saved responseId for new session");
+      } catch (_) {}
 
       // Get session ID from VoiceroCore
       var sessionId =
