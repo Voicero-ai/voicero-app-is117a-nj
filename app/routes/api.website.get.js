@@ -79,7 +79,7 @@ export async function loader({ request }) {
 
     // Fetch website data from the API using the website ID
     const websiteResponse = await fetch(
-      `https://1d3818d4ade1.ngrok-free.app/api/websites/get?id=${websiteId}`,
+      `https://www.voicero.ai/api/websites/get?id=${websiteId}`,
       {
         method: "GET",
         headers: {
