@@ -22,6 +22,11 @@
       };
     };
     
+    // Provide a direct getter used internally (still not exposing globally on window)
+    window.voiceroConfig.getAccessKey = function() {
+      return accessKey || null;
+    };
+    
     // Create a method to check if we have a valid key
     window.voiceroConfig.hasValidKey = function() {
       return !!accessKey && accessKey.length > 0;
@@ -230,23 +235,35 @@
   // Load the single widget.js file from localhost:8090 with dynamic access token
   async function loadWidget() {
     console.log("VoiceroAI: Loading widget from localhost:8090");
-    
+
     try {
-      // First, get the access token from storefront-accessible App Proxy endpoint
-      const response = await fetch('/apps/proxy/access-key', { credentials: 'omit' });
-      const data = await response.json();
-      
-      if (!data.success || !data.accessKey) {
-        console.error("VoiceroAI: Failed to get access token from proxy API", data);
-        return;
+      // 1) Prefer Liquid-provided key if available
+      var inlineKey = null;
+      try {
+        if (window.voiceroConfig && typeof window.voiceroConfig.getAccessKey === 'function') {
+          inlineKey = window.voiceroConfig.getAccessKey();
+        }
+      } catch (_) {}
+
+      let accessToken = inlineKey;
+
+      // 2) If no inline key, fallback to storefront-accessible App Proxy endpoint
+      if (!accessToken) {
+        const response = await fetch('/apps/proxy/access-key', { credentials: 'omit' });
+        const data = await response.json();
+        if (data && data.success && data.accessKey) {
+          accessToken = data.accessKey;
+        } else {
+          console.error("VoiceroAI: Failed to get access token from proxy API", data);
+          return;
+        }
       }
-      
-      console.log("VoiceroAI: Retrieved access token from proxy, loading widget");
-      
-      // Now load the widget with the retrieved token
+
+      // 3) Load widget with the resolved token
+      console.log("VoiceroAI: access token:", accessToken);
       var script = document.createElement('script');
       script.src = "http://localhost:8090/widget.js";
-      script.setAttribute('data-token', data.accessKey);
+      script.setAttribute('data-token', accessToken);
       script.onload = function() {
         console.log("VoiceroAI: Widget loaded successfully from localhost:8090");
       };
@@ -254,17 +271,17 @@
         console.error("VoiceroAI: Failed to load widget from localhost:8090");
       };
       document.body.appendChild(script);
-      
+
     } catch (error) {
-      console.error("VoiceroAI: Error fetching access token via proxy:", error);
+      console.error("VoiceroAI: Error resolving access token:", error);
     }
   }
-  
+
   // Load widget when DOM is ready
   document.addEventListener('DOMContentLoaded', function() {
     loadWidget();
   });
-  
+
   // Also try to load immediately if DOM is already loaded
   if (document.readyState === "complete" || document.readyState === "interactive") {
     loadWidget();
