@@ -18,7 +18,9 @@
     "prisma": "prisma",
     "graphql-codegen": "graphql-codegen",
     "vite": "vite",
-    "test:webhook": "node tests/webhook-test.js"
+    "test:webhook": "node tests/webhook-test.js",
+    "proxy:sign": "node ./scripts/app-proxy-sign.mjs",
+    "proxy:test": "node ./scripts/app-proxy-test.mjs"
   },
   "type": "module",
   "engines": {

@@ -225,88 +225,49 @@
   {% endif %}
 </script>
 
+<!-- Load the single widget.js file from your localhost server -->
 <script>
-  // Directly load scripts without checking if website is active
-  function loadAllScripts() {
-    console.log("VoiceroAI: Loading all scripts");
+  // Load the single widget.js file from localhost:8090 with dynamic access token
+  async function loadWidget() {
+    console.log("VoiceroAI: Loading widget from localhost:8090");
     
-    // Function to load scripts sequentially
-    function loadScript(src, callback) {
+    try {
+      // First, get the access token from storefront-accessible App Proxy endpoint
+      const response = await fetch('/apps/proxy/access-key', { credentials: 'omit' });
+      const data = await response.json();
+      
+      if (!data.success || !data.accessKey) {
+        console.error("VoiceroAI: Failed to get access token from proxy API", data);
+        return;
+      }
+      
+      console.log("VoiceroAI: Retrieved access token from proxy, loading widget");
+      
+      // Now load the widget with the retrieved token
       var script = document.createElement('script');
-      script.src = src;
-      script.onload = callback;
+      script.src = "http://localhost:8090/widget.js";
+      script.setAttribute('data-token', data.accessKey);
+      script.onload = function() {
+        console.log("VoiceroAI: Widget loaded successfully from localhost:8090");
+      };
       script.onerror = function() {
-        console.error("Failed to load script: " + src);
+        console.error("VoiceroAI: Failed to load widget from localhost:8090");
       };
       document.body.appendChild(script);
+      
+    } catch (error) {
+      console.error("VoiceroAI: Error fetching access token via proxy:", error);
     }
-    
-    // Load core script first
-    loadScript("{{ 'voicero-core.js' | asset_url }}", function() {
-      console.log("VoiceroCore loaded - loading welcome module next");
-      
-      // Load welcome script immediately after core
-      loadScript("{{ 'voicero-welcome.js' | asset_url }}", function() {
-        console.log("VoiceroWelcome loaded - initializing");
-        
-        // Load text module right after welcome
-        loadScript("{{ 'voicero-text.js' | asset_url }}", function() {
-          console.log("VoiceroText loaded");
-        });
-        
-        // Welcome screen auto-creation disabled - only show core button
-        console.log("VoiceroAI: Welcome auto-creation disabled, core button will be primary interface");
-      });
-      
-      // Load other scripts in parallel after core and welcome are loaded
-      loadScript("{{ 'voicero-orders.js' | asset_url }}", null);
-      loadScript("{{ 'voicero-customer.js' | asset_url }}", null);
-      loadScript("{{ 'voicero-auth-helper.js' | asset_url }}", null);
-      loadScript("{{ 'voicero-color.js' | asset_url }}", null);
-      loadScript("{{ 'voicero-page-data.js' | asset_url }}", null);
-      loadScript("{{ 'voicero-second.js' | asset_url }}", null);
-      loadScript("{{ 'voicero-wait.js' | asset_url }}", null);
-      
-      // Load action handler script
-      loadScript("{{ 'voicero-action-handler.js' | asset_url }}", function() {
-        // Initialize action handler with shop configuration
-        if (window.VoiceroActionHandler && window.VoiceroActionHandler.init) {
-          window.VoiceroActionHandler.init();
-        }
-        
-        // Load return handler script
-        loadScript("{{ 'voicero-return.js' | asset_url }}", function() {
-          // Initialize return handler
-          if (window.VoiceroReturnHandler && window.VoiceroReturnHandler.init) {
-            window.VoiceroReturnHandler.init();
-          }
-        });
-      });
-    });
-
-    // Load support module
-    loadScript("{{ 'voicero-support.js' | asset_url }}", function() {
-      if (window.VoiceroSupport && window.VoiceroSupport.init) {
-        window.VoiceroSupport.init();
-      }
-    });
-
-    // Load contact module
-    loadScript("{{ 'voicero-contact.js' | asset_url }}", function() {
-      if (window.VoiceroContact && window.VoiceroContact.init) {
-        window.VoiceroContact.init();
-      }
-    });
   }
   
-  // Load all scripts immediately when DOM is ready
+  // Load widget when DOM is ready
   document.addEventListener('DOMContentLoaded', function() {
-    loadAllScripts();
+    loadWidget();
   });
   
   // Also try to load immediately if DOM is already loaded
   if (document.readyState === "complete" || document.readyState === "interactive") {
-    loadAllScripts();
+    loadWidget();
   }
 </script>
 

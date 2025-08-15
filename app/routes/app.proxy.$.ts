@@ -14,9 +14,52 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   try {
-    const { cors } = await authenticate.public.appProxy(request);
+    const { cors, admin, session } =
+      await authenticate.public.appProxy(request);
     const rest = params["*"] ?? "";
-    return cors(json({ ok: true, fallback: true, rest }));
+
+    // Endpoint: /apps/proxy/access-key → returns the Voicero access key metafield
+    if (rest === "access-key" || rest === "accessKey") {
+      try {
+        const metafieldResponse = await admin.graphql(`
+          query {
+            shop {
+              metafield(namespace: "voicero", key: "access_key") {
+                id
+                value
+              }
+            }
+          }
+        `);
+        const metafieldData = await metafieldResponse.json();
+        const accessKey = metafieldData?.data?.shop?.metafield?.value || null;
+
+        return cors(
+          json(
+            {
+              success: true,
+              accessKey,
+              shop: session?.shop || null,
+            },
+            addCorsHeaders(),
+          ),
+        );
+      } catch (e) {
+        return cors(
+          json(
+            {
+              success: false,
+              error:
+                e instanceof Error ? e.message : "Failed to fetch access key",
+            },
+            addCorsHeaders({ status: 500 }),
+          ),
+        );
+      }
+    }
+
+    // Default fallback for other GETs under /apps/proxy/*
+    return cors(json({ ok: true, fallback: true, rest }, addCorsHeaders()));
   } catch (error) {
     return json(
       {
