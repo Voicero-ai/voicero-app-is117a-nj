@@ -171,6 +171,9 @@ export const loader = async ({ request }) => {
         autoFeatures,
         showVoiceAI: Boolean(site.showVoiceAI),
         showTextAI: Boolean(site.showTextAI),
+        showHome: Boolean(site.showHome),
+        showNews: Boolean(site.showNews),
+        showHelp: Boolean(site.showHelp),
         // Additional fields for compatibility with UI
         monthlyQueries: website.monthlyQueries,
         queryLimit: website.queryLimit,
@@ -398,6 +401,11 @@ export default function CustomizeChatbotPage() {
     Boolean(chatbotSettings?.showTextAI),
   );
 
+  // Bottom navigation toggles state
+  const [showHome, setShowHome] = useState(Boolean(chatbotSettings?.showHome));
+  const [showNews, setShowNews] = useState(Boolean(chatbotSettings?.showNews));
+  const [showHelp, setShowHelp] = useState(Boolean(chatbotSettings?.showHelp));
+
   // Validation states
   const [botNameError, setBotNameError] = useState("");
   const [welcomeMessageError, setWelcomeMessageError] = useState("");
@@ -556,6 +564,9 @@ export default function CustomizeChatbotPage() {
         color: colorHex,
         showVoiceAI,
         showTextAI,
+        showHome,
+        showNews,
+        showHelp,
         // Auto features included in same request
         allowAutoRedirect: !!autoFeatures.allowAutoRedirect,
         allowAutoScroll: !!autoFeatures.allowAutoScroll,
@@ -999,6 +1010,43 @@ export default function CustomizeChatbotPage() {
                     </Box>
 
                     {/* Bot icon selection removed */}
+                  </BlockStack>
+                </BlockStack>
+              </Card>
+
+              {/* Bottom Navigation */}
+              <Card>
+                <BlockStack gap="400">
+                  <InlineStack align="space-between">
+                    <InlineStack gap="200">
+                      <Icon source={SettingsIcon} color="highlight" />
+                      <Text as="h3" variant="headingMd">
+                        Bottom Navigation
+                      </Text>
+                    </InlineStack>
+                  </InlineStack>
+                  <Divider />
+                  <BlockStack gap="400">
+                    <LegacyStack vertical spacing="tight">
+                      <Checkbox
+                        label="Home"
+                        helpText="Shown in nav"
+                        checked={showHome}
+                        onChange={setShowHome}
+                      />
+                      <Checkbox
+                        label="News"
+                        helpText="Shown in nav"
+                        checked={showNews}
+                        onChange={setShowNews}
+                      />
+                      <Checkbox
+                        label="Help"
+                        helpText="Shown in nav"
+                        checked={showHelp}
+                        onChange={setShowHelp}
+                      />
+                    </LegacyStack>
                   </BlockStack>
                 </BlockStack>
               </Card>
