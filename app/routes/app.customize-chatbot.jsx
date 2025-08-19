@@ -107,34 +107,54 @@ export const loader = async ({ request }) => {
 
     const website = data.website;
 
+    // Fetch interface settings using new API
+    const interfaceRes = await fetch(
+      `${urls.voiceroApi}/api/updateInterface/get?websiteId=${website.id}`,
+      {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${accessKey}`,
+        },
+      },
+    );
+
+    if (!interfaceRes.ok) {
+      return json({
+        error: "Failed to fetch interface settings",
+      });
+    }
+
+    const interfaceData = await interfaceRes.json();
+    const site = interfaceData.website;
+
     // Format popup questions properly
     let formattedPopUpQuestions = [];
-    if (website.popUpQuestions && Array.isArray(website.popUpQuestions)) {
-      formattedPopUpQuestions = website.popUpQuestions.map((q) =>
-        typeof q === "string" ? q : q.question || "",
-      );
+    if (site.popUpQuestions && Array.isArray(site.popUpQuestions)) {
+      formattedPopUpQuestions = site.popUpQuestions.map((q) => ({
+        id: q.id,
+        question: q.question || "",
+        createdAt: q.createdAt,
+      }));
     }
 
     // Auto features normalized
     const autoFeatures = {
-      allowAutoRedirect: toBoolean(website.allowAutoRedirect, false),
-      allowAutoScroll: toBoolean(website.allowAutoScroll, false),
-      allowAutoHighlight: toBoolean(website.allowAutoHighlight, false),
-      allowAutoClick: toBoolean(website.allowAutoClick, false),
-      allowAutoCancel: toBoolean(website.allowAutoCancel, false),
-      allowAutoReturn: toBoolean(website.allowAutoReturn, false),
-      allowAutoExchange: toBoolean(website.allowAutoExchange, false),
-      allowAutoGetUserOrders: toBoolean(website.allowAutoGetUserOrders, false),
-      allowAutoUpdateUserInfo: toBoolean(
-        website.allowAutoUpdateUserInfo,
-        false,
-      ),
+      allowAutoRedirect: toBoolean(site.allowAutoRedirect, false),
+      allowAutoScroll: toBoolean(site.allowAutoScroll, false),
+      allowAutoHighlight: toBoolean(site.allowAutoHighlight, false),
+      allowAutoClick: toBoolean(site.allowAutoClick, false),
+      allowAutoCancel: toBoolean(site.allowAutoCancel, false),
+      allowAutoReturn: toBoolean(site.allowAutoReturn, false),
+      allowAutoExchange: toBoolean(site.allowAutoExchange, false),
+      allowAutoGetUserOrders: toBoolean(site.allowAutoGetUserOrders, false),
+      allowAutoUpdateUserInfo: toBoolean(site.allowAutoUpdateUserInfo, false),
       // Defaults true where UI indicates enabled-by-default
-      allowAutoFillForm: toBoolean(website.allowAutoFillForm, true),
-      allowAutoTrackOrder: toBoolean(website.allowAutoTrackOrder, true),
-      allowAutoLogout: toBoolean(website.allowAutoLogout, true),
-      allowAutoLogin: toBoolean(website.allowAutoLogin, true),
-      allowAutoGenerateImage: toBoolean(website.allowAutoGenerateImage, true),
+      allowAutoFillForm: toBoolean(site.allowAutoFillForm, true),
+      allowAutoTrackOrder: toBoolean(site.allowAutoTrackOrder, true),
+      allowAutoLogout: toBoolean(site.allowAutoLogout, true),
+      allowAutoLogin: toBoolean(site.allowAutoLogin, true),
+      allowAutoGenerateImage: toBoolean(site.allowAutoGenerateImage, true),
     };
 
     // Return the website data with all the customization options
@@ -142,17 +162,12 @@ export const loader = async ({ request }) => {
       websiteData: website,
       accessKey,
       chatbotSettings: {
-        customInstructions: website.customInstructions || "",
-        customWelcomeMessage: website.customWelcomeMessage || "",
+        customInstructions: site.customInstructions || "",
+        customWelcomeMessage: site.customWelcomeMessage || "",
         popUpQuestions: formattedPopUpQuestions,
-        color: website.color || "#008060",
-        removeHighlight: website.removeHighlight || false,
-        botName: website.botName || "AI Assistant",
-        iconBot: website.iconBot || "robot",
-        iconVoice: website.iconVoice || "microphone",
-        iconMessage: website.iconMessage || "chat",
-        clickMessage: website.clickMessage || "",
-        allowMultiAIReview: website.allowMultiAIReview || false,
+        color: site.color || "#008060",
+        removeHighlight: false,
+        botName: site.botName || "AI Assistant",
         autoFeatures,
         // Additional fields for compatibility with UI
         monthlyQueries: website.monthlyQueries,
@@ -422,26 +437,76 @@ export default function CustomizeChatbotPage() {
   }, []);
 
   // Handle adding a new popup question
-  const handleAddQuestion = useCallback(() => {
-    if (!newQuestion.trim()) return;
+  const handleAddQuestion = useCallback(async () => {
+    const text = newQuestion.trim();
+    if (!text) return;
 
     if (popUpQuestions.length >= 3) {
       setPopUpQuestionsError("You can only have up to 3 popup questions");
       return;
     }
 
-    setPopUpQuestions((prev) => [...prev, newQuestion.trim()]);
-    setNewQuestion("");
-    setPopUpQuestionsError("");
-  }, [newQuestion, popUpQuestions]);
+    try {
+      const res = await fetch(
+        `${urls.voiceroApi}/api/updateInterface/addQuestion`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            Authorization: `Bearer ${accessKey}`,
+          },
+          body: JSON.stringify({ websiteId: websiteData.id, question: text }),
+        },
+      );
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to add question");
+      }
+      setPopUpQuestions((prev) => [
+        { id: data.id, question: text, createdAt: new Date().toISOString() },
+        ...prev,
+      ]);
+      setNewQuestion("");
+      setPopUpQuestionsError("");
+    } catch (e) {
+      setPopUpQuestionsError(e.message || "Failed to add question");
+    }
+  }, [newQuestion, popUpQuestions, accessKey, websiteData?.id]);
 
   // Handle removing a popup question
-  const handleRemoveQuestion = useCallback((indexToRemove) => {
-    setPopUpQuestions((prev) =>
-      prev.filter((_, index) => index !== indexToRemove),
-    );
-    setPopUpQuestionsError("");
-  }, []);
+  const handleRemoveQuestion = useCallback(
+    async (indexToRemove) => {
+      const q = popUpQuestions[indexToRemove];
+      if (!q?.id) {
+        setPopUpQuestions((prev) => prev.filter((_, i) => i !== indexToRemove));
+        return;
+      }
+      try {
+        const res = await fetch(
+          `${urls.voiceroApi}/api/updateInterface/deleteQuestion`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json",
+              Authorization: `Bearer ${accessKey}`,
+            },
+            body: JSON.stringify({ websiteId: websiteData.id, id: q.id }),
+          },
+        );
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || "Failed to delete question");
+        }
+        setPopUpQuestions((prev) => prev.filter((_, i) => i !== indexToRemove));
+        setPopUpQuestionsError("");
+      } catch (e) {
+        setPopUpQuestionsError(e.message || "Failed to delete question");
+      }
+    },
+    [popUpQuestions, accessKey, websiteData?.id],
+  );
 
   // Removed icon options
 
@@ -472,43 +537,14 @@ export default function CustomizeChatbotPage() {
         typeof q === "object" && q.question ? q.question : String(q),
       );
 
-      // Prepare data for API
+      // Prepare data for interface API
       const updateData = {
         websiteId: websiteData.id,
         botName,
         customWelcomeMessage: welcomeMessage,
         customInstructions,
-        popUpQuestions: formattedQuestions,
         color: colorHex,
-      };
-
-      console.log("Saving chatbot settings:", updateData);
-      console.log("Popup questions being sent:", formattedQuestions);
-
-      // Make API call to save settings
-      const response = await fetch(`${urls.voiceroApi}/api/saveBotSettings`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          Authorization: `Bearer ${accessKey}`,
-        },
-        body: JSON.stringify(updateData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.error || errorData.message || "Failed to update settings",
-        );
-      }
-
-      // Get the response data
-      const data = await response.json();
-      console.log("API response:", data);
-
-      // Save auto-features using our app API
-      const autoFeaturesPayload = {
+        // Auto features included in same request
         allowAutoRedirect: !!autoFeatures.allowAutoRedirect,
         allowAutoScroll: !!autoFeatures.allowAutoScroll,
         allowAutoHighlight: !!autoFeatures.allowAutoHighlight,
@@ -525,17 +561,33 @@ export default function CustomizeChatbotPage() {
         allowAutoGenerateImage: !!autoFeatures.allowAutoGenerateImage,
       };
 
-      const autoRes = await fetch(`/api/updateWebsiteAutos`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(autoFeaturesPayload),
-      });
-      const autoResData = await autoRes.json().catch(() => ({}));
-      if (!autoRes.ok || !autoResData.success) {
+      console.log("Saving chatbot settings:", updateData);
+      console.log("Popup questions being sent:", formattedQuestions);
+
+      // Make API call to save interface settings
+      const response = await fetch(
+        `${urls.voiceroApi}/api/updateInterface/edit`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            Authorization: `Bearer ${accessKey}`,
+          },
+          body: JSON.stringify(updateData),
+        },
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
         throw new Error(
-          autoResData.error || "Failed to update AI auto features",
+          errorData.error || errorData.message || "Failed to update settings",
         );
       }
+
+      // Get the response data
+      const data = await response.json();
+      console.log("API response:", data);
 
       setToastMessage("Chatbot settings and auto features saved successfully!");
       setToastType("success");
@@ -641,6 +693,43 @@ export default function CustomizeChatbotPage() {
                     />
 
                     {/* Removed Multi-AI Review and Click Message fields */}
+                  </BlockStack>
+                </BlockStack>
+              </Card>
+
+              {/* AI UI (hardcoded for now) */}
+              <Card>
+                <BlockStack gap="400">
+                  <InlineStack align="space-between">
+                    <InlineStack gap="200">
+                      <Icon source={SettingsIcon} color="highlight" />
+                      <Text as="h3" variant="headingMd">
+                        AI UI
+                      </Text>
+                    </InlineStack>
+                  </InlineStack>
+                  <Divider />
+                  <BlockStack gap="400">
+                    <LegacyStack vertical spacing="tight">
+                      <Checkbox
+                        label="Activate All"
+                        helpText="Toggle both Voice and Text AI"
+                        checked={false}
+                        disabled
+                      />
+                      <Checkbox
+                        label="Voice AI"
+                        helpText="Enable voice-based assistant UI"
+                        checked={false}
+                        disabled
+                      />
+                      <Checkbox
+                        label="Text AI"
+                        helpText="Enable text chat assistant UI"
+                        checked={false}
+                        disabled
+                      />
+                    </LegacyStack>
                   </BlockStack>
                 </BlockStack>
               </Card>
