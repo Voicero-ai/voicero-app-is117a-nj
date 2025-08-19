@@ -21,6 +21,7 @@ import {
   ResourceItem,
   EmptyState,
   Tag,
+  Toast,
 } from "@shopify/polaris";
 import {
   DataPresentationIcon,
@@ -29,6 +30,10 @@ import {
   ChevronDownIcon,
   ChevronUpIcon,
   CollectionIcon,
+  StarFilledIcon,
+  StarIcon,
+  FavoriteMajor,
+  CircleAlertMajor,
 } from "@shopify/polaris-icons";
 import { authenticate } from "../shopify.server";
 
@@ -71,6 +76,10 @@ export default function NewsSettingsPage() {
   const [fetchError, setFetchError] = useState(null);
   const [selectedBlogIndex, setSelectedBlogIndex] = useState(0);
   const [expandedArticleId, setExpandedArticleId] = useState(null);
+  const [toastActive, setToastActive] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  const [toastError, setToastError] = useState(false);
+  const [isUpdatingHot, setIsUpdatingHot] = useState(false);
 
   const fetchNewsData = async () => {
     if (!accessKey) return;
@@ -109,6 +118,67 @@ export default function NewsSettingsPage() {
     }
   };
 
+  const toggleHotStatus = async (postId, currentHotStatus, websiteId) => {
+    if (!accessKey || isUpdatingHot) return;
+
+    setIsUpdatingHot(true);
+
+    try {
+      const response = await fetch(`/api/news.hot`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          accessKey,
+          postId,
+          websiteId,
+          hot: !currentHotStatus,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Update the local state to reflect the change
+        const updatedNewsData = { ...newsData };
+
+        // Update the post in all blogs
+        updatedNewsData.blogs = updatedNewsData.blogs.map((blog) => {
+          blog.blogPosts = blog.blogPosts.map((post) => {
+            if (post.id === postId) {
+              return { ...post, hot: !currentHotStatus ? 1 : 0 };
+            }
+            return post;
+          });
+          return blog;
+        });
+
+        setNewsData(updatedNewsData);
+
+        // Show success toast
+        setToastMessage(
+          !currentHotStatus ? "Post marked as hot!" : "Post removed from hot",
+        );
+        setToastError(false);
+        setToastActive(true);
+      } else {
+        // Show error toast
+        setToastMessage(data.error || "Failed to update hot status");
+        setToastError(true);
+        setToastActive(true);
+      }
+    } catch (error) {
+      console.error("Error updating hot status:", error);
+      setToastMessage("Error updating hot status");
+      setToastError(true);
+      setToastActive(true);
+    } finally {
+      setIsUpdatingHot(false);
+    }
+  };
+
   useEffect(() => {
     if (accessKey) {
       fetchNewsData();
@@ -143,20 +213,30 @@ export default function NewsSettingsPage() {
 
   // Get all blog posts from all blogs
   const allBlogPosts = blogs.reduce((posts, blog) => {
-    // Add blog title to each post for reference
+    // Add blog title and websiteId to each post for reference
     const postsWithBlogInfo = (blog.blogPosts || []).map((post) => ({
       ...post,
       blogTitle: blog.title,
+      websiteId: newsData.websiteId,
     }));
     return [...posts, ...postsWithBlogInfo];
   }, []);
 
-  // Sort all posts by date, newest first
-  const sortedAllPosts = [...allBlogPosts].sort(
-    (a, b) =>
+  // Sort all posts with hot posts first, then by date
+  const sortedAllPosts = [...allBlogPosts].sort((a, b) => {
+    // First sort by hot status (hot posts first)
+    if ((a.hot === 1 || a.hot === true) && b.hot !== 1 && b.hot !== true) {
+      return -1;
+    }
+    if ((b.hot === 1 || b.hot === true) && a.hot !== 1 && a.hot !== true) {
+      return 1;
+    }
+    // Then sort by date
+    return (
       new Date(b.publishedAt || b.createdAt) -
-      new Date(a.publishedAt || a.createdAt),
-  );
+      new Date(a.publishedAt || a.createdAt)
+    );
+  });
 
   // Get tab items for blog selection with "All" as the first tab
   const tabItems = [
@@ -178,13 +258,46 @@ export default function NewsSettingsPage() {
   const selectedBlog =
     selectedBlogIndex === 0 ? null : blogs[selectedBlogIndex - 1];
 
-  // Get articles from selected blog or all blogs
-  const articles =
-    selectedBlogIndex === 0 ? sortedAllPosts : selectedBlog?.blogPosts || [];
+  // Get articles from selected blog or all blogs, sorted with hot posts first
+  const getArticles = () => {
+    if (selectedBlogIndex === 0) {
+      return sortedAllPosts;
+    } else if (selectedBlog?.blogPosts) {
+      return [...selectedBlog.blogPosts].sort((a, b) => {
+        // First sort by hot status (hot posts first)
+        if ((a.hot === 1 || a.hot === true) && b.hot !== 1 && b.hot !== true) {
+          return -1;
+        }
+        if ((b.hot === 1 || b.hot === true) && a.hot !== 1 && a.hot !== true) {
+          return 1;
+        }
+        // Then sort by date
+        return (
+          new Date(b.publishedAt || b.createdAt) -
+          new Date(a.publishedAt || a.createdAt)
+        );
+      });
+    } else {
+      return [];
+    }
+  };
+
+  const articles = getArticles();
+
+  // Count hot articles
+  const countHotArticles = () => {
+    return allBlogPosts.filter((post) => post.hot === 1 || post.hot === true)
+      .length;
+  };
+
+  const hotArticlesCount = countHotArticles();
 
   // Render an article item
   const renderArticleItem = (article) => {
     const isExpanded = expandedArticleId === article.id;
+    const isHot = article.hot === 1 || article.hot === true;
+    const websiteId = article.websiteId || newsData?.websiteId;
+
     return (
       <ResourceItem
         id={article.id}
@@ -193,17 +306,33 @@ export default function NewsSettingsPage() {
       >
         <BlockStack gap="200">
           <InlineStack align="space-between">
-            <Text variant="bodyMd" fontWeight="bold">
-              {article.title}
-            </Text>
-            <Button
-              plain
-              icon={isExpanded ? ChevronUpIcon : ChevronDownIcon}
-              onClick={(e) => {
-                e.stopPropagation();
-                toggleArticleExpansion(article.id);
-              }}
-            />
+            <InlineStack gap="200">
+              {isHot && <Icon source={FavoriteMajor} color="warning" />}
+              <Text variant="bodyMd" fontWeight="bold">
+                {article.title}
+              </Text>
+            </InlineStack>
+            <InlineStack gap="200">
+              <Button
+                size="slim"
+                icon={isHot ? StarFilledIcon : StarIcon}
+                disabled={isUpdatingHot || (!isHot && hotArticlesCount >= 2)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleHotStatus(article.id, isHot, websiteId);
+                }}
+              >
+                {isHot ? "Remove Hot" : "Make Hot"}
+              </Button>
+              <Button
+                plain
+                icon={isExpanded ? ChevronUpIcon : ChevronDownIcon}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleArticleExpansion(article.id);
+                }}
+              />
+            </InlineStack>
           </InlineStack>
           <InlineStack align="start" gap="200" wrap>
             <Text variant="bodySm" color="subdued">
@@ -218,6 +347,7 @@ export default function NewsSettingsPage() {
             {selectedBlogIndex === 0 && article.blogTitle && (
               <Tag>Blog: {article.blogTitle}</Tag>
             )}
+            {isHot && <Badge status="warning">Hot</Badge>}
           </InlineStack>
 
           <Collapsible open={isExpanded} id={`article-${article.id}`}>
@@ -288,6 +418,13 @@ export default function NewsSettingsPage() {
                     <Text as="h3" variant="headingMd">
                       Blog Selection
                     </Text>
+                  </InlineStack>
+                  <InlineStack gap="200">
+                    <Badge
+                      status={hotArticlesCount >= 2 ? "warning" : "success"}
+                    >
+                      {hotArticlesCount}/2 Hot Posts
+                    </Badge>
                   </InlineStack>
                 </InlineStack>
                 <Divider />
@@ -393,6 +530,15 @@ export default function NewsSettingsPage() {
           </Layout.Section>
         </Layout>
       </BlockStack>
+
+      {toastActive && (
+        <Toast
+          content={toastMessage}
+          error={toastError}
+          onDismiss={() => setToastActive(false)}
+          duration={3000}
+        />
+      )}
     </Page>
   );
 }
