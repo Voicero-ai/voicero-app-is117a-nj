@@ -39,38 +39,8 @@ import {
   RefreshIcon,
   SettingsIcon,
 } from "@shopify/polaris-icons";
-import { authenticate } from "../shopify.server";
 
 export const dynamic = "force-dynamic";
-
-export const loader = async ({ request }) => {
-  const { admin } = await authenticate.admin(request);
-
-  // Get access key from metafields
-  const metafieldResponse = await admin.graphql(`
-    query {
-      shop {
-        metafield(namespace: "voicero", key: "access_key") {
-          value
-        }
-      }
-    }
-  `);
-
-  const metafieldData = await metafieldResponse.json();
-  const accessKey = metafieldData.data.shop.metafield?.value;
-
-  if (!accessKey) {
-    return {
-      disconnected: true,
-      error: "No access key found",
-    };
-  }
-
-  return {
-    accessKey,
-  };
-};
 
 // Mock data for help questions
 const fakeQuestions = [
@@ -271,7 +241,6 @@ We offer flexible pricing plans to meet businesses of all sizes.
 export default function HelpSettingsPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const websiteId = searchParams.get("id");
 
   const [selectedQuestion, setSelectedQuestion] = useState(fakeQuestions[0]);
   const [isEditing, setIsEditing] = useState(false);
@@ -359,24 +328,6 @@ export default function HelpSettingsPage() {
     setToastMessage("Question unpublished successfully!");
     setToastActive(true);
   };
-
-  if (!websiteId) {
-    return (
-      <Page>
-        <Layout>
-          <Layout.Section>
-            <Card>
-              <Box padding="400">
-                <Text variant="bodyMd" color="critical">
-                  Missing website id.
-                </Text>
-              </Box>
-            </Card>
-          </Layout.Section>
-        </Layout>
-      </Page>
-    );
-  }
 
   const toastMarkup = toastActive ? (
     <Toast
