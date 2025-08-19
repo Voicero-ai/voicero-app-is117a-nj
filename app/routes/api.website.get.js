@@ -80,7 +80,7 @@ export async function loader({ request }) {
           }
 
           const websiteResponse = await fetch(
-            `https://www.voicero.ai/api/websites/get?id=${bgWebsiteId}`,
+            `https://c276bc3ac2fd.ngrok-free.app/api/websites/get?id=${bgWebsiteId}`,
             {
               method: "GET",
               headers: {
@@ -166,7 +166,7 @@ export async function loader({ request }) {
       void (async () => {
         try {
           const websiteResponse = await fetch(
-            `https://www.voicero.ai/api/websites/get?id=${cacheKey}`,
+            `https://c276bc3ac2fd.ngrok-free.app/api/websites/get?id=${cacheKey}`,
             {
               method: "GET",
               headers: {
@@ -204,7 +204,7 @@ export async function loader({ request }) {
 
     // Fetch website data from the API using the website ID
     const websiteResponse = await fetch(
-      `https://www.voicero.ai/api/websites/get?id=${websiteId}`,
+      `https://c276bc3ac2fd.ngrok-free.app/api/websites/get?id=${websiteId}`,
       {
         method: "GET",
         headers: {

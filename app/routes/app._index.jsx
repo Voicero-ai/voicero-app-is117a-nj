@@ -3914,10 +3914,7 @@ export default function Index() {
                                                 "Using domain:",
                                                 domain,
                                               );
-                                              console.log(
-                                                "Item URL:",
-                                                item.url,
-                                              );
+                                             
 
                                               // Check for home page special case
                                               if (
