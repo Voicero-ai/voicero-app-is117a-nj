@@ -44,12 +44,25 @@ import {
 } from "@shopify/polaris-icons";
 import { authenticate } from "../shopify.server";
 import { PlusIcon, DeleteIcon } from "@shopify/polaris-icons";
-import dynamic from "next/dynamic";
-
-const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false });
 import "react-quill-new/dist/quill.snow.css";
 
 export const dynamic = "force-dynamic";
+
+// Client-only loader for react-quill-new to avoid SSR issues in Remix
+function QuillEditor(props) {
+  const [Editor, setEditor] = useState(null);
+  useEffect(() => {
+    let mounted = true;
+    import("react-quill-new").then((mod) => {
+      if (mounted) setEditor(() => mod.default);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+  if (!Editor) return <div style={{ minHeight: 300 }} />;
+  return <Editor {...props} />;
+}
 
 export const loader = async ({ request }) => {
   const { admin } = await authenticate.admin(request);
@@ -994,7 +1007,7 @@ export default function HelpSettingsPage() {
                                     }}
                                   >
                                     <div style={{ minHeight: 300 }}>
-                                      <ReactQuill
+                                      <QuillEditor
                                         theme="snow"
                                         value={editContent}
                                         onChange={setEditContent}
