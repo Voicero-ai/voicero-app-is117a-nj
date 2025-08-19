@@ -123,7 +123,7 @@ export default function NewsSettingsPage() {
     setIsUpdatingHot(true);
 
     try {
-      const response = await fetch(`/api/news.hot`, {
+      const response = await fetch(`/api/news/hot`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
