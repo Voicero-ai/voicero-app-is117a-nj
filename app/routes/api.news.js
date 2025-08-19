@@ -9,6 +9,7 @@ export async function loader({ request }) {
     const accessKey =
       url.searchParams.get("accessKey") ||
       request.headers.get("Authorization")?.replace("Bearer ", "");
+    const websiteId = url.searchParams.get("websiteId");
 
     if (!accessKey) {
       return json(
@@ -17,16 +18,18 @@ export async function loader({ request }) {
       );
     }
 
-    // Call the external news API
+    // Call the external news API with POST instead of GET
     const response = await fetch(
       `https://c276bc3ac2fd.ngrok-free.app/api/news`,
       {
-        method: "GET",
+        method: "POST", // Changed from GET to POST
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
           Authorization: `Bearer ${accessKey}`,
         },
+        // Include websiteId in the request body
+        body: JSON.stringify({ websiteId }),
       },
     );
 
@@ -65,7 +68,7 @@ export async function action({ request }) {
   try {
     // Get the data from the request body
     const body = await request.json();
-    const { accessKey } = body;
+    const { accessKey, websiteId } = body;
 
     if (!accessKey) {
       return json(
@@ -75,15 +78,18 @@ export async function action({ request }) {
     }
 
     // Call the external news API
-    const response = await fetch(`https://c276bc3ac2fd.ngrok-free.app/api/news`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        Authorization: `Bearer ${accessKey}`,
+    const response = await fetch(
+      `https://c276bc3ac2fd.ngrok-free.app/api/news`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${accessKey}`,
+        },
+        body: JSON.stringify(body),
       },
-      body: JSON.stringify(body),
-    });
+    );
 
     const text = await response.text();
     let data;

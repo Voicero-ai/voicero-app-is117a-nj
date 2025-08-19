@@ -83,9 +83,19 @@ export default function NewsSettingsPage() {
     setFetchError(null);
 
     try {
-      const response = await fetch(
-        `/api/news?accessKey=${encodeURIComponent(accessKey)}`,
-      );
+      // Use POST request instead of GET
+      const response = await fetch(`/api/news`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          accessKey,
+          // No need to specify websiteId, the API will determine it from the access key
+        }),
+      });
+
       const data = await response.json();
 
       console.log("News API response:", data);
@@ -133,7 +143,7 @@ export default function NewsSettingsPage() {
   };
 
   // Get blogs from news data
-  const blogs = newsData?.json?.blogs || [];
+  const blogs = newsData?.blogs || [];
 
   // Get tab items for blog selection
   const tabItems = blogs.map((blog) => ({
