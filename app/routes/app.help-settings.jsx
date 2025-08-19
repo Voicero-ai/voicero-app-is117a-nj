@@ -24,19 +24,18 @@ import {
 } from "@shopify/polaris";
 import {
   QuestionCircleIcon,
-  RobotIcon,
+  AutomationIcon,
   EditIcon,
   CheckIcon,
-  EyeIcon,
-  BoldIcon,
-  ItalicIcon,
-  ListIcon,
-  NumberedListIcon,
+  ViewIcon,
+  TextIcon,
+  TextIcon as ListIcon,
+  TextIcon as NumberedListIcon,
   LinkIcon,
-  TableIcon,
-  HeadingIcon,
-  QuoteIcon,
-  CodeIcon,
+  TextIcon as TableIcon,
+  TextIcon as HeadingIcon,
+  TextIcon as QuoteIcon,
+  TextIcon as CodeIcon,
   RefreshIcon,
   SettingsIcon,
 } from "@shopify/polaris-icons";
@@ -527,7 +526,7 @@ export default function HelpSettingsPage() {
                                       >
                                         <InlineStack gap="100" align="center">
                                           <Icon
-                                            source={RobotIcon}
+                                            source={AutomationIcon}
                                             color="highlight"
                                           />
                                           <Text
@@ -598,7 +597,7 @@ export default function HelpSettingsPage() {
                                       >
                                         <InlineStack gap="100" align="center">
                                           <Icon
-                                            source={EyeIcon}
+                                            source={ViewIcon}
                                             color="caution"
                                           />
                                           <Text
@@ -666,7 +665,7 @@ export default function HelpSettingsPage() {
                                       >
                                         <InlineStack gap="100" align="center">
                                           <Icon
-                                            source={RobotIcon}
+                                            source={AutomationIcon}
                                             color="highlight"
                                           />
                                           <Text
@@ -737,7 +736,7 @@ export default function HelpSettingsPage() {
                                       >
                                         <InlineStack gap="100" align="center">
                                           <Icon
-                                            source={EyeIcon}
+                                            source={ViewIcon}
                                             color="caution"
                                           />
                                           <Text
@@ -794,7 +793,7 @@ export default function HelpSettingsPage() {
                                       <Button
                                         onClick={handleUnpublish}
                                         variant="secondary"
-                                        icon={EyeIcon}
+                                        icon={ViewIcon}
                                       >
                                         Unpublish
                                       </Button>
@@ -845,14 +844,14 @@ export default function HelpSettingsPage() {
                                     <Button
                                       onClick={() => formatText("bold")}
                                       variant="tertiary"
-                                      icon={BoldIcon}
+                                      icon={TextIcon}
                                       size="slim"
                                       title="Bold (Ctrl+B)"
                                     />
                                     <Button
                                       onClick={() => formatText("italic")}
                                       variant="tertiary"
-                                      icon={ItalicIcon}
+                                      icon={TextIcon}
                                       size="slim"
                                       title="Italic (Ctrl+I)"
                                     />
