@@ -15,17 +15,12 @@ import {
   Banner,
   Badge,
   Icon,
-  Tabs,
   LegacyTabs,
   Collapsible,
-  Link,
-  LegacyCard,
   ResourceList,
   ResourceItem,
-  Thumbnail,
-  SkeletonBodyText,
-  SkeletonDisplayText,
   EmptyState,
+  Tag,
 } from "@shopify/polaris";
 import {
   DataPresentationIcon,
@@ -33,6 +28,7 @@ import {
   BlogIcon,
   ChevronDownIcon,
   ChevronUpIcon,
+  CollectionIcon,
 } from "@shopify/polaris-icons";
 import { authenticate } from "../shopify.server";
 
@@ -145,19 +141,120 @@ export default function NewsSettingsPage() {
   // Get blogs from news data
   const blogs = newsData?.blogs || [];
 
-  // Get tab items for blog selection
-  const tabItems = blogs.map((blog) => ({
-    id: blog.id,
-    content: blog.title,
-    accessibilityLabel: `View ${blog.title} blog`,
-    panelID: `blog-${blog.id}`,
-  }));
+  // Get all blog posts from all blogs
+  const allBlogPosts = blogs.reduce((posts, blog) => {
+    // Add blog title to each post for reference
+    const postsWithBlogInfo = (blog.blogPosts || []).map((post) => ({
+      ...post,
+      blogTitle: blog.title,
+    }));
+    return [...posts, ...postsWithBlogInfo];
+  }, []);
+
+  // Sort all posts by date, newest first
+  const sortedAllPosts = [...allBlogPosts].sort(
+    (a, b) =>
+      new Date(b.publishedAt || b.createdAt) -
+      new Date(a.publishedAt || a.createdAt),
+  );
+
+  // Get tab items for blog selection with "All" as the first tab
+  const tabItems = [
+    {
+      id: "all",
+      content: "All Blog Posts",
+      accessibilityLabel: "View all blog posts",
+      panelID: "all-blogs",
+    },
+    ...blogs.map((blog) => ({
+      id: blog.id,
+      content: blog.title,
+      accessibilityLabel: `View ${blog.title} blog`,
+      panelID: `blog-${blog.id}`,
+    })),
+  ];
 
   // Get selected blog
-  const selectedBlog = blogs[selectedBlogIndex] || null;
+  const selectedBlog =
+    selectedBlogIndex === 0 ? null : blogs[selectedBlogIndex - 1];
 
-  // Get articles from selected blog
-  const articles = selectedBlog?.blogPosts || [];
+  // Get articles from selected blog or all blogs
+  const articles =
+    selectedBlogIndex === 0 ? sortedAllPosts : selectedBlog?.blogPosts || [];
+
+  // Render an article item
+  const renderArticleItem = (article) => {
+    const isExpanded = expandedArticleId === article.id;
+    return (
+      <ResourceItem
+        id={article.id}
+        accessibilityLabel={`View details for ${article.title}`}
+        onClick={() => toggleArticleExpansion(article.id)}
+      >
+        <BlockStack gap="200">
+          <InlineStack align="space-between">
+            <Text variant="bodyMd" fontWeight="bold">
+              {article.title}
+            </Text>
+            <Button
+              plain
+              icon={isExpanded ? ChevronUpIcon : ChevronDownIcon}
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleArticleExpansion(article.id);
+              }}
+            />
+          </InlineStack>
+          <InlineStack align="start" gap="200" wrap>
+            <Text variant="bodySm" color="subdued">
+              Published: {formatDate(article.publishedAt)}
+            </Text>
+            {article.author && (
+              <Text variant="bodySm" color="subdued">
+                Author: {article.author}
+              </Text>
+            )}
+            {/* Show blog tag in "All" view */}
+            {selectedBlogIndex === 0 && article.blogTitle && (
+              <Tag>Blog: {article.blogTitle}</Tag>
+            )}
+          </InlineStack>
+
+          <Collapsible open={isExpanded} id={`article-${article.id}`}>
+            <Box
+              padding="300"
+              background="bg-surface-subdued"
+              borderRadius="200"
+            >
+              <BlockStack gap="300">
+                <Text variant="headingSm">Article Content</Text>
+                <div
+                  style={{
+                    maxHeight: "500px",
+                    overflow: "auto",
+                    padding: "16px",
+                    backgroundColor: "white",
+                    borderRadius: "8px",
+                    border: "1px solid #e1e3e5",
+                  }}
+                >
+                  {article.content ? (
+                    <div
+                      dangerouslySetInnerHTML={{
+                        __html: article.content,
+                      }}
+                    />
+                  ) : (
+                    <Text color="subdued">No content available</Text>
+                  )}
+                </div>
+              </BlockStack>
+            </Box>
+          </Collapsible>
+        </BlockStack>
+      </ResourceItem>
+    );
+  };
 
   if (disconnected) {
     return null; // Don't render anything while redirecting
@@ -208,7 +305,7 @@ export default function NewsSettingsPage() {
                     </Banner>
                   ) : blogs.length > 0 ? (
                     <BlockStack gap="400">
-                      {/* Blog Tabs */}
+                      {/* Blog Tabs with All option */}
                       <LegacyTabs
                         tabs={tabItems}
                         selected={selectedBlogIndex}
@@ -217,132 +314,68 @@ export default function NewsSettingsPage() {
                         }
                       />
 
-                      {/* Selected Blog Info */}
-                      <Box
-                        padding="400"
-                        background="bg-surface-secondary"
-                        borderRadius="200"
-                      >
-                        <BlockStack gap="200">
-                          <InlineStack align="space-between">
-                            <Text variant="headingMd" fontWeight="bold">
-                              {selectedBlog.title}
+                      {/* Selected Blog Info - only show for specific blogs */}
+                      {selectedBlogIndex !== 0 && selectedBlog && (
+                        <Box
+                          padding="400"
+                          background="bg-surface-secondary"
+                          borderRadius="200"
+                        >
+                          <BlockStack gap="200">
+                            <InlineStack align="space-between">
+                              <Text variant="headingMd" fontWeight="bold">
+                                {selectedBlog.title}
+                              </Text>
+                              <Badge>
+                                {selectedBlog.blogPosts?.length || 0} articles
+                              </Badge>
+                            </InlineStack>
+                            <Text variant="bodySm" color="subdued">
+                              Handle: {selectedBlog.handle} | Created:{" "}
+                              {formatDate(selectedBlog.createdAt)}
                             </Text>
-                            <Badge>{articles.length} articles</Badge>
-                          </InlineStack>
-                          <Text variant="bodySm" color="subdued">
-                            Handle: {selectedBlog.handle} | Created:{" "}
-                            {formatDate(selectedBlog.createdAt)}
-                          </Text>
-                        </BlockStack>
-                      </Box>
+                          </BlockStack>
+                        </Box>
+                      )}
+
+                      {/* All Posts Header - only show for All view */}
+                      {selectedBlogIndex === 0 && (
+                        <Box
+                          padding="400"
+                          background="bg-surface-secondary"
+                          borderRadius="200"
+                        >
+                          <BlockStack gap="200">
+                            <InlineStack align="space-between">
+                              <InlineStack gap="200">
+                                <Icon source={CollectionIcon} color="base" />
+                                <Text variant="headingMd" fontWeight="bold">
+                                  All Blog Posts
+                                </Text>
+                              </InlineStack>
+                              <Badge>{sortedAllPosts.length} articles</Badge>
+                            </InlineStack>
+                            <Text variant="bodySm" color="subdued">
+                              Showing posts from all blogs, sorted by publish
+                              date
+                            </Text>
+                          </BlockStack>
+                        </Box>
+                      )}
 
                       {/* Articles List */}
                       <Text variant="headingSm">Articles</Text>
                       {articles.length > 0 ? (
                         <ResourceList
                           items={articles}
-                          renderItem={(article) => {
-                            const isExpanded = expandedArticleId === article.id;
-                            return (
-                              <ResourceItem
-                                id={article.id}
-                                accessibilityLabel={`View details for ${article.title}`}
-                                onClick={() =>
-                                  toggleArticleExpansion(article.id)
-                                }
-                              >
-                                <BlockStack gap="200">
-                                  <InlineStack align="space-between">
-                                    <Text variant="bodyMd" fontWeight="bold">
-                                      {article.title}
-                                    </Text>
-                                    <Button
-                                      plain
-                                      icon={
-                                        isExpanded
-                                          ? ChevronUpIcon
-                                          : ChevronDownIcon
-                                      }
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        toggleArticleExpansion(article.id);
-                                      }}
-                                    />
-                                  </InlineStack>
-                                  <InlineStack align="start" gap="200">
-                                    <Text variant="bodySm" color="subdued">
-                                      Published:{" "}
-                                      {formatDate(article.publishedAt)}
-                                    </Text>
-                                    {article.author && (
-                                      <Text variant="bodySm" color="subdued">
-                                        Author: {article.author}
-                                      </Text>
-                                    )}
-                                  </InlineStack>
-
-                                  <Collapsible
-                                    open={isExpanded}
-                                    id={`article-${article.id}`}
-                                  >
-                                    <Box
-                                      padding="300"
-                                      background="bg-surface-subdued"
-                                      borderRadius="200"
-                                    >
-                                      <BlockStack gap="300">
-                                        <Text variant="headingSm">
-                                          Content Preview
-                                        </Text>
-                                        <div
-                                          style={{
-                                            maxHeight: "200px",
-                                            overflow: "auto",
-                                            padding: "12px",
-                                            backgroundColor: "white",
-                                            borderRadius: "8px",
-                                            border: "1px solid #e1e3e5",
-                                          }}
-                                        >
-                                          {article.content ? (
-                                            <div
-                                              dangerouslySetInnerHTML={{
-                                                __html:
-                                                  article.content.substring(
-                                                    0,
-                                                    500,
-                                                  ) +
-                                                  (article.content.length > 500
-                                                    ? "..."
-                                                    : ""),
-                                              }}
-                                            />
-                                          ) : (
-                                            <Text color="subdued">
-                                              No content available
-                                            </Text>
-                                          )}
-                                        </div>
-                                        <InlineStack align="end">
-                                          <Button size="slim">
-                                            View Full Article
-                                          </Button>
-                                        </InlineStack>
-                                      </BlockStack>
-                                    </Box>
-                                  </Collapsible>
-                                </BlockStack>
-                              </ResourceItem>
-                            );
-                          }}
+                          renderItem={renderArticleItem}
                         />
                       ) : (
                         <EmptyState
                           heading="No articles found"
                           image="https://cdn.shopify.com/s/files/1/0262/4071/2726/files/emptystate-files.png"
                         >
-                          <p>This blog doesn't have any articles yet.</p>
+                          <p>No articles available in the selected blog.</p>
                         </EmptyState>
                       )}
                     </BlockStack>
@@ -355,33 +388,6 @@ export default function NewsSettingsPage() {
                     </EmptyState>
                   )}
                 </BlockStack>
-              </BlockStack>
-            </Card>
-
-            {/* Raw API Response */}
-            <Card>
-              <BlockStack gap="400">
-                <InlineStack align="space-between">
-                  <InlineStack gap="200">
-                    <Icon source={DataPresentationIcon} color="highlight" />
-                    <Text as="h3" variant="headingMd">
-                      Raw API Response
-                    </Text>
-                  </InlineStack>
-                </InlineStack>
-                <Divider />
-                <Box
-                  background="bg-surface-secondary"
-                  padding="400"
-                  borderRadius="200"
-                  overflowX="scroll"
-                >
-                  <pre style={{ margin: 0 }}>
-                    {newsData
-                      ? JSON.stringify(newsData, null, 2)
-                      : "No data available"}
-                  </pre>
-                </Box>
               </BlockStack>
             </Card>
           </Layout.Section>
