@@ -32,8 +32,6 @@ import {
   CollectionIcon,
   StarFilledIcon,
   StarIcon,
-  FavoriteMajor,
-  CircleAlertMajor,
 } from "@shopify/polaris-icons";
 import { authenticate } from "../shopify.server";
 
@@ -307,7 +305,7 @@ export default function NewsSettingsPage() {
         <BlockStack gap="200">
           <InlineStack align="space-between">
             <InlineStack gap="200">
-              {isHot && <Icon source={FavoriteMajor} color="warning" />}
+              {isHot && <Icon source={StarFilledIcon} color="warning" />}
               <Text variant="bodyMd" fontWeight="bold">
                 {article.title}
               </Text>
