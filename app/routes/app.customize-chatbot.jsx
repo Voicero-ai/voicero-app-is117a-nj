@@ -109,7 +109,7 @@ export const loader = async ({ request }) => {
 
     // Fetch interface settings using new API
     const interfaceRes = await fetch(
-      `${urls.voiceroApi}/api/updateInterface/get?websiteId=${website.id}`,
+      `https://c276bc3ac2fd.ngrok-free.app/api/updateInterface/get?websiteId=${website.id}`,
       {
         method: "GET",
         headers: {
@@ -448,7 +448,7 @@ export default function CustomizeChatbotPage() {
 
     try {
       const res = await fetch(
-        `${urls.voiceroApi}/api/updateInterface/addQuestion`,
+        `https://c276bc3ac2fd.ngrok-free.app/api/updateInterface/addQuestion`,
         {
           method: "POST",
           headers: {
@@ -484,7 +484,7 @@ export default function CustomizeChatbotPage() {
       }
       try {
         const res = await fetch(
-          `${urls.voiceroApi}/api/updateInterface/deleteQuestion`,
+          `https://c276bc3ac2fd.ngrok-free.app/api/updateInterface/deleteQuestion`,
           {
             method: "POST",
             headers: {
@@ -566,7 +566,7 @@ export default function CustomizeChatbotPage() {
 
       // Make API call to save interface settings
       const response = await fetch(
-        `${urls.voiceroApi}/api/updateInterface/edit`,
+        `https://c276bc3ac2fd.ngrok-free.app/api/updateInterface/edit`,
         {
           method: "POST",
           headers: {
