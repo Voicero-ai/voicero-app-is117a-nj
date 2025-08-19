@@ -28,14 +28,15 @@ import {
   EditIcon,
   CheckIcon,
   ViewIcon,
-  TextIcon,
-  TextIcon as ListIcon,
-  TextIcon as NumberedListIcon,
+  TextBoldIcon,
+  TextItalicIcon,
+  ListBulletedIcon,
+  ListNumberedIcon,
   LinkIcon,
-  TextIcon as TableIcon,
-  TextIcon as HeadingIcon,
-  TextIcon as QuoteIcon,
-  TextIcon as CodeIcon,
+  DataTableIcon,
+  TextTitleIcon,
+  TextQuoteIcon,
+  CodeIcon,
   RefreshIcon,
   SettingsIcon,
 } from "@shopify/polaris-icons";
@@ -795,14 +796,14 @@ export default function HelpSettingsPage() {
                                     <Button
                                       onClick={() => formatText("bold")}
                                       variant="tertiary"
-                                      icon={TextIcon}
+                                      icon={TextBoldIcon}
                                       size="slim"
                                       title="Bold (Ctrl+B)"
                                     />
                                     <Button
                                       onClick={() => formatText("italic")}
                                       variant="tertiary"
-                                      icon={TextIcon}
+                                      icon={TextItalicIcon}
                                       size="slim"
                                       title="Italic (Ctrl+I)"
                                     />
@@ -816,21 +817,21 @@ export default function HelpSettingsPage() {
                                     <Button
                                       onClick={() => formatText("heading")}
                                       variant="tertiary"
-                                      icon={HeadingIcon}
+                                      icon={TextTitleIcon}
                                       size="slim"
                                       title="Heading"
                                     />
                                     <Button
                                       onClick={() => formatText("list-ul")}
                                       variant="tertiary"
-                                      icon={ListIcon}
+                                      icon={ListBulletedIcon}
                                       size="slim"
                                       title="Bullet List"
                                     />
                                     <Button
                                       onClick={() => formatText("list-ol")}
                                       variant="tertiary"
-                                      icon={NumberedListIcon}
+                                      icon={ListNumberedIcon}
                                       size="slim"
                                       title="Numbered List"
                                     />
@@ -844,7 +845,7 @@ export default function HelpSettingsPage() {
                                     <Button
                                       onClick={() => formatText("quote")}
                                       variant="tertiary"
-                                      icon={QuoteIcon}
+                                      icon={TextQuoteIcon}
                                       size="slim"
                                       title="Quote"
                                     />
@@ -865,7 +866,7 @@ export default function HelpSettingsPage() {
                                     <Button
                                       onClick={() => formatText("table")}
                                       variant="tertiary"
-                                      icon={TableIcon}
+                                      icon={DataTableIcon}
                                       size="slim"
                                       title="Insert Table"
                                     />
