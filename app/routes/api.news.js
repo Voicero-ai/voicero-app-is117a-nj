@@ -18,14 +18,17 @@ export async function loader({ request }) {
     }
 
     // Call the external news API
-    const response = await fetch(`http://localhost:3000/api/news`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        Authorization: `Bearer ${accessKey}`,
+    const response = await fetch(
+      `https://c276bc3ac2fd.ngrok-free.app/api/news`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${accessKey}`,
+        },
       },
-    });
+    );
 
     const text = await response.text();
     let data;
@@ -72,7 +75,7 @@ export async function action({ request }) {
     }
 
     // Call the external news API
-    const response = await fetch(`http://localhost:3000/api/news`, {
+    const response = await fetch(`https://c276bc3ac2fd.ngrok-free.app/api/news`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
