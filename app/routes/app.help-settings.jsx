@@ -337,11 +337,11 @@ export default function HelpSettingsPage() {
           },
         }}
       >
-        <BlockStack gap="500">
+        <BlockStack gap="300">
           <Layout>
             <Layout.Section>
               <Card>
-                <BlockStack gap="400">
+                <BlockStack gap="200">
                   {isLoading && (
                     <div
                       style={{
@@ -398,7 +398,7 @@ export default function HelpSettingsPage() {
                     {/* Sidebar */}
                     <div style={{ width: "320px", flexShrink: 0 }}>
                       <Card>
-                        <BlockStack gap="400">
+                        <BlockStack gap="200">
                           <InlineStack gap="200" align="center">
                             <Icon
                               source={QuestionCircleIcon}
@@ -420,7 +420,7 @@ export default function HelpSettingsPage() {
                             </Button>
                           </InlineStack>
 
-                          <BlockStack gap="300">
+                          <BlockStack gap="200">
                             {questions.map((question) => (
                               <div
                                 key={question.id}
@@ -611,10 +611,10 @@ export default function HelpSettingsPage() {
                           </BlockStack>
                         </Card>
                       ) : (
-                        <BlockStack gap="600">
+                        <BlockStack gap="300">
                           {/* Question Header */}
                           <Card>
-                            <BlockStack gap="400">
+                            <BlockStack gap="200">
                               <div
                                 style={{
                                   background:
@@ -825,7 +825,7 @@ export default function HelpSettingsPage() {
 
                           {/* Article Content */}
                           <Card>
-                            <BlockStack gap="400">
+                            <BlockStack gap="200">
                               {isEditing ? (
                                 <div>
                                   <Text
@@ -838,7 +838,7 @@ export default function HelpSettingsPage() {
                                   {/* Remove custom toolbar; use Quill toolbar */}
 
                                   <div style={{ border: "1px solid #E5E7EB" }}>
-                                    <div style={{ minHeight: 300 }}>
+                                    <div style={{ minHeight: 220 }}>
                                       <QuillEditor
                                         theme="snow"
                                         value={editContent}
@@ -853,10 +853,7 @@ export default function HelpSettingsPage() {
                                               "underline",
                                               "strike",
                                             ],
-                                            [
-                                              { list: "ordered" },
-                                              { list: "bullet" },
-                                            ],
+                                            [{ list: "ordered" }],
                                             ["blockquote", "code"],
                                             ["link", "clean"],
                                           ],

@@ -1,3 +1,31 @@
+/* Tighten default Quill spacing */
+.ql-editor {
+  line-height: 1.4;
+}
+.ql-editor p {
+  margin: 0 0 8px;
+}
+.ql-editor h1,
+.ql-editor h2,
+.ql-editor h3,
+.ql-editor h4,
+.ql-editor h5,
+.ql-editor h6 {
+  margin: 8px 0 8px;
+}
+.ql-editor ol {
+  list-style-type: decimal !important;
+  padding-left: 18px;
+  margin: 0 0 8px;
+}
+.ql-editor ul {
+  list-style-type: disc;
+  padding-left: 18px;
+  margin: 0 0 8px;
+}
+.ql-container.ql-snow {
+  font-size: 14px;
+}
 /* Apply brand color (#882be6) to primary elements */
 
 /* Primary buttons */
