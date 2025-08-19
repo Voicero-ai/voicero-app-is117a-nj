@@ -38,7 +38,7 @@ export async function action({ request }) {
     // Expecting upstream path: /api/websites/toggle-feature with { feature, enabled }
     // If your upstream differs, update the URL accordingly.
     const upstream = await fetch(
-      `${urls.voiceroApi}/api/websites/toggle-feature`,
+      `https://c276bc3ac2fd.ngrok-free.app/api/websites/toggle-feature`,
       {
         method: "POST",
         headers: {
