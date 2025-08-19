@@ -977,12 +977,6 @@ export default function Index() {
   const app = useAppBridge();
   const isLoading = fetcher.state === "submitting";
 
-  // Add useEffect to fetch contacts when component mounts or accessKey changes
-  useEffect(() => {
-    if (accessKey && fetcher.data?.success) {
-      fetchContacts();
-    }
-  }, [accessKey, fetcher.data?.success]);
 
   // Add function to fetch extended website data
   const fetchExtendedWebsiteData = async () => {
