@@ -89,6 +89,17 @@ export default function HelpSettingsPage() {
 
   // Remove old markdown toolbar: React Quill handles formatting itself
 
+  // Ensure content is HTML for both display and Quill (convert markdown if needed)
+  const ensureHtml = (content) => {
+    if (!content) return "";
+    const looksLikeHtml = /<\/?[a-z][\s\S]*>/i.test(content);
+    try {
+      return looksLikeHtml ? content : marked.parse(content);
+    } catch {
+      return content;
+    }
+  };
+
   const fetchQuestions = async () => {
     if (!accessKey) return;
     try {
@@ -112,7 +123,7 @@ export default function HelpSettingsPage() {
         order: Number(m.number) || 0,
         isAIGenerated: (m.type || "manual") === "ai",
         status: m.status || "draft",
-        content: m.documentAnswer || "",
+        content: ensureHtml(m.documentAnswer || ""),
         websiteId: m.websiteId,
       }));
       setQuestions(mapped);
@@ -156,13 +167,13 @@ export default function HelpSettingsPage() {
       }
       const updated = questions.map((q) =>
         q.id === selectedQuestion.id
-          ? { ...q, content: contentToSave, title: editTitle }
+          ? { ...q, content: ensureHtml(contentToSave), title: editTitle }
           : q,
       );
       setQuestions(updated);
       setSelectedQuestion({
         ...selectedQuestion,
-        content: contentToSave,
+        content: ensureHtml(contentToSave),
         title: editTitle,
       });
       setIsEditing(false);
@@ -286,7 +297,7 @@ export default function HelpSettingsPage() {
         order: nextOrder,
         isAIGenerated: false,
         status: "draft",
-        content: draftContent,
+        content: ensureHtml(draftContent),
         websiteId: created?.websiteId || null,
       };
       const next = [...questions, newItem].sort((a, b) => a.order - b.order);
