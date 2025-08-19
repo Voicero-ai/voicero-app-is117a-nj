@@ -227,7 +227,7 @@ export async function loader({ request }) {
     // Log the full JSON output from the websites/get endpoint
     console.log(
       "Full websites/get response:",
-      JSON.stringify(websiteData, null, 2),
+      JSON.stringify(websiteDataRaw, null, 2),
     );
 
     // Store in cache
