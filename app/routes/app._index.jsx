@@ -780,6 +780,8 @@ export default function Index() {
   // Action details UI state
   const [selectedActionType, setSelectedActionType] = useState(null); // 'redirect' | 'purchase' | 'click' | 'scroll'
   const [selectedThreadId, setSelectedThreadId] = useState(null);
+  const [voiceEnabled, setVoiceEnabled] = useState(null);
+  const [textEnabled, setTextEnabled] = useState(null);
   useEffect(() => {
     // Reset selected thread whenever action type changes
     // This ensures that when switching between action types,
@@ -788,6 +790,19 @@ export default function Index() {
       setSelectedThreadId(null);
     }
   }, [selectedActionType]);
+
+  // Sync feature flags from latest data
+  useEffect(() => {
+    const src = extendedWebsiteData || fetcher.data?.websiteData;
+    if (src) {
+      if (typeof src.showVoiceAI !== "undefined") {
+        setVoiceEnabled(Boolean(src.showVoiceAI));
+      }
+      if (typeof src.showTextAI !== "undefined") {
+        setTextEnabled(Boolean(src.showTextAI));
+      }
+    }
+  }, [extendedWebsiteData, fetcher.data]);
 
   // Helpers for action details
   const parseActionPayload = useCallback((content) => {
@@ -1552,6 +1567,61 @@ export default function Index() {
     }
   };
 
+  const handleToggleAI = async (feature, nextEnabled) => {
+    try {
+      // Optimistic UI update
+      if (feature === "voice") setVoiceEnabled(nextEnabled);
+      if (feature === "text") setTextEnabled(nextEnabled);
+
+      const res = await fetch("/api/toggle-ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ feature, enabled: nextEnabled }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data?.success) {
+        throw new Error(data?.error || "Failed to toggle feature");
+      }
+
+      // Update extendedWebsiteData and client cache to reflect override
+      setExtendedWebsiteData((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          ...(feature === "voice"
+            ? { showVoiceAI: nextEnabled }
+            : { showTextAI: nextEnabled }),
+        };
+      });
+
+      try {
+        const CACHE_KEY = "voicero:website:get";
+        const raw = sessionStorage.getItem(CACHE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed?.data) {
+            parsed.data = {
+              ...parsed.data,
+              ...(feature === "voice"
+                ? { showVoiceAI: nextEnabled }
+                : { showTextAI: nextEnabled }),
+            };
+            sessionStorage.setItem(CACHE_KEY, JSON.stringify(parsed));
+          }
+        }
+      } catch {}
+    } catch (err) {
+      // Revert optimistic update on failure
+      if (feature === "voice") setVoiceEnabled(!nextEnabled);
+      if (feature === "text") setTextEnabled(!nextEnabled);
+      setError(
+        <Banner status="critical" onDismiss={() => setError("")}>
+          <p>{err.message || "Failed to toggle feature"}</p>
+        </Banner>,
+      );
+    }
+  };
+
   // Helper to get formatted training status message
   const getTrainingStatusMessage = useCallback(() => {
     if (!fetcher.data) return "No training data available";
@@ -2114,6 +2184,96 @@ export default function Index() {
                       </InlineStack>
 
                       <Divider />
+
+                      {/* AI Features */}
+                      <div
+                        style={{
+                          backgroundColor: "#FFFFFF",
+                          borderRadius: 12,
+                          padding: 16,
+                          border: "1px solid #EEF2F7",
+                        }}
+                      >
+                        <BlockStack gap="300">
+                          <Text variant="headingSm" fontWeight="semibold">
+                            AI Features
+                          </Text>
+                          {[
+                            {
+                              key: "voice",
+                              title: "Voice AI",
+                              description:
+                                "Enable voice-based AI interactions on your website",
+                              enabled: Boolean(voiceEnabled),
+                            },
+                            {
+                              key: "text",
+                              title: "Text AI",
+                              description:
+                                "Enable text-based AI chat on your website",
+                              enabled: Boolean(textEnabled),
+                            },
+                          ].map((f) => (
+                            <InlineStack
+                              key={f.key}
+                              align="space-between"
+                              blockAlign="center"
+                            >
+                              <InlineStack gap="200" blockAlign="center">
+                                <div
+                                  style={{
+                                    width: 36,
+                                    height: 36,
+                                    borderRadius: 8,
+                                    backgroundColor: "#EDE9FE",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                  }}
+                                >
+                                  <Icon source={ChatIcon} color="highlight" />
+                                </div>
+                                <BlockStack gap="0">
+                                  <Text variant="bodyMd" fontWeight="semibold">
+                                    {f.title}
+                                  </Text>
+                                  <Text variant="bodySm" color="subdued">
+                                    {f.description}
+                                  </Text>
+                                </BlockStack>
+                              </InlineStack>
+                              <button
+                                onClick={() =>
+                                  handleToggleAI(f.key, !f.enabled)
+                                }
+                                disabled={!fetcher.data?.websiteData?.plan}
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: 8,
+                                  backgroundColor: f.enabled
+                                    ? "#8B5CF6"
+                                    : "#E5E7EB",
+                                  color: f.enabled ? "white" : "#111827",
+                                  border: "none",
+                                  padding: "6px 12px",
+                                  borderRadius: 9999,
+                                  cursor: "pointer",
+                                  fontWeight: 600,
+                                }}
+                              >
+                                <Icon
+                                  source={
+                                    f.enabled ? ToggleOnIcon : ToggleOffIcon
+                                  }
+                                  color={f.enabled ? "base" : "subdued"}
+                                />
+                                {f.enabled ? "Live" : "Off"}
+                              </button>
+                            </InlineStack>
+                          ))}
+                        </BlockStack>
+                      </div>
 
                       {/* Quick Stats Grid */}
                       <div

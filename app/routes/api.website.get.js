@@ -1,14 +1,17 @@
 import { json } from "@remix-run/node";
 import { authenticate } from "../shopify.server";
 import urls from "../config/urls";
+import {
+  WEBSITE_CACHE,
+  SHOP_CACHE,
+  CACHE_TTL_MS,
+  applyOverrides,
+  updateCachesAfterFetch,
+} from "../cache/websiteCache";
 
 export const dynamic = "force-dynamic";
 
-// In-memory cache with 1-hour TTL
-const WEBSITE_CACHE = new Map();
-const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
-// Map shop domain -> { websiteId, data, storedAt, expiresAt }
-const SHOP_CACHE = new Map();
+// caches moved to shared module to ensure consistency across endpoints
 
 export async function loader({ request }) {
   const { admin, session } = await authenticate.admin(request);
@@ -89,19 +92,11 @@ export async function loader({ request }) {
           );
           if (!websiteResponse.ok) return;
           const latest = await websiteResponse.json();
-          WEBSITE_CACHE.set(bgWebsiteId, {
+          updateCachesAfterFetch({
+            shop,
+            websiteId: bgWebsiteId,
             data: latest,
-            storedAt: Date.now(),
-            expiresAt: Date.now() + CACHE_TTL_MS,
           });
-          if (shop) {
-            SHOP_CACHE.set(shop, {
-              websiteId: bgWebsiteId,
-              data: latest,
-              storedAt: Date.now(),
-              expiresAt: Date.now() + CACHE_TTL_MS,
-            });
-          }
         } catch (e) {
           console.error("Background revalidation failed:", e);
         }
@@ -109,7 +104,7 @@ export async function loader({ request }) {
 
       return json({
         success: true,
-        websiteData: shopCached.data,
+        websiteData: applyOverrides(shopCached.websiteId, shopCached.data),
         cached: true,
         revalidating: true,
         lastUpdatedAt: shopCached.storedAt,
@@ -183,19 +178,7 @@ export async function loader({ request }) {
           );
           if (!websiteResponse.ok) return;
           const latest = await websiteResponse.json();
-          WEBSITE_CACHE.set(cacheKey, {
-            data: latest,
-            storedAt: Date.now(),
-            expiresAt: Date.now() + CACHE_TTL_MS,
-          });
-          if (shop) {
-            SHOP_CACHE.set(shop, {
-              websiteId: cacheKey,
-              data: latest,
-              storedAt: Date.now(),
-              expiresAt: Date.now() + CACHE_TTL_MS,
-            });
-          }
+          updateCachesAfterFetch({ shop, websiteId: cacheKey, data: latest });
         } catch (e) {
           console.error("Background revalidation (by websiteId) failed:", e);
         }
@@ -204,7 +187,7 @@ export async function loader({ request }) {
       if (shop) {
         SHOP_CACHE.set(shop, {
           websiteId: cacheKey,
-          data: websiteCached.data,
+          data: applyOverrides(cacheKey, websiteCached.data),
           storedAt: websiteCached.storedAt,
           expiresAt: websiteCached.expiresAt,
         });
@@ -212,7 +195,7 @@ export async function loader({ request }) {
 
       return json({
         success: true,
-        websiteData: websiteCached.data,
+        websiteData: applyOverrides(cacheKey, websiteCached.data),
         cached: true,
         revalidating: true,
         lastUpdatedAt: websiteCached.storedAt,
@@ -239,7 +222,7 @@ export async function loader({ request }) {
       );
     }
 
-    const websiteData = await websiteResponse.json();
+    const websiteDataRaw = await websiteResponse.json();
 
     // Log the full JSON output from the websites/get endpoint
     console.log(
@@ -248,21 +231,18 @@ export async function loader({ request }) {
     );
 
     // Store in cache
-    WEBSITE_CACHE.set(cacheKey, {
-      data: websiteData,
-      storedAt: now,
-      expiresAt: now + CACHE_TTL_MS,
+    updateCachesAfterFetch({
+      shop,
+      websiteId: cacheKey,
+      data: websiteDataRaw,
+      now,
     });
-    if (shop) {
-      SHOP_CACHE.set(shop, {
-        websiteId: cacheKey,
-        data: websiteData,
-        storedAt: now,
-        expiresAt: now + CACHE_TTL_MS,
-      });
-    }
 
-    return json({ success: true, websiteData, cached: false });
+    return json({
+      success: true,
+      websiteData: applyOverrides(cacheKey, websiteDataRaw),
+      cached: false,
+    });
   } catch (error) {
     console.error("API website get error:", error);
     return json(
