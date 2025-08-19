@@ -16,6 +16,11 @@ export async function loader({ request }) {
   try {
     const urlObj = new URL(request.url);
     const bypassCache = urlObj.searchParams.get("bypassCache");
+    const bypass =
+      bypassCache === "true" ||
+      bypassCache === "1" ||
+      bypassCache === "yes" ||
+      bypassCache === "on";
     const clearCache = urlObj.searchParams.get("clearCache");
     const clearAllCache = urlObj.searchParams.get("clearAllCache");
     const shop = session?.shop;
@@ -33,10 +38,10 @@ export async function loader({ request }) {
 
     const now = Date.now();
 
-    // If we have a cached entry for this shop and we're not explicitly bypassing cache,
-    // return it immediately and trigger a background revalidation.
+    // If we have a cached entry for this shop, return it immediately and
+    // trigger a background revalidation.
     const shopCached = shop ? SHOP_CACHE.get(shop) : null;
-    if (shopCached && !bypassCache) {
+    if (shopCached) {
       // Fire-and-forget revalidation to keep cache fresh
       void (async () => {
         try {
@@ -159,6 +164,60 @@ export async function loader({ request }) {
     }
 
     const cacheKey = websiteId;
+
+    // If we have website-level cache, return it immediately and revalidate in background
+    const websiteCached = WEBSITE_CACHE.get(cacheKey);
+    if (websiteCached) {
+      void (async () => {
+        try {
+          const websiteResponse = await fetch(
+            `https://www.voicero.ai/api/websites/get?id=${cacheKey}`,
+            {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+                Accept: "application/json",
+                Authorization: `Bearer ${accessKey}`,
+              },
+            },
+          );
+          if (!websiteResponse.ok) return;
+          const latest = await websiteResponse.json();
+          WEBSITE_CACHE.set(cacheKey, {
+            data: latest,
+            storedAt: Date.now(),
+            expiresAt: Date.now() + CACHE_TTL_MS,
+          });
+          if (shop) {
+            SHOP_CACHE.set(shop, {
+              websiteId: cacheKey,
+              data: latest,
+              storedAt: Date.now(),
+              expiresAt: Date.now() + CACHE_TTL_MS,
+            });
+          }
+        } catch (e) {
+          console.error("Background revalidation (by websiteId) failed:", e);
+        }
+      })();
+
+      if (shop) {
+        SHOP_CACHE.set(shop, {
+          websiteId: cacheKey,
+          data: websiteCached.data,
+          storedAt: websiteCached.storedAt,
+          expiresAt: websiteCached.expiresAt,
+        });
+      }
+
+      return json({
+        success: true,
+        websiteData: websiteCached.data,
+        cached: true,
+        revalidating: true,
+        lastUpdatedAt: websiteCached.storedAt,
+      });
+    }
 
     // Fetch website data from the API using the website ID
     const websiteResponse = await fetch(
