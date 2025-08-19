@@ -2242,34 +2242,59 @@ export default function Index() {
                                   </Text>
                                 </BlockStack>
                               </InlineStack>
-                              <button
-                                onClick={() =>
-                                  handleToggleAI(f.key, !f.enabled)
-                                }
-                                disabled={!fetcher.data?.websiteData?.plan}
-                                style={{
-                                  display: "inline-flex",
-                                  alignItems: "center",
-                                  gap: 8,
-                                  backgroundColor: f.enabled
-                                    ? "#8B5CF6"
-                                    : "#E5E7EB",
-                                  color: f.enabled ? "white" : "#111827",
-                                  border: "none",
-                                  padding: "6px 12px",
-                                  borderRadius: 9999,
-                                  cursor: "pointer",
-                                  fontWeight: 600,
-                                }}
-                              >
-                                <Icon
-                                  source={
-                                    f.enabled ? ToggleOnIcon : ToggleOffIcon
+                              {isDataLoading ||
+                              isLoadingExtendedData ||
+                              isLoading ||
+                              (f.key === "voice"
+                                ? voiceEnabled === null
+                                : textEnabled === null) ? (
+                                <div
+                                  style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: 8,
+                                    backgroundColor: "#F3F4F6",
+                                    color: "#6B7280",
+                                    border: "1px solid #E5E7EB",
+                                    padding: "6px 12px",
+                                    borderRadius: 9999,
+                                  }}
+                                >
+                                  <Spinner size="small" />
+                                  <span style={{ fontWeight: 600 }}>
+                                    Loading...
+                                  </span>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() =>
+                                    handleToggleAI(f.key, !f.enabled)
                                   }
-                                  color={f.enabled ? "base" : "subdued"}
-                                />
-                                {f.enabled ? "Live" : "Off"}
-                              </button>
+                                  disabled={!fetcher.data?.websiteData?.plan}
+                                  style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: 8,
+                                    backgroundColor: f.enabled
+                                      ? "#8B5CF6"
+                                      : "#E5E7EB",
+                                    color: f.enabled ? "white" : "#111827",
+                                    border: "none",
+                                    padding: "6px 12px",
+                                    borderRadius: 9999,
+                                    cursor: "pointer",
+                                    fontWeight: 600,
+                                  }}
+                                >
+                                  <Icon
+                                    source={
+                                      f.enabled ? ToggleOnIcon : ToggleOffIcon
+                                    }
+                                    color={f.enabled ? "base" : "subdued"}
+                                  />
+                                  {f.enabled ? "Live" : "Off"}
+                                </button>
+                              )}
                             </InlineStack>
                           ))}
                         </BlockStack>
@@ -3914,7 +3939,6 @@ export default function Index() {
                                                 "Using domain:",
                                                 domain,
                                               );
-                                             
 
                                               // Check for home page special case
                                               if (
