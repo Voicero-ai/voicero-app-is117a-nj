@@ -977,7 +977,6 @@ export default function Index() {
   const app = useAppBridge();
   const isLoading = fetcher.state === "submitting";
 
-
   // Add function to fetch extended website data
   const fetchExtendedWebsiteData = async () => {
     try {
@@ -2776,7 +2775,9 @@ export default function Index() {
                                     </div>
                                     <BlockStack gap="100">
                                       <Text variant="bodySm" color="subdued">
-                                        {stat.label}
+                                        {stat.type === "purchase"
+                                          ? "Add To Cart"
+                                          : stat.label}
                                       </Text>
                                       <Text
                                         variant="headingXl"
