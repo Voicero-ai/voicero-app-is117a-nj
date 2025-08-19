@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { useNavigate, useSearchParams } from "@remix-run/react";
+import { useState, useEffect } from "react";
+import { json } from "@remix-run/node";
+import { useLoaderData, useNavigate, useSearchParams } from "@remix-run/react";
 import {
   Page,
   Layout,
@@ -40,214 +41,47 @@ import {
   RefreshIcon,
   SettingsIcon,
 } from "@shopify/polaris-icons";
+import { authenticate } from "../shopify.server";
+import { PlusIcon, DeleteIcon } from "@shopify/polaris-icons";
 
 export const dynamic = "force-dynamic";
 
-// Mock data for help questions
-const fakeQuestions = [
-  {
-    id: "1",
-    title: "How do I connect my Shopify store?",
-    order: 1,
-    isAIGenerated: true,
-    status: "published",
-    content: `# Connecting Your Shopify Store
+export const loader = async ({ request }) => {
+  const { admin } = await authenticate.admin(request);
 
-To connect your Shopify store to our platform, follow these steps:
+  const metafieldResponse = await admin.graphql(`
+    query {
+      shop {
+        metafield(namespace: "voicero", key: "access_key") {
+          value
+        }
+      }
+    }
+  `);
 
-## Prerequisites
-- Admin access to your Shopify store
-- Store URL (e.g., yourstore.myshopify.com)
+  const metafieldData = await metafieldResponse.json();
+  const accessKey = metafieldData.data.shop.metafield?.value;
 
-## Step-by-Step Process
+  if (!accessKey) {
+    return json({ disconnected: true, error: "No access key found" });
+  }
 
-### 1. Generate API Credentials
-1. Log into your Shopify admin panel
-2. Go to **Apps** → **Develop apps**
-3. Click **Create an app**
-4. Give your app a name (e.g., "Voicero AI Integration")
-5. Select **Admin API integration**
-6. Configure the required scopes:
-   - **Read products** - To access product information
-   - **Read customers** - To access customer data
-   - **Read orders** - To access order information
-   - **Read inventory** - To access stock levels
-
-### 2. Install the App
-1. Click **Install app** in your app settings
-2. Copy the **API key** and **API secret key**
-3. Note your **store URL**
-
-### 3. Connect to Our Platform
-1. In our dashboard, go to **Connect Website**
-2. Select **Shopify** as your platform
-3. Enter your store URL
-4. Paste your API credentials
-5. Click **Connect**
-
-## Troubleshooting
-
-| Issue | Solution |
-|-------|----------|
-| "Invalid API key" | Verify you copied the full API key |
-| "Access denied" | Check that you have admin permissions |
-| "Store not found" | Ensure your store URL is correct |
-
-## Security Notes
-- Never share your API credentials
-- Use HTTPS for all connections
-- Regularly rotate your API keys
-
-For additional support, contact our team at support@voicero.ai`,
-  },
-  {
-    id: "2",
-    title: "How does the AI training work?",
-    order: 2,
-    isAIGenerated: false,
-    status: "published",
-    content: `# AI Training Process
-
-Our AI training system works by analyzing your website content and learning from your business context.
-
-## Training Phases
-
-### Phase 1: Content Analysis
-- **Web scraping** of your website pages
-- **Document processing** (PDFs, Word docs, etc.)
-- **Content categorization** by topic and relevance
-- **Metadata extraction** for better context
-
-### Phase 2: Knowledge Base Creation
-- **Vectorization** of content into searchable formats
-- **Semantic indexing** for natural language queries
-- **Context linking** between related topics
-- **Quality scoring** of content relevance
-
-### Phase 3: AI Model Training
-- **Fine-tuning** on your specific content
-- **Domain adaptation** to your industry
-- **Response generation** training
-- **Accuracy validation** testing
-
-## Training Data Sources
-
-| Source | Description | Update Frequency |
-|--------|-------------|------------------|
-| Website Pages | Static content and blog posts | Daily |
-| Product Catalog | Product descriptions and specs | Real-time |
-| Customer FAQs | Common questions and answers | Weekly |
-| Support Tickets | Issue resolution patterns | Monthly |
-
-## Performance Metrics
-
-- **Training Time**: 2-4 hours for initial setup
-- **Accuracy**: 95%+ on domain-specific questions
-- **Response Time**: <2 seconds for most queries
-- **Coverage**: 99% of your business topics
-
-## Best Practices
-
-1. **Regular Updates**: Keep content fresh and current
-2. **Quality Content**: Ensure accurate and helpful information
-3. **Customer Feedback**: Use real questions to improve training
-4. **Monitoring**: Track AI performance and accuracy
-
-## Customization Options
-
-- **Brand Voice**: Match your company's tone and style
-- **Industry Terms**: Learn your specific jargon and terminology
-- **Response Length**: Adjust from brief to detailed answers
-- **Source Attribution**: Include links to original content`,
-  },
-  {
-    id: "3",
-    title: "What are the pricing plans?",
-    order: 3,
-    isAIGenerated: true,
-    status: "draft",
-    content: `# Pricing Plans Overview
-
-We offer flexible pricing plans to meet businesses of all sizes.
-
-## Plan Comparison
-
-| Feature | Starter | Professional | Enterprise |
-|---------|---------|--------------|------------|
-| **Monthly Price** | $29 | $99 | $299 |
-| **Annual Price** | $290 | $990 | $2,990 |
-| **AI Conversations** | 1,000/month | 10,000/month | Unlimited |
-| **Website Connections** | 1 | 5 | Unlimited |
-| **Training Documents** | 100 MB | 1 GB | 10 GB |
-| **Customer Support** | Email | Email + Chat | Priority + Phone |
-| **Custom Branding** | ❌ | ✅ | ✅ |
-| **API Access** | ❌ | ✅ | ✅ |
-| **Advanced Analytics** | ❌ | ✅ | ✅ |
-| **White-label Solution** | ❌ | ❌ | ✅ |
-
-## What's Included
-
-### Starter Plan ($29/month)
-- Basic AI chatbot
-- Standard response templates
-- Email support
-- Basic analytics dashboard
-
-### Professional Plan ($99/month)
-- Advanced AI capabilities
-- Custom response training
-- Priority support
-- Advanced analytics
-- Multiple website support
-
-### Enterprise Plan ($299/month)
-- Full AI customization
-- Dedicated account manager
-- Phone support
-- Custom integrations
-- White-label options
-
-## Additional Services
-
-| Service | Price | Description |
-|---------|-------|-------------|
-| **Custom Training** | $500 | Specialized AI training for your industry |
-| **API Development** | $1,000 | Custom API endpoints and integrations |
-| **White-label Setup** | $2,000 | Branded solution for reselling |
-| **Priority Support** | $200/month | 24/7 phone and chat support |
-
-## Payment Options
-
-- **Credit Card**: Visa, Mastercard, American Express
-- **Bank Transfer**: Available for annual plans
-- **Invoice**: Available for Enterprise customers
-- **PayPal**: Available for Starter and Professional plans
-
-## Refund Policy
-
-- **30-day money-back guarantee** for all plans
-- **Pro-rated refunds** for annual plans
-- **No questions asked** cancellation policy
-
-## Volume Discounts
-
-- **10% off** for 2+ Professional plans
-- **20% off** for 5+ Professional plans
-- **Custom pricing** for Enterprise customers
-
-*All prices are in USD and subject to change with 30 days notice.*`,
-  },
-];
+  return json({ accessKey });
+};
 
 export default function HelpSettingsPage() {
+  const { accessKey, error, disconnected } = useLoaderData();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  const [selectedQuestion, setSelectedQuestion] = useState(fakeQuestions[0]);
+  const [questions, setQuestions] = useState([]);
+  const [selectedQuestion, setSelectedQuestion] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState("");
   const [toastActive, setToastActive] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Rich text formatting functions
   const formatText = (format) => {
@@ -313,22 +147,219 @@ export default function HelpSettingsPage() {
     }, 0);
   };
 
-  const handleSave = () => {
-    // Save functionality would go here
-    setIsEditing(false);
-    setToastMessage("Changes saved successfully!");
-    setToastActive(true);
+  const fetchQuestions = async () => {
+    if (!accessKey) return;
+    try {
+      setIsLoading(true);
+      const res = await fetch(`/api/helpCenter/get`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({ accessKey }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.success === false) {
+        throw new Error(data.error || "Failed to load help center");
+      }
+      const modules = Array.isArray(data.modules) ? data.modules : [];
+      const mapped = modules.map((m) => ({
+        id: m.id,
+        title: m.question,
+        order: Number(m.number) || 0,
+        isAIGenerated: (m.type || "manual") === "ai",
+        status: m.status || "draft",
+        content: m.documentAnswer || "",
+        websiteId: m.websiteId,
+      }));
+      setQuestions(mapped);
+      setSelectedQuestion(mapped[0] || null);
+    } catch (e) {
+      setToastMessage(e.message);
+      setToastActive(true);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handlePublish = () => {
-    setToastMessage("Question published successfully!");
-    setToastActive(true);
+  const handleSave = async () => {
+    if (!selectedQuestion) return;
+    try {
+      setIsSubmitting(true);
+      const res = await fetch(`/api/helpCenter/edit`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          accessKey,
+          id: selectedQuestion.id,
+          question: selectedQuestion.title,
+          documentAnswer: editContent,
+          number: selectedQuestion.order,
+          type: selectedQuestion.isAIGenerated ? "ai" : "manual",
+          status: selectedQuestion.status,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.success === false) {
+        throw new Error(data.error || "Failed to save changes");
+      }
+      const updated = questions.map((q) =>
+        q.id === selectedQuestion.id ? { ...q, content: editContent } : q,
+      );
+      setQuestions(updated);
+      setSelectedQuestion({ ...selectedQuestion, content: editContent });
+      setIsEditing(false);
+      setToastMessage("Changes saved successfully!");
+      setToastActive(true);
+    } catch (e) {
+      setToastMessage(e.message || "Failed to save");
+      setToastActive(true);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleUnpublish = () => {
-    setToastMessage("Question unpublished successfully!");
-    setToastActive(true);
+  const updatePublishStatus = async (nextStatus) => {
+    if (!selectedQuestion) return;
+    try {
+      setIsSubmitting(true);
+      const res = await fetch(`/api/helpCenter/edit`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          accessKey,
+          id: selectedQuestion.id,
+          question: selectedQuestion.title,
+          documentAnswer: selectedQuestion.content,
+          number: selectedQuestion.order,
+          type: selectedQuestion.isAIGenerated ? "ai" : "manual",
+          status: nextStatus,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.success === false) {
+        throw new Error(data.error || "Failed to update status");
+      }
+      const updated = questions.map((q) =>
+        q.id === selectedQuestion.id ? { ...q, status: nextStatus } : q,
+      );
+      setQuestions(updated);
+      setSelectedQuestion({ ...selectedQuestion, status: nextStatus });
+      setToastMessage(
+        nextStatus === "published"
+          ? "Question published successfully!"
+          : "Question unpublished successfully!",
+      );
+      setToastActive(true);
+    } catch (e) {
+      setToastMessage(e.message || "Failed to update status");
+      setToastActive(true);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  const handlePublish = () => updatePublishStatus("published");
+
+  const handleUnpublish = () => updatePublishStatus("draft");
+
+  const handleDelete = async (id) => {
+    if (!id) return;
+    try {
+      setIsSubmitting(true);
+      const res = await fetch(`/api/helpCenter/delete`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({ accessKey, id }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.success === false) {
+        throw new Error(data.error || "Failed to delete");
+      }
+      const next = questions.filter((q) => q.id !== id);
+      setQuestions(next);
+      setSelectedQuestion(next[0] || null);
+      setToastMessage("Question deleted");
+      setToastActive(true);
+    } catch (e) {
+      setToastMessage(e.message || "Failed to delete");
+      setToastActive(true);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleAdd = async () => {
+    try {
+      setIsSubmitting(true);
+      // Determine next order number
+      const nextOrder =
+        questions.reduce((max, q) => Math.max(max, Number(q.order) || 0), 0) +
+        1;
+      const draftTitle = "New Question";
+      const draftContent = "";
+      const res = await fetch(`/api/helpCenter/add`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          accessKey,
+          question: draftTitle,
+          documentAnswer: draftContent,
+          number: nextOrder,
+          type: "manual",
+          status: "draft",
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.success === false) {
+        throw new Error(data.error || "Failed to add question");
+      }
+      // Assuming API returns the created module with id
+      const created = data.module || data.created || data.result || null;
+      const newItem = {
+        id: created?.id || `${Date.now()}`,
+        title: draftTitle,
+        order: nextOrder,
+        isAIGenerated: false,
+        status: "draft",
+        content: draftContent,
+        websiteId: created?.websiteId || null,
+      };
+      const next = [...questions, newItem].sort((a, b) => a.order - b.order);
+      setQuestions(next);
+      setSelectedQuestion(newItem);
+      setIsEditing(true);
+      setEditContent(draftContent);
+      setToastMessage("Question added");
+      setToastActive(true);
+    } catch (e) {
+      setToastMessage(e.message || "Failed to add question");
+      setToastActive(true);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  useEffect(() => {
+    if (disconnected) navigate("/app");
+  }, [disconnected, navigate]);
+
+  useEffect(() => {
+    if (accessKey) fetchQuestions();
+  }, [accessKey]);
 
   const toastMarkup = toastActive ? (
     <Toast
@@ -350,8 +381,7 @@ export default function HelpSettingsPage() {
           content: "Refresh",
           icon: RefreshIcon,
           onAction: () => {
-            setToastMessage("Help content refreshed!");
-            setToastActive(true);
+            fetchQuestions();
           },
         }}
       >
@@ -412,19 +442,25 @@ export default function HelpSettingsPage() {
                             </Text>
                           </InlineStack>
 
+                          <InlineStack>
+                            <Button icon={PlusIcon} onClick={handleAdd}>
+                              Add Question
+                            </Button>
+                          </InlineStack>
+
                           <BlockStack gap="300">
-                            {fakeQuestions.map((question) => (
+                            {questions.map((question) => (
                               <div
                                 key={question.id}
                                 style={{
                                   background:
-                                    selectedQuestion.id === question.id
+                                    selectedQuestion?.id === question.id
                                       ? "linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%)"
                                       : "linear-gradient(135deg, #FFFFFF 0%, #F9FAFB 100%)",
                                   borderRadius: "12px",
                                   padding: "16px",
                                   border:
-                                    selectedQuestion.id === question.id
+                                    selectedQuestion?.id === question.id
                                       ? "2px solid #3B82F6"
                                       : "1px solid #E5E7EB",
                                   cursor: "pointer",
@@ -432,7 +468,7 @@ export default function HelpSettingsPage() {
                                 }}
                                 onClick={() => setSelectedQuestion(question)}
                                 onMouseEnter={(e) => {
-                                  if (selectedQuestion.id !== question.id) {
+                                  if (selectedQuestion?.id !== question.id) {
                                     e.currentTarget.style.transform =
                                       "translateY(-2px)";
                                     e.currentTarget.style.boxShadow =
@@ -440,7 +476,7 @@ export default function HelpSettingsPage() {
                                   }
                                 }}
                                 onMouseLeave={(e) => {
-                                  if (selectedQuestion.id !== question.id) {
+                                  if (selectedQuestion?.id !== question.id) {
                                     e.currentTarget.style.transform =
                                       "translateY(0)";
                                     e.currentTarget.style.boxShadow = "none";
@@ -563,6 +599,19 @@ export default function HelpSettingsPage() {
                                       </div>
                                     )}
                                   </InlineStack>
+                                  <InlineStack align="end">
+                                    <Button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDelete(question.id);
+                                      }}
+                                      icon={DeleteIcon}
+                                      variant="secondary"
+                                      tone="critical"
+                                    >
+                                      Delete
+                                    </Button>
+                                  </InlineStack>
                                 </BlockStack>
                               </div>
                             ))}
@@ -573,7 +622,16 @@ export default function HelpSettingsPage() {
 
                     {/* Main Content */}
                     <div style={{ flex: 1 }}>
-                      {selectedQuestion && (
+                      {!selectedQuestion ? (
+                        <Card>
+                          <BlockStack gap="300" align="center">
+                            <Text>No questions yet.</Text>
+                            <Button icon={PlusIcon} onClick={handleAdd}>
+                              Add your first question
+                            </Button>
+                          </BlockStack>
+                        </Card>
+                      ) : (
                         <BlockStack gap="600">
                           {/* Question Header */}
                           <Card>
