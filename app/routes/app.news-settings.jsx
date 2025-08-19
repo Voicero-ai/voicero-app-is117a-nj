@@ -22,6 +22,7 @@ import {
   EmptyState,
   Tag,
   Toast,
+  Frame,
 } from "@shopify/polaris";
 import {
   DataPresentationIcon,
@@ -388,155 +389,158 @@ export default function NewsSettingsPage() {
     return null; // Don't render anything while redirecting
   }
 
+  const toastMarkup = toastActive ? (
+    <Toast
+      content={toastMessage}
+      error={toastError}
+      onDismiss={() => setToastActive(false)}
+      duration={3000}
+    />
+  ) : null;
+
   return (
-    <Page
-      title="News Interface Settings"
-      backAction={{
-        content: "Back",
-        onAction: () => navigate("/app"),
-      }}
-      primaryAction={{
-        content: "Refresh Data",
-        icon: RefreshIcon,
-        onAction: fetchNewsData,
-        disabled: isLoading,
-      }}
-    >
-      <BlockStack gap="500">
-        <Layout>
-          <Layout.Section>
-            <Card>
-              <BlockStack gap="400">
-                <InlineStack align="space-between">
-                  <InlineStack gap="200">
-                    <Icon
-                      source={BlogIcon || DataPresentationIcon}
-                      color="highlight"
-                    />
-                    <Text as="h3" variant="headingMd">
-                      Blog Selection
-                    </Text>
-                  </InlineStack>
-                  <InlineStack gap="200">
-                    <Badge
-                      status={hotArticlesCount >= 2 ? "warning" : "success"}
-                    >
-                      {hotArticlesCount}/2 Hot Posts
-                    </Badge>
-                  </InlineStack>
-                </InlineStack>
-                <Divider />
-                <BlockStack gap="300">
-                  {isLoading ? (
-                    <Box padding="400">
-                      <BlockStack gap="200" align="center">
-                        <Spinner size="large" />
-                        <Text alignment="center">Loading news data...</Text>
-                      </BlockStack>
-                    </Box>
-                  ) : fetchError ? (
-                    <Banner status="critical">
-                      <p>Error loading news data: {fetchError}</p>
-                    </Banner>
-                  ) : blogs.length > 0 ? (
-                    <BlockStack gap="400">
-                      {/* Blog Tabs with All option */}
-                      <LegacyTabs
-                        tabs={tabItems}
-                        selected={selectedBlogIndex}
-                        onSelect={(selectedTabIndex) =>
-                          setSelectedBlogIndex(selectedTabIndex)
-                        }
+    <Frame>
+      <Page
+        title="News Interface Settings"
+        backAction={{
+          content: "Back",
+          onAction: () => navigate("/app"),
+        }}
+        primaryAction={{
+          content: "Refresh Data",
+          icon: RefreshIcon,
+          onAction: fetchNewsData,
+          disabled: isLoading,
+        }}
+      >
+        <BlockStack gap="500">
+          <Layout>
+            <Layout.Section>
+              <Card>
+                <BlockStack gap="400">
+                  <InlineStack align="space-between">
+                    <InlineStack gap="200">
+                      <Icon
+                        source={BlogIcon || DataPresentationIcon}
+                        color="highlight"
                       />
-
-                      {/* Selected Blog Info - only show for specific blogs */}
-                      {selectedBlogIndex !== 0 && selectedBlog && (
-                        <Box
-                          padding="400"
-                          background="bg-surface-secondary"
-                          borderRadius="200"
-                        >
-                          <BlockStack gap="200">
-                            <InlineStack align="space-between">
-                              <Text variant="headingMd" fontWeight="bold">
-                                {selectedBlog.title}
-                              </Text>
-                              <Badge>
-                                {selectedBlog.blogPosts?.length || 0} articles
-                              </Badge>
-                            </InlineStack>
-                            <Text variant="bodySm" color="subdued">
-                              Handle: {selectedBlog.handle} | Created:{" "}
-                              {formatDate(selectedBlog.createdAt)}
-                            </Text>
-                          </BlockStack>
-                        </Box>
-                      )}
-
-                      {/* All Posts Header - only show for All view */}
-                      {selectedBlogIndex === 0 && (
-                        <Box
-                          padding="400"
-                          background="bg-surface-secondary"
-                          borderRadius="200"
-                        >
-                          <BlockStack gap="200">
-                            <InlineStack align="space-between">
-                              <InlineStack gap="200">
-                                <Icon source={CollectionIcon} color="base" />
-                                <Text variant="headingMd" fontWeight="bold">
-                                  All Blog Posts
-                                </Text>
-                              </InlineStack>
-                              <Badge>{sortedAllPosts.length} articles</Badge>
-                            </InlineStack>
-                            <Text variant="bodySm" color="subdued">
-                              Showing posts from all blogs, sorted by publish
-                              date
-                            </Text>
-                          </BlockStack>
-                        </Box>
-                      )}
-
-                      {/* Articles List */}
-                      <Text variant="headingSm">Articles</Text>
-                      {articles.length > 0 ? (
-                        <ResourceList
-                          items={articles}
-                          renderItem={renderArticleItem}
+                      <Text as="h3" variant="headingMd">
+                        Blog Selection
+                      </Text>
+                    </InlineStack>
+                    <InlineStack gap="200">
+                      <Badge
+                        status={hotArticlesCount >= 2 ? "warning" : "success"}
+                      >
+                        {hotArticlesCount}/2 Hot Posts
+                      </Badge>
+                    </InlineStack>
+                  </InlineStack>
+                  <Divider />
+                  <BlockStack gap="300">
+                    {isLoading ? (
+                      <Box padding="400">
+                        <BlockStack gap="200" align="center">
+                          <Spinner size="large" />
+                          <Text alignment="center">Loading news data...</Text>
+                        </BlockStack>
+                      </Box>
+                    ) : fetchError ? (
+                      <Banner status="critical">
+                        <p>Error loading news data: {fetchError}</p>
+                      </Banner>
+                    ) : blogs.length > 0 ? (
+                      <BlockStack gap="400">
+                        {/* Blog Tabs with All option */}
+                        <LegacyTabs
+                          tabs={tabItems}
+                          selected={selectedBlogIndex}
+                          onSelect={(selectedTabIndex) =>
+                            setSelectedBlogIndex(selectedTabIndex)
+                          }
                         />
-                      ) : (
-                        <EmptyState
-                          heading="No articles found"
-                          image="https://cdn.shopify.com/s/files/1/0262/4071/2726/files/emptystate-files.png"
-                        >
-                          <p>No articles available in the selected blog.</p>
-                        </EmptyState>
-                      )}
-                    </BlockStack>
-                  ) : (
-                    <EmptyState
-                      heading="No blogs found"
-                      image="https://cdn.shopify.com/s/files/1/0262/4071/2726/files/emptystate-files.png"
-                    >
-                      <p>No blog data is available from the API.</p>
-                    </EmptyState>
-                  )}
-                </BlockStack>
-              </BlockStack>
-            </Card>
-          </Layout.Section>
-        </Layout>
-      </BlockStack>
 
-      {toastActive && (
-        <Toast
-          content={toastMessage}
-          error={toastError}
-          onDismiss={() => setToastActive(false)}
-          duration={3000}
-        />
-      )}
-    </Page>
+                        {/* Selected Blog Info - only show for specific blogs */}
+                        {selectedBlogIndex !== 0 && selectedBlog && (
+                          <Box
+                            padding="400"
+                            background="bg-surface-secondary"
+                            borderRadius="200"
+                          >
+                            <BlockStack gap="200">
+                              <InlineStack align="space-between">
+                                <Text variant="headingMd" fontWeight="bold">
+                                  {selectedBlog.title}
+                                </Text>
+                                <Badge>
+                                  {selectedBlog.blogPosts?.length || 0} articles
+                                </Badge>
+                              </InlineStack>
+                              <Text variant="bodySm" color="subdued">
+                                Handle: {selectedBlog.handle} | Created:{" "}
+                                {formatDate(selectedBlog.createdAt)}
+                              </Text>
+                            </BlockStack>
+                          </Box>
+                        )}
+
+                        {/* All Posts Header - only show for All view */}
+                        {selectedBlogIndex === 0 && (
+                          <Box
+                            padding="400"
+                            background="bg-surface-secondary"
+                            borderRadius="200"
+                          >
+                            <BlockStack gap="200">
+                              <InlineStack align="space-between">
+                                <InlineStack gap="200">
+                                  <Icon source={CollectionIcon} color="base" />
+                                  <Text variant="headingMd" fontWeight="bold">
+                                    All Blog Posts
+                                  </Text>
+                                </InlineStack>
+                                <Badge>{sortedAllPosts.length} articles</Badge>
+                              </InlineStack>
+                              <Text variant="bodySm" color="subdued">
+                                Showing posts from all blogs, sorted by publish
+                                date
+                              </Text>
+                            </BlockStack>
+                          </Box>
+                        )}
+
+                        {/* Articles List */}
+                        <Text variant="headingSm">Articles</Text>
+                        {articles.length > 0 ? (
+                          <ResourceList
+                            items={articles}
+                            renderItem={renderArticleItem}
+                          />
+                        ) : (
+                          <EmptyState
+                            heading="No articles found"
+                            image="https://cdn.shopify.com/s/files/1/0262/4071/2726/files/emptystate-files.png"
+                          >
+                            <p>No articles available in the selected blog.</p>
+                          </EmptyState>
+                        )}
+                      </BlockStack>
+                    ) : (
+                      <EmptyState
+                        heading="No blogs found"
+                        image="https://cdn.shopify.com/s/files/1/0262/4071/2726/files/emptystate-files.png"
+                      >
+                        <p>No blog data is available from the API.</p>
+                      </EmptyState>
+                    )}
+                  </BlockStack>
+                </BlockStack>
+              </Card>
+            </Layout.Section>
+          </Layout>
+        </BlockStack>
+        {toastMarkup}
+      </Page>
+    </Frame>
   );
 }
