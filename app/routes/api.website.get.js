@@ -7,6 +7,8 @@ export const dynamic = "force-dynamic";
 // In-memory cache with 1-hour TTL
 const WEBSITE_CACHE = new Map();
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+// Map shop domain -> { websiteId, data, storedAt, expiresAt }
+const SHOP_CACHE = new Map();
 
 export async function loader({ request }) {
   const { admin, session } = await authenticate.admin(request);
@@ -16,7 +18,100 @@ export async function loader({ request }) {
     const bypassCache = urlObj.searchParams.get("bypassCache");
     const clearCache = urlObj.searchParams.get("clearCache");
     const clearAllCache = urlObj.searchParams.get("clearAllCache");
+    const shop = session?.shop;
 
+    // Allow clearing cache entries
+    if (clearAllCache) {
+      WEBSITE_CACHE.clear();
+      SHOP_CACHE.clear();
+    }
+    if (clearCache && shop) {
+      const shopEntry = SHOP_CACHE.get(shop);
+      if (shopEntry?.websiteId) WEBSITE_CACHE.delete(shopEntry.websiteId);
+      SHOP_CACHE.delete(shop);
+    }
+
+    const now = Date.now();
+
+    // If we have a cached entry for this shop and we're not explicitly bypassing cache,
+    // return it immediately and trigger a background revalidation.
+    const shopCached = shop ? SHOP_CACHE.get(shop) : null;
+    if (shopCached && !bypassCache) {
+      // Fire-and-forget revalidation to keep cache fresh
+      void (async () => {
+        try {
+          // Get access key from metafields
+          const mfResp = await admin.graphql(`
+            query {
+              shop {
+                metafield(namespace: "voicero", key: "access_key") {
+                  value
+                }
+              }
+            }
+          `);
+          const mfData = await mfResp.json();
+          const bgAccessKey = mfData.data.shop.metafield?.value;
+          if (!bgAccessKey) return;
+
+          // Use websiteId from cache if present; otherwise resolve via connect
+          let bgWebsiteId = shopCached.websiteId;
+          if (!bgWebsiteId) {
+            const connResp = await fetch(`${urls.voiceroApi}/api/connect`, {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+                Accept: "application/json",
+                Authorization: `Bearer ${bgAccessKey}`,
+              },
+            });
+            if (!connResp.ok) return;
+            const connData = await connResp.json();
+            bgWebsiteId = connData.website?.id;
+            if (!bgWebsiteId) return;
+          }
+
+          const websiteResponse = await fetch(
+            `https://www.voicero.ai/api/websites/get?id=${bgWebsiteId}`,
+            {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+                Accept: "application/json",
+                Authorization: `Bearer ${bgAccessKey}`,
+              },
+            },
+          );
+          if (!websiteResponse.ok) return;
+          const latest = await websiteResponse.json();
+          WEBSITE_CACHE.set(bgWebsiteId, {
+            data: latest,
+            storedAt: Date.now(),
+            expiresAt: Date.now() + CACHE_TTL_MS,
+          });
+          if (shop) {
+            SHOP_CACHE.set(shop, {
+              websiteId: bgWebsiteId,
+              data: latest,
+              storedAt: Date.now(),
+              expiresAt: Date.now() + CACHE_TTL_MS,
+            });
+          }
+        } catch (e) {
+          console.error("Background revalidation failed:", e);
+        }
+      })();
+
+      return json({
+        success: true,
+        websiteData: shopCached.data,
+        cached: true,
+        revalidating: true,
+        lastUpdatedAt: shopCached.storedAt,
+      });
+    }
+
+    // No usable cache or bypass requested: fetch fresh, update caches, and return
     // Get access key from metafields
     const metafieldResponse = await admin.graphql(`
       query {
@@ -63,19 +158,7 @@ export async function loader({ request }) {
       );
     }
 
-    // Allow clearing cache entries
-    if (clearAllCache) WEBSITE_CACHE.clear();
     const cacheKey = websiteId;
-    if (clearCache) WEBSITE_CACHE.delete(cacheKey);
-
-    // Serve from cache unless bypassed
-    const now = Date.now();
-    if (!bypassCache) {
-      const cached = WEBSITE_CACHE.get(cacheKey);
-      if (cached && now < cached.expiresAt) {
-        return json({ success: true, websiteData: cached.data, cached: true });
-      }
-    }
 
     // Fetch website data from the API using the website ID
     const websiteResponse = await fetch(
@@ -111,6 +194,14 @@ export async function loader({ request }) {
       storedAt: now,
       expiresAt: now + CACHE_TTL_MS,
     });
+    if (shop) {
+      SHOP_CACHE.set(shop, {
+        websiteId: cacheKey,
+        data: websiteData,
+        storedAt: now,
+        expiresAt: now + CACHE_TTL_MS,
+      });
+    }
 
     return json({ success: true, websiteData, cached: false });
   } catch (error) {

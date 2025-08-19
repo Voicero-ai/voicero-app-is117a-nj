@@ -1046,8 +1046,24 @@ export default function Index() {
           if (cached.expiresAt && now < cached.expiresAt && cached.data) {
             setExtendedWebsiteData(cached.data);
             setIsLoadingExtendedData(false);
-            // Background refresh, non-blocking
-            fetch("/api/website/get?bypassCache=true").catch(() => {});
+            // Background refresh; when it completes, update UI and cache
+            fetch("/api/website/get?bypassCache=true")
+              .then((r) => r.json())
+              .then((d) => {
+                if (d?.success && d.websiteData) {
+                  setExtendedWebsiteData(d.websiteData);
+                  try {
+                    sessionStorage.setItem(
+                      CACHE_KEY,
+                      JSON.stringify({
+                        data: d.websiteData,
+                        expiresAt: Date.now() + CACHE_TTL_MS,
+                      }),
+                    );
+                  } catch {}
+                }
+              })
+              .catch(() => {});
             return;
           }
         }
