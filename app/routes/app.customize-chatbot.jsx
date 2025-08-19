@@ -169,6 +169,8 @@ export const loader = async ({ request }) => {
         removeHighlight: false,
         botName: site.botName || "AI Assistant",
         autoFeatures,
+        showVoiceAI: Boolean(site.showVoiceAI),
+        showTextAI: Boolean(site.showTextAI),
         // Additional fields for compatibility with UI
         monthlyQueries: website.monthlyQueries,
         queryLimit: website.queryLimit,
@@ -388,6 +390,14 @@ export default function CustomizeChatbotPage() {
     setAutoFeatures((prev) => ({ ...prev, [featureKey]: !prev[featureKey] }));
   }, []);
 
+  // AI UI toggles state
+  const [showVoiceAI, setShowVoiceAI] = useState(
+    Boolean(chatbotSettings?.showVoiceAI),
+  );
+  const [showTextAI, setShowTextAI] = useState(
+    Boolean(chatbotSettings?.showTextAI),
+  );
+
   // Validation states
   const [botNameError, setBotNameError] = useState("");
   const [welcomeMessageError, setWelcomeMessageError] = useState("");
@@ -544,6 +554,8 @@ export default function CustomizeChatbotPage() {
         customWelcomeMessage: welcomeMessage,
         customInstructions,
         color: colorHex,
+        showVoiceAI,
+        showTextAI,
         // Auto features included in same request
         allowAutoRedirect: !!autoFeatures.allowAutoRedirect,
         allowAutoScroll: !!autoFeatures.allowAutoScroll,
@@ -697,7 +709,7 @@ export default function CustomizeChatbotPage() {
                 </BlockStack>
               </Card>
 
-              {/* AI UI (hardcoded for now) */}
+              {/* AI UI */}
               <Card>
                 <BlockStack gap="400">
                   <InlineStack align="space-between">
@@ -714,20 +726,23 @@ export default function CustomizeChatbotPage() {
                       <Checkbox
                         label="Activate All"
                         helpText="Toggle both Voice and Text AI"
-                        checked={false}
-                        disabled
+                        checked={showVoiceAI && showTextAI}
+                        onChange={(checked) => {
+                          setShowVoiceAI(checked);
+                          setShowTextAI(checked);
+                        }}
                       />
                       <Checkbox
                         label="Voice AI"
                         helpText="Enable voice-based assistant UI"
-                        checked={false}
-                        disabled
+                        checked={showVoiceAI}
+                        onChange={setShowVoiceAI}
                       />
                       <Checkbox
                         label="Text AI"
                         helpText="Enable text chat assistant UI"
-                        checked={false}
-                        disabled
+                        checked={showTextAI}
+                        onChange={setShowTextAI}
                       />
                     </LegacyStack>
                   </BlockStack>
