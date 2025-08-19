@@ -847,7 +847,19 @@ export default function Index() {
           // Thread must contain at least one message with the matching action type
           const hasMatchingAction = t.messages.some((m) => {
             const payload = parseActionPayload(m.content);
-            return payload && payload.action === actionType;
+            if (!payload) return false;
+            const a = payload.action;
+            if (actionType === "purchase") {
+              return (
+                a === "purchase" || a === "add_to_cart" || a === "add to cart"
+              );
+            }
+            if (actionType === "add_to_cart" || actionType === "add to cart") {
+              return (
+                a === "purchase" || a === "add_to_cart" || a === "add to cart"
+              );
+            }
+            return a === actionType;
           });
 
           if (!hasMatchingAction) {
@@ -1894,17 +1906,6 @@ export default function Index() {
           {/* Main Content */}
           <BlockStack gap="600">
             {/* NEW: Contacts Card - Add this before the Content Overview section */}
-            {accessKey && fetcher.data?.success && (
-              <div
-                style={{
-                  backgroundColor: "white",
-                  borderRadius: "12px",
-                  padding: "24px",
-                  boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
-                  marginBottom: "16px",
-                }}
-              ></div>
-            )}
             {accessKey ? (
               isDataLoading ? (
                 /* Loading State */
@@ -3011,11 +3012,27 @@ export default function Index() {
                                           const payload = parseActionPayload(
                                             m.content,
                                           );
-                                          return (
-                                            payload &&
-                                            payload.action ===
-                                              selectedActionType
-                                          );
+                                          if (!payload) return false;
+                                          const a = payload.action;
+                                          const s = selectedActionType;
+                                          if (s === "purchase") {
+                                            return (
+                                              a === "purchase" ||
+                                              a === "add_to_cart" ||
+                                              a === "add to cart"
+                                            );
+                                          }
+                                          if (
+                                            s === "add_to_cart" ||
+                                            s === "add to cart"
+                                          ) {
+                                            return (
+                                              a === "purchase" ||
+                                              a === "add_to_cart" ||
+                                              a === "add to cart"
+                                            );
+                                          }
+                                          return a === s;
                                         });
 
                                       if (!hasMatchingAction) {
