@@ -977,44 +977,12 @@ export default function Index() {
   const app = useAppBridge();
   const isLoading = fetcher.state === "submitting";
 
-  // Add this state for contacts data
-  const [contactsData, setContactsData] = useState([]);
-  const [isLoadingContacts, setIsLoadingContacts] = useState(false);
-  const [contactsError, setContactsError] = useState(null);
-
-  // Add function to fetch contacts data
-  const fetchContacts = async () => {
-    if (!accessKey) return;
-
-    try {
-      setIsLoadingContacts(true);
-      setContactsError(null);
-
-      const response = await fetch("/api/contacts");
-      const data = await response.json();
-
-      if (data.success && data.contactsData) {
-        setContactsData(data.contactsData);
-      } else {
-        setContactsError(data.error || "Failed to fetch contacts");
-      }
-    } catch (error) {
-      console.error("Error fetching contacts:", error);
-      setContactsError("Failed to fetch contacts");
-    } finally {
-      setIsLoadingContacts(false);
-    }
-  };
-
   // Add useEffect to fetch contacts when component mounts or accessKey changes
   useEffect(() => {
     if (accessKey && fetcher.data?.success) {
       fetchContacts();
     }
   }, [accessKey, fetcher.data?.success]);
-
-  // Calculate unread contacts
-  const unreadContacts = contactsData.filter((contact) => !contact.read).length;
 
   // Add function to fetch extended website data
   const fetchExtendedWebsiteData = async () => {
@@ -1933,7 +1901,7 @@ export default function Index() {
           {/* Main Content */}
           <BlockStack gap="600">
             {/* NEW: Contacts Card - Add this before the Content Overview section */}
-            {accessKey && fetcher.data?.success && contactsData.length > 0 && (
+            {accessKey && fetcher.data?.success && (
               <div
                 style={{
                   backgroundColor: "white",
@@ -1942,51 +1910,7 @@ export default function Index() {
                   boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
                   marginBottom: "16px",
                 }}
-              >
-                <InlineStack align="space-between" blockAlign="center">
-                  <BlockStack gap="200">
-                    <Text variant="headingLg" fontWeight="semibold">
-                      Customer Contacts
-                    </Text>
-                    <Text variant="bodyMd" color="subdued">
-                      Messages from your store visitors
-                    </Text>
-                  </BlockStack>
-
-                  <InlineStack gap="400" blockAlign="center">
-                    {isLoadingContacts ? (
-                      <Spinner size="small" />
-                    ) : (
-                      <>
-                        {unreadContacts > 0 && (
-                          <div
-                            style={{
-                              backgroundColor: "#FCF1CD",
-                              borderRadius: "20px",
-                              padding: "4px 12px",
-                              border: "1px solid #EEC200",
-                            }}
-                          >
-                            <Text
-                              variant="bodySm"
-                              fontWeight="semibold"
-                              tone="warning"
-                            >
-                              {unreadContacts} unread message
-                              {unreadContacts !== 1 ? "s" : ""}
-                            </Text>
-                          </div>
-                        )}
-                        <Link url="https://www.voicero.ai/app/contacts">
-                          <Button primary={unreadContacts > 0} icon={ChatIcon}>
-                            View Contacts
-                          </Button>
-                        </Link>
-                      </>
-                    )}
-                  </InlineStack>
-                </InlineStack>
-              </div>
+              ></div>
             )}
             {accessKey ? (
               isDataLoading ? (
@@ -2404,7 +2328,7 @@ export default function Index() {
                                   icon: ChatIcon,
                                 },
                                 {
-                                  label: "Total Revenue Increase",
+                                  label: "Total revenue added to cart",
                                   value: formatCurrency(
                                     tri.amount || 0,
                                     currency,
@@ -2891,10 +2815,17 @@ export default function Index() {
                                     variant="headingMd"
                                     fontWeight="semibold"
                                   >
-                                    {selectedActionType
-                                      .charAt(0)
-                                      .toUpperCase() +
-                                      selectedActionType.slice(1)}{" "}
+                                    {(() => {
+                                      if (selectedActionType === "purchase") {
+                                        return "Add to cart";
+                                      }
+                                      const label =
+                                        selectedActionType
+                                          .charAt(0)
+                                          .toUpperCase() +
+                                        selectedActionType.slice(1);
+                                      return label;
+                                    })()}{" "}
                                     Conversations
                                   </Text>
                                   <Button
