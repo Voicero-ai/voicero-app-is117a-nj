@@ -791,19 +791,6 @@ export default function Index() {
     }
   }, [selectedActionType]);
 
-  // Sync feature flags from latest data
-  useEffect(() => {
-    const src = extendedWebsiteData || fetcher.data?.websiteData;
-    if (src) {
-      if (typeof src.showVoiceAI !== "undefined") {
-        setVoiceEnabled(Boolean(src.showVoiceAI));
-      }
-      if (typeof src.showTextAI !== "undefined") {
-        setTextEnabled(Boolean(src.showTextAI));
-      }
-    }
-  }, [extendedWebsiteData, fetcher.data]);
-
   // Helpers for action details
   const parseActionPayload = useCallback((content) => {
     try {
@@ -1003,6 +990,19 @@ export default function Index() {
   const fetcher = useFetcher();
   const app = useAppBridge();
   const isLoading = fetcher.state === "submitting";
+
+  // Sync feature flags from latest data (must be after fetcher is initialized)
+  useEffect(() => {
+    const src = extendedWebsiteData || fetcher.data?.websiteData;
+    if (src) {
+      if (typeof src.showVoiceAI !== "undefined") {
+        setVoiceEnabled(Boolean(src.showVoiceAI));
+      }
+      if (typeof src.showTextAI !== "undefined") {
+        setTextEnabled(Boolean(src.showTextAI));
+      }
+    }
+  }, [extendedWebsiteData, fetcher.data]);
 
   // Add function to fetch extended website data
   const fetchExtendedWebsiteData = async () => {
