@@ -44,6 +44,10 @@ import {
 } from "@shopify/polaris-icons";
 import { authenticate } from "../shopify.server";
 import { PlusIcon, DeleteIcon } from "@shopify/polaris-icons";
+import dynamic from "next/dynamic";
+
+const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false });
+import "react-quill-new/dist/quill.snow.css";
 
 export const dynamic = "force-dynamic";
 
@@ -310,7 +314,6 @@ export default function HelpSettingsPage() {
   const handleAdd = async () => {
     try {
       setIsSubmitting(true);
-      // Determine next order number
       const nextOrder =
         questions.reduce((max, q) => Math.max(max, Number(q.order) || 0), 0) +
         1;
@@ -335,7 +338,6 @@ export default function HelpSettingsPage() {
       if (!res.ok || data.success === false) {
         throw new Error(data.error || "Failed to add question");
       }
-      // Assuming API returns the created module with id
       const created = data.module || data.created || data.result || null;
       const newItem = {
         id: created?.id || `${Date.now()}`,
@@ -351,6 +353,7 @@ export default function HelpSettingsPage() {
       setSelectedQuestion(newItem);
       setIsEditing(true);
       setEditContent(draftContent);
+      setEditTitle(draftTitle);
       setToastMessage("Question added");
       setToastActive(true);
     } catch (e) {
@@ -412,6 +415,7 @@ export default function HelpSettingsPage() {
                       />
                     </div>
                   )}
+
                   <div
                     style={{
                       background:
@@ -736,7 +740,7 @@ export default function HelpSettingsPage() {
                                           backgroundColor: "#F0FDF4",
                                           padding: "6px 12px",
                                           borderRadius: "20px",
-                                          border: "1px solid #86EFAC",
+                                          border: "1px solid ",
                                         }}
                                       >
                                         <InlineStack gap="100" align="center">
@@ -983,19 +987,38 @@ export default function HelpSettingsPage() {
                                     />
                                   </div>
 
-                                  <TextField
-                                    id="edit-textarea"
-                                    value={editContent}
-                                    onChange={setEditContent}
-                                    multiline={20}
-                                    placeholder="Type your content here and use the formatting buttons above to add styling..."
+                                  <div
                                     style={{
-                                      fontFamily: "monospace",
-                                      fontSize: "14px",
-                                      borderTopLeftRadius: "0",
-                                      borderTopRightRadius: "0",
+                                      border: "1px solid #E5E7EB",
+                                      borderTop: "none",
                                     }}
-                                  />
+                                  >
+                                    <div style={{ minHeight: 300 }}>
+                                      <ReactQuill
+                                        theme="snow"
+                                        value={editContent}
+                                        onChange={setEditContent}
+                                        placeholder="Write your content here..."
+                                        modules={{
+                                          toolbar: [
+                                            [{ header: [1, 2, 3, false] }],
+                                            [
+                                              "bold",
+                                              "italic",
+                                              "underline",
+                                              "strike",
+                                            ],
+                                            [
+                                              { list: "ordered" },
+                                              { list: "bullet" },
+                                            ],
+                                            ["blockquote", "code"],
+                                            ["link", "clean"],
+                                          ],
+                                        }}
+                                      />
+                                    </div>
+                                  </div>
                                 </div>
                               ) : (
                                 <div
