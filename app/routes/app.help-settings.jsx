@@ -13,16 +13,10 @@ import {
   Divider,
   Badge,
   Icon,
-  TextField,
-  Select,
-  Tabs,
-  Collapsible,
-  ResourceList,
-  ResourceItem,
-  EmptyState,
   Toast,
   Frame,
   Spinner,
+  TextField,
 } from "@shopify/polaris";
 import {
   QuestionCircleIcon,
@@ -30,21 +24,12 @@ import {
   EditIcon,
   CheckIcon,
   ViewIcon,
-  TextBoldIcon,
-  TextItalicIcon,
-  ListBulletedIcon,
-  ListNumberedIcon,
-  LinkIcon,
-  DataTableIcon,
-  TextTitleIcon,
-  TextQuoteIcon,
-  CodeIcon,
   RefreshIcon,
-  SettingsIcon,
 } from "@shopify/polaris-icons";
 import { authenticate } from "../shopify.server";
 import { PlusIcon, DeleteIcon } from "@shopify/polaris-icons";
 import "react-quill-new/dist/quill.snow.css";
+import { marked } from "marked";
 
 export const dynamic = "force-dynamic";
 
@@ -102,69 +87,7 @@ export default function HelpSettingsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Rich text formatting functions
-  const formatText = (format) => {
-    const textarea = document.getElementById("edit-textarea");
-    if (!textarea) return;
-
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selectedText = editContent.substring(start, end);
-
-    let formattedText = "";
-    let newCursorPos = start;
-
-    switch (format) {
-      case "bold":
-        formattedText = `**${selectedText}**`;
-        newCursorPos = start + 2;
-        break;
-      case "italic":
-        formattedText = `*${selectedText}*`;
-        newCursorPos = start + 1;
-        break;
-      case "heading":
-        formattedText = `# ${selectedText}`;
-        newCursorPos = start + 2;
-        break;
-      case "list-ul":
-        formattedText = `- ${selectedText}`;
-        newCursorPos = start + 2;
-        break;
-      case "list-ol":
-        formattedText = `1. ${selectedText}`;
-        newCursorPos = start + 3;
-        break;
-      case "quote":
-        formattedText = `> ${selectedText}`;
-        newCursorPos = start + 2;
-        break;
-      case "code":
-        formattedText = `\`${selectedText}\``;
-        newCursorPos = start + 1;
-        break;
-      case "link":
-        formattedText = `[${selectedText}](url)`;
-        newCursorPos = start + 1;
-        break;
-      case "table":
-        formattedText = `| Header 1 | Header 2 | Header 3 |\n|----------|----------|----------|\n| Cell 1   | Cell 2   | Cell 3   |`;
-        newCursorPos = start + formattedText.length;
-        break;
-    }
-
-    const newContent =
-      editContent.substring(0, start) +
-      formattedText +
-      editContent.substring(end);
-    setEditContent(newContent);
-
-    // Set cursor position after formatting
-    setTimeout(() => {
-      textarea.focus();
-      textarea.setSelectionRange(newCursorPos, newCursorPos);
-    }, 0);
-  };
+  // Remove old markdown toolbar: React Quill handles formatting itself
 
   const fetchQuestions = async () => {
     if (!accessKey) return;
@@ -206,6 +129,11 @@ export default function HelpSettingsPage() {
     if (!selectedQuestion) return;
     try {
       setIsSubmitting(true);
+      // If content appears to be markdown (no HTML tags), convert to HTML for storage
+      const looksLikeHtml = /<[^>]+>/.test(editContent);
+      const contentToSave = looksLikeHtml
+        ? editContent
+        : marked.parse(editContent || "");
       const res = await fetch(`/api/helpCenter/edit`, {
         method: "POST",
         headers: {
@@ -216,7 +144,7 @@ export default function HelpSettingsPage() {
           accessKey,
           id: selectedQuestion.id,
           question: editTitle,
-          documentAnswer: editContent,
+          documentAnswer: contentToSave,
           number: selectedQuestion.order,
           type: selectedQuestion.isAIGenerated ? "ai" : "manual",
           status: selectedQuestion.status,
@@ -228,13 +156,13 @@ export default function HelpSettingsPage() {
       }
       const updated = questions.map((q) =>
         q.id === selectedQuestion.id
-          ? { ...q, content: editContent, title: editTitle }
+          ? { ...q, content: contentToSave, title: editTitle }
           : q,
       );
       setQuestions(updated);
       setSelectedQuestion({
         ...selectedQuestion,
-        content: editContent,
+        content: contentToSave,
         title: editTitle,
       });
       setIsEditing(false);
@@ -331,7 +259,7 @@ export default function HelpSettingsPage() {
         questions.reduce((max, q) => Math.max(max, Number(q.order) || 0), 0) +
         1;
       const draftTitle = "New Question";
-      const draftContent = "";
+      const draftContent = "<p></p>";
       const res = await fetch(`/api/helpCenter/add`, {
         method: "POST",
         headers: {
@@ -753,7 +681,7 @@ export default function HelpSettingsPage() {
                                           backgroundColor: "#F0FDF4",
                                           padding: "6px 12px",
                                           borderRadius: "20px",
-                                          border: "1px solid ",
+                                          border: "1px solid #86EFAC",
                                         }}
                                       >
                                         <InlineStack gap="100" align="center">
@@ -907,105 +835,9 @@ export default function HelpSettingsPage() {
                                     Rich Text Editor
                                   </Text>
 
-                                  {/* Formatting Toolbar */}
-                                  <div
-                                    style={{
-                                      display: "flex",
-                                      alignItems: "center",
-                                      gap: "8px",
-                                      padding: "12px",
-                                      backgroundColor: "#F9FAFB",
-                                      border: "1px solid #E5E7EB",
-                                      borderTopLeftRadius: "8px",
-                                      borderTopRightRadius: "8px",
-                                      borderBottom: "none",
-                                    }}
-                                  >
-                                    <Button
-                                      onClick={() => formatText("bold")}
-                                      variant="tertiary"
-                                      icon={TextBoldIcon}
-                                      size="slim"
-                                      title="Bold (Ctrl+B)"
-                                    />
-                                    <Button
-                                      onClick={() => formatText("italic")}
-                                      variant="tertiary"
-                                      icon={TextItalicIcon}
-                                      size="slim"
-                                      title="Italic (Ctrl+I)"
-                                    />
-                                    <div
-                                      style={{
-                                        width: "1px",
-                                        height: "24px",
-                                        backgroundColor: "#E5E7EB",
-                                      }}
-                                    />
-                                    <Button
-                                      onClick={() => formatText("heading")}
-                                      variant="tertiary"
-                                      icon={TextTitleIcon}
-                                      size="slim"
-                                      title="Heading"
-                                    />
-                                    <Button
-                                      onClick={() => formatText("list-ul")}
-                                      variant="tertiary"
-                                      icon={ListBulletedIcon}
-                                      size="slim"
-                                      title="Bullet List"
-                                    />
-                                    <Button
-                                      onClick={() => formatText("list-ol")}
-                                      variant="tertiary"
-                                      icon={ListNumberedIcon}
-                                      size="slim"
-                                      title="Numbered List"
-                                    />
-                                    <div
-                                      style={{
-                                        width: "1px",
-                                        height: "24px",
-                                        backgroundColor: "#E5E7EB",
-                                      }}
-                                    />
-                                    <Button
-                                      onClick={() => formatText("quote")}
-                                      variant="tertiary"
-                                      icon={TextQuoteIcon}
-                                      size="slim"
-                                      title="Quote"
-                                    />
-                                    <Button
-                                      onClick={() => formatText("code")}
-                                      variant="tertiary"
-                                      icon={CodeIcon}
-                                      size="slim"
-                                      title="Inline Code"
-                                    />
-                                    <Button
-                                      onClick={() => formatText("link")}
-                                      variant="tertiary"
-                                      icon={LinkIcon}
-                                      size="slim"
-                                      title="Link"
-                                    />
-                                    <Button
-                                      onClick={() => formatText("table")}
-                                      variant="tertiary"
-                                      icon={DataTableIcon}
-                                      size="slim"
-                                      title="Insert Table"
-                                    />
-                                  </div>
+                                  {/* Remove custom toolbar; use Quill toolbar */}
 
-                                  <div
-                                    style={{
-                                      border: "1px solid #E5E7EB",
-                                      borderTop: "none",
-                                    }}
-                                  >
+                                  <div style={{ border: "1px solid #E5E7EB" }}>
                                     <div style={{ minHeight: 300 }}>
                                       <QuillEditor
                                         theme="snow"
@@ -1050,48 +882,7 @@ export default function HelpSettingsPage() {
                                       color: "#374151",
                                     }}
                                     dangerouslySetInnerHTML={{
-                                      __html: selectedQuestion.content
-                                        .replace(
-                                          /^# (.*$)/gim,
-                                          '<h1 style="color: #1F2937; font-size: 24px; font-weight: bold; margin-bottom: 16px;">$1</h1>',
-                                        )
-                                        .replace(
-                                          /^## (.*$)/gim,
-                                          '<h2 style="color: #374151; font-size: 20px; font-weight: bold; margin-bottom: 12px; margin-top: 24px;">$1</h2>',
-                                        )
-                                        .replace(
-                                          /^### (.*$)/gim,
-                                          '<h3 style="color: #4B5563; font-size: 18px; font-weight: bold; margin-bottom: 8px; margin-top: 20px;">$1</h3>',
-                                        )
-                                        .replace(
-                                          /\*\*(.*?)\*\*/g,
-                                          '<strong style="font-weight: bold;">$1</strong>',
-                                        )
-                                        .replace(
-                                          /\*(.*?)\*/g,
-                                          '<em style="font-style: italic;">$1</em>',
-                                        )
-                                        .replace(
-                                          /^- (.*$)/gim,
-                                          '<li style="margin-bottom: 4px;">$1</li>',
-                                        )
-                                        .replace(
-                                          /^(\d+)\. (.*$)/gim,
-                                          '<li style="margin-bottom: 4px;">$2</li>',
-                                        )
-                                        .replace(
-                                          /^> (.*$)/gim,
-                                          '<blockquote style="border-left: 4px solid #3B82F6; padding-left: 16px; margin: 16px 0; color: #6B7280; font-style: italic;">$1</blockquote>',
-                                        )
-                                        .replace(
-                                          /`(.*?)`/g,
-                                          '<code style="background-color: #F3F4F6; padding: 2px 6px; border-radius: 4px; font-family: monospace; color: #1F2937;">$1</code>',
-                                        )
-                                        .replace(
-                                          /\[(.*?)\]\((.*?)\)/g,
-                                          '<a href="$2" style="color: #3B82F6; text-decoration: underline;">$1</a>',
-                                        )
-                                        .replace(/\n\n/g, "<br><br>"),
+                                      __html: selectedQuestion.content,
                                     }}
                                   />
                                 </div>
