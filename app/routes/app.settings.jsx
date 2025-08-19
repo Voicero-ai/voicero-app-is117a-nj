@@ -6,19 +6,6 @@ import urls from "../config/urls";
 
 export const dynamic = "force-dynamic";
 
-// Normalize backend flags that may arrive as 1/0, "1"/"0", "true"/"false", or booleans
-function toBoolean(value, defaultValue = false) {
-  if (value === undefined || value === null) return defaultValue;
-  if (typeof value === "boolean") return value;
-  if (typeof value === "number") return value === 1;
-  if (typeof value === "string") {
-    const v = value.trim().toLowerCase();
-    if (v === "true" || v === "1" || v === "yes" || v === "on") return true;
-    if (v === "false" || v === "0" || v === "no" || v === "off") return false;
-  }
-  return Boolean(value);
-}
-
 export const loader = async ({ request }) => {
   const { admin } = await authenticate.admin(request);
 
@@ -115,12 +102,10 @@ export const action = async ({ request }) => {
       const customInstructions = formData.get("customInstructions");
 
       // Prepare the update payload
-      const updates = {
-        name,
-        url,
-        customInstructions,
-        active,
-      };
+      const updates = { name, url, active };
+      if (customInstructions !== null && customInstructions !== undefined) {
+        updates.customInstructions = customInstructions;
+      }
 
       // Call the editInfoFromShopify API
       const response = await fetch(
@@ -188,40 +173,10 @@ export default function SettingsPage() {
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [isEditingUser, setIsEditingUser] = useState(false);
-  const [isEditingAuto, setIsEditingAuto] = useState(false);
   const [formData, setFormData] = useState({
     name: websiteData?.name || "",
     url: websiteData?.url || "",
-    customInstructions: websiteData?.customInstructions || "",
     active: websiteData?.active || false,
-  });
-
-  // Auto features state
-  const [autoFeatures, setAutoFeatures] = useState({
-    allowAutoRedirect: toBoolean(websiteData?.allowAutoRedirect, false),
-    allowAutoScroll: toBoolean(websiteData?.allowAutoScroll, false),
-    allowAutoHighlight: toBoolean(websiteData?.allowAutoHighlight, false),
-    allowAutoClick: toBoolean(websiteData?.allowAutoClick, false),
-    allowAutoCancel: toBoolean(websiteData?.allowAutoCancel, false),
-    allowAutoReturn: toBoolean(websiteData?.allowAutoReturn, false),
-    allowAutoExchange: toBoolean(websiteData?.allowAutoExchange, false),
-    allowAutoGetUserOrders: toBoolean(
-      websiteData?.allowAutoGetUserOrders,
-      false,
-    ),
-    allowAutoUpdateUserInfo: toBoolean(
-      websiteData?.allowAutoUpdateUserInfo,
-      false,
-    ),
-    // Defaults true where UI indicates enabled-by-default
-    allowAutoFillForm: toBoolean(websiteData?.allowAutoFillForm, true),
-    allowAutoTrackOrder: toBoolean(websiteData?.allowAutoTrackOrder, true),
-    allowAutoLogout: toBoolean(websiteData?.allowAutoLogout, true),
-    allowAutoLogin: toBoolean(websiteData?.allowAutoLogin, true),
-    allowAutoGenerateImage: toBoolean(
-      websiteData?.allowAutoGenerateImage,
-      true,
-    ),
   });
 
   // User data state
@@ -467,7 +422,6 @@ export default function SettingsPage() {
       action: "update",
       name: formData.name,
       url: formData.url,
-      customInstructions: formData.customInstructions,
       active: formData.active.toString(),
     };
 
@@ -571,33 +525,8 @@ export default function SettingsPage() {
         setFormData({
           name: fetcher.data.data.name || "",
           url: fetcher.data.data.url || "",
-          customInstructions: fetcher.data.data.customInstructions || "",
           active: fetcher.data.data.active || false,
         });
-
-        // Update auto features if they are part of the response
-        if (fetcher.data.data.autoFeatures) {
-          const f = fetcher.data.data.autoFeatures;
-          setAutoFeatures({
-            allowAutoRedirect: toBoolean(f.allowAutoRedirect, false),
-            allowAutoScroll: toBoolean(f.allowAutoScroll, false),
-            allowAutoHighlight: toBoolean(f.allowAutoHighlight, false),
-            allowAutoClick: toBoolean(f.allowAutoClick, false),
-            allowAutoCancel: toBoolean(f.allowAutoCancel, false),
-            allowAutoReturn: toBoolean(f.allowAutoReturn, false),
-            allowAutoExchange: toBoolean(f.allowAutoExchange, false),
-            allowAutoGetUserOrders: toBoolean(f.allowAutoGetUserOrders, false),
-            allowAutoUpdateUserInfo: toBoolean(
-              f.allowAutoUpdateUserInfo,
-              false,
-            ),
-            allowAutoFillForm: toBoolean(f.allowAutoFillForm, true),
-            allowAutoTrackOrder: toBoolean(f.allowAutoTrackOrder, true),
-            allowAutoLogout: toBoolean(f.allowAutoLogout, true),
-            allowAutoLogin: toBoolean(f.allowAutoLogin, true),
-            allowAutoGenerateImage: toBoolean(f.allowAutoGenerateImage, true),
-          });
-        }
       }
 
       setShowToast(true);
@@ -639,62 +568,6 @@ export default function SettingsPage() {
       setToastMessage(error.message || "Failed to update user settings");
       setToastType("critical");
     }
-  };
-
-  const handleSaveAutoFeatures = async () => {
-    try {
-      setIsEditingAuto(false);
-
-      // Ensure all auto features are explicitly set as booleans
-      const featuresPayload = {
-        allowAutoRedirect: !!autoFeatures.allowAutoRedirect,
-        allowAutoScroll: !!autoFeatures.allowAutoScroll,
-        allowAutoHighlight: !!autoFeatures.allowAutoHighlight,
-        allowAutoClick: !!autoFeatures.allowAutoClick,
-        allowAutoCancel: !!autoFeatures.allowAutoCancel,
-        allowAutoReturn: !!autoFeatures.allowAutoReturn,
-        allowAutoExchange: !!autoFeatures.allowAutoExchange,
-        allowAutoGetUserOrders: !!autoFeatures.allowAutoGetUserOrders,
-        allowAutoUpdateUserInfo: !!autoFeatures.allowAutoUpdateUserInfo,
-        allowAutoFillForm: !!autoFeatures.allowAutoFillForm,
-        allowAutoTrackOrder: !!autoFeatures.allowAutoTrackOrder,
-        allowAutoLogout: !!autoFeatures.allowAutoLogout,
-        allowAutoLogin: !!autoFeatures.allowAutoLogin,
-        allowAutoGenerateImage: !!autoFeatures.allowAutoGenerateImage,
-      };
-
-      console.log("Sending auto features:", featuresPayload);
-
-      const response = await fetch("/api/updateWebsiteAutos", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(featuresPayload),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setShowToast(true);
-        setToastMessage("AI auto features updated successfully!");
-        setToastType("success");
-      } else {
-        throw new Error(data.error || "Failed to update AI auto features");
-      }
-    } catch (error) {
-      console.error("Error updating AI auto features:", error);
-      setShowToast(true);
-      setToastMessage(error.message || "Failed to update AI auto features");
-      setToastType("critical");
-    }
-  };
-
-  const toggleAutoFeature = (feature) => {
-    setAutoFeatures({
-      ...autoFeatures,
-      [feature]: !autoFeatures[feature],
-    });
   };
 
   if (disconnected) {
@@ -834,17 +707,6 @@ export default function SettingsPage() {
             disabled={!isEditing}
           />
         </div>
-        <div style={styles.infoRow}>
-          <label style={styles.label}>Custom Instructions:</label>
-          <textarea
-            style={styles.textArea}
-            value={formData.customInstructions}
-            onChange={(e) =>
-              setFormData({ ...formData, customInstructions: e.target.value })
-            }
-            disabled={!isEditing}
-          />
-        </div>
       </div>
 
       {/* User Settings */}
@@ -938,344 +800,7 @@ export default function SettingsPage() {
         )}
       </div>
 
-      {/* AI Auto Features */}
-      <div style={styles.card}>
-        <div style={styles.cardHeader}>
-          <h2 style={styles.cardTitle}>AI Auto Features</h2>
-          {isEditingAuto ? (
-            <div>
-              <button
-                style={styles.secondaryButton}
-                onClick={() => setIsEditingAuto(false)}
-              >
-                Cancel
-              </button>
-              <button style={styles.button} onClick={handleSaveAutoFeatures}>
-                Save Changes
-              </button>
-            </div>
-          ) : (
-            <button
-              style={styles.secondaryButton}
-              onClick={() => setIsEditingAuto(true)}
-            >
-              Edit
-            </button>
-          )}
-        </div>
-        <div style={styles.divider}></div>
-
-        <div style={{ marginBottom: "20px" }}>
-          <p
-            style={{ fontSize: "14px", color: "#637381", marginBottom: "16px" }}
-          >
-            Control which automated actions your AI assistant can perform.
-            Disabling certain features may limit functionality.
-          </p>
-
-          <div
-            style={{
-              padding: "12px",
-              backgroundColor: "#FFF4E4",
-              borderRadius: "8px",
-              marginBottom: "20px",
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-            }}
-          >
-            <span style={{ color: "#C05717" }}>⚠️</span>
-            <p style={{ fontSize: "13px", color: "#C05717", margin: 0 }}>
-              Disabling these features will significantly reduce the
-              effectiveness of your AI assistant.
-            </p>
-          </div>
-        </div>
-
-        <h3
-          style={{ fontSize: "16px", fontWeight: "600", marginBottom: "16px" }}
-        >
-          Critical Features
-        </h3>
-
-        <div style={styles.featureRow}>
-          <div style={styles.featureLabel}>
-            <span>
-              Allow AI to automatically redirect users to relevant pages
-            </span>
-          </div>
-          <div style={styles.featureToggle}>
-            <input
-              type="checkbox"
-              style={styles.checkbox}
-              checked={autoFeatures.allowAutoRedirect}
-              onChange={() => toggleAutoFeature("allowAutoRedirect")}
-              disabled={!isEditingAuto}
-            />
-          </div>
-        </div>
-
-        <div style={styles.featureRow}>
-          <div style={styles.featureLabel}>
-            <span>Allow AI to scroll to relevant sections on the page</span>
-          </div>
-          <div style={styles.featureToggle}>
-            <input
-              type="checkbox"
-              style={styles.checkbox}
-              checked={autoFeatures.allowAutoScroll}
-              onChange={() => toggleAutoFeature("allowAutoScroll")}
-              disabled={!isEditingAuto}
-            />
-          </div>
-        </div>
-
-        <div style={styles.featureRow}>
-          <div style={styles.featureLabel}>
-            <span>Allow AI to highlight important elements on the page</span>
-          </div>
-          <div style={styles.featureToggle}>
-            <input
-              type="checkbox"
-              style={styles.checkbox}
-              checked={autoFeatures.allowAutoHighlight}
-              onChange={() => toggleAutoFeature("allowAutoHighlight")}
-              disabled={!isEditingAuto}
-            />
-          </div>
-        </div>
-
-        <div style={styles.featureRow}>
-          <div style={styles.featureLabel}>
-            <span>Allow AI to click buttons and links on behalf of users</span>
-          </div>
-          <div style={styles.featureToggle}>
-            <input
-              type="checkbox"
-              style={styles.checkbox}
-              checked={autoFeatures.allowAutoClick}
-              onChange={() => toggleAutoFeature("allowAutoClick")}
-              disabled={!isEditingAuto}
-            />
-          </div>
-        </div>
-
-        <div style={styles.featureRow}>
-          <div style={styles.featureLabel}>
-            <span>Allow AI to automatically fill forms for users</span>
-          </div>
-          <div style={styles.featureToggle}>
-            <input
-              type="checkbox"
-              style={styles.checkbox}
-              checked={autoFeatures.allowAutoFillForm}
-              onChange={() => toggleAutoFeature("allowAutoFillForm")}
-              disabled={!isEditingAuto}
-            />
-          </div>
-        </div>
-
-        <h3
-          style={{ fontSize: "16px", fontWeight: "600", margin: "24px 0 16px" }}
-        >
-          Order Features
-        </h3>
-
-        <div style={styles.featureRow}>
-          <div style={styles.featureLabel}>
-            <span>Allow AI to help users cancel orders</span>
-          </div>
-          <div style={styles.featureToggle}>
-            <input
-              type="checkbox"
-              style={styles.checkbox}
-              checked={autoFeatures.allowAutoCancel}
-              onChange={() => toggleAutoFeature("allowAutoCancel")}
-              disabled={!isEditingAuto}
-            />
-          </div>
-        </div>
-
-        <div style={styles.featureRow}>
-          <div style={styles.featureLabel}>
-            <span>Allow AI to help users return products</span>
-            <span
-              style={{
-                marginLeft: "8px",
-                padding: "2px 6px",
-                backgroundColor: "#f1f1f1",
-                color: "#637381",
-                borderRadius: "4px",
-                fontSize: "12px",
-                fontWeight: "bold",
-              }}
-            >
-              Coming Soon
-            </span>
-          </div>
-          <div style={styles.featureToggle}>
-            <input
-              type="checkbox"
-              style={{
-                ...styles.checkbox,
-                opacity: 0.5,
-                cursor: "not-allowed",
-              }}
-              checked={false}
-              disabled={true}
-            />
-          </div>
-        </div>
-
-        <div style={styles.featureRow}>
-          <div style={styles.featureLabel}>
-            <span>Allow AI to help users exchange products</span>
-            <span
-              style={{
-                marginLeft: "8px",
-                padding: "2px 6px",
-                backgroundColor: "#f1f1f1",
-                color: "#637381",
-                borderRadius: "4px",
-                fontSize: "12px",
-                fontWeight: "bold",
-              }}
-            >
-              Coming Soon
-            </span>
-          </div>
-          <div style={styles.featureToggle}>
-            <input
-              type="checkbox"
-              style={{
-                ...styles.checkbox,
-                opacity: 0.5,
-                cursor: "not-allowed",
-              }}
-              checked={false}
-              disabled={true}
-            />
-          </div>
-        </div>
-
-        <div style={styles.featureRow}>
-          <div style={styles.featureLabel}>
-            <span>Allow AI to help users track their orders</span>
-          </div>
-          <div style={styles.featureToggle}>
-            <input
-              type="checkbox"
-              style={styles.checkbox}
-              checked={autoFeatures.allowAutoTrackOrder}
-              onChange={() => toggleAutoFeature("allowAutoTrackOrder")}
-              disabled={!isEditingAuto}
-            />
-          </div>
-        </div>
-
-        <div style={styles.featureRow}>
-          <div style={styles.featureLabel}>
-            <span>Allow AI to fetch and display user order history</span>
-          </div>
-          <div style={styles.featureToggle}>
-            <input
-              type="checkbox"
-              style={styles.checkbox}
-              checked={autoFeatures.allowAutoGetUserOrders}
-              onChange={() => toggleAutoFeature("allowAutoGetUserOrders")}
-              disabled={!isEditingAuto}
-            />
-          </div>
-        </div>
-
-        <h3
-          style={{ fontSize: "16px", fontWeight: "600", margin: "24px 0 16px" }}
-        >
-          User Data Features
-        </h3>
-
-        <div style={styles.featureRow}>
-          <div style={styles.featureLabel}>
-            <span>Allow AI to help users update their account information</span>
-          </div>
-          <div style={styles.featureToggle}>
-            <input
-              type="checkbox"
-              style={styles.checkbox}
-              checked={autoFeatures.allowAutoUpdateUserInfo}
-              onChange={() => toggleAutoFeature("allowAutoUpdateUserInfo")}
-              disabled={!isEditingAuto}
-            />
-          </div>
-        </div>
-
-        <div style={styles.featureRow}>
-          <div style={styles.featureLabel}>
-            <span>Allow AI to help users log out</span>
-          </div>
-          <div style={styles.featureToggle}>
-            <input
-              type="checkbox"
-              style={styles.checkbox}
-              checked={autoFeatures.allowAutoLogout}
-              onChange={() => toggleAutoFeature("allowAutoLogout")}
-              disabled={!isEditingAuto}
-            />
-          </div>
-        </div>
-
-        <div style={styles.featureRow}>
-          <div style={styles.featureLabel}>
-            <span>Allow AI to help users log in</span>
-          </div>
-          <div style={styles.featureToggle}>
-            <input
-              type="checkbox"
-              style={styles.checkbox}
-              checked={autoFeatures.allowAutoLogin}
-              onChange={() => toggleAutoFeature("allowAutoLogin")}
-              disabled={!isEditingAuto}
-            />
-          </div>
-        </div>
-
-        <h3
-          style={{ fontSize: "16px", fontWeight: "600", margin: "24px 0 16px" }}
-        >
-          Content Generation Features
-        </h3>
-
-        <div style={styles.featureRow}>
-          <div style={styles.featureLabel}>
-            <span>Allow AI to generate images for users</span>
-            <span
-              style={{
-                marginLeft: "8px",
-                padding: "2px 6px",
-                backgroundColor: "#f1f1f1",
-                color: "#637381",
-                borderRadius: "4px",
-                fontSize: "12px",
-                fontWeight: "bold",
-              }}
-            >
-              Coming Soon
-            </span>
-          </div>
-          <div style={styles.featureToggle}>
-            <input
-              type="checkbox"
-              style={{
-                ...styles.checkbox,
-                opacity: 0.5,
-                cursor: "not-allowed",
-              }}
-              checked={false}
-              disabled={true}
-            />
-          </div>
-        </div>
-      </div>
+      {/* Custom instructions moved to Customize Chatbot page - field hidden here */}
 
       {/* Subscription Information */}
       <div style={styles.card}>

@@ -21,163 +21,40 @@ import {
   EmptyState,
   Icon,
   TextField,
-  Select,
   ColorPicker,
   Checkbox,
   Banner,
-  Combobox,
-  Listbox,
-  Tag,
   LegacyStack,
-  ButtonGroup,
   Frame,
 } from "@shopify/polaris";
 import {
   ChatIcon,
   RefreshIcon,
   SettingsIcon,
-  EditIcon,
   ColorIcon,
   DeleteIcon,
   PlusIcon,
   PersonIcon,
-  NoteIcon,
 } from "@shopify/polaris-icons";
 import { authenticate } from "../shopify.server";
 import urls from "../config/urls";
 
 export const dynamic = "force-dynamic";
 
-// SVG Icons for different options
-const SVG_ICONS = {
-  // Voice icons
-  microphone: (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      width="24"
-      height="24"
-      fill="currentColor"
-    >
-      <path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z" />
-      <path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11z" />
-    </svg>
-  ),
-  waveform: (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      fill="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path d="M3 12h2v3H3v-3zm4-4h2v10H7V8zm4-6h2v22h-2V2zm4 6h2v10h-2V8zm4 4h2v3h-2v-3z" />
-    </svg>
-  ),
-  speaker: (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      fill="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path d="M5 9v6h4l5 5V4L9 9H5zm13.54.12a1 1 0 1 0-1.41 1.42 3 3 0 0 1 0 4.24 1 1 0 1 0 1.41 1.41 5 5 0 0 0 0-7.07z" />
-    </svg>
-  ),
-
-  // Message icons
-  message: (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      fill="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zM4 16V4h16v12H5.17L4 17.17V16z" />
-    </svg>
-  ),
-  cursor: (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      fill="currentColor"
-      viewBox="0 0 24 24"
-      width="24"
-      height="24"
-    >
-      <path d="M11 2h2v20h-2z" />
-    </svg>
-  ),
-  document: (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      fill="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path d="M4 4h16v2H4V4zm0 4h16v2H4V8zm0 4h10v2H4v-2zm0 4h16v2H4v-2z" />
-    </svg>
-  ),
-
-  // Bot icons
-  bot: (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 64 64"
-      width="24"
-      height="24"
-      fill="currentColor"
-    >
-      <rect
-        x="12"
-        y="16"
-        width="40"
-        height="32"
-        rx="10"
-        ry="10"
-        stroke="black"
-        stroke-width="2"
-        fill="currentColor"
-      />
-      <circle cx="22" cy="32" r="4" fill="white" />
-      <circle cx="42" cy="32" r="4" fill="white" />
-      <path
-        d="M24 42c4 4 12 4 16 0"
-        stroke="white"
-        stroke-width="2"
-        fill="none"
-        stroke-linecap="round"
-      />
-      <line x1="32" y1="8" x2="32" y2="16" stroke="black" stroke-width="2" />
-      <circle cx="32" cy="6" r="2" fill="black" />
-    </svg>
-  ),
-  voice: (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      fill="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path d="M5 9v6h4l5 5V4L9 9H5zm13.54.12a1 1 0 1 0-1.41 1.42 3 3 0 0 1 0 4.24 1 1 0 1 0 1.41 1.41 5 5 0 0 0 0-7.07z" />
-    </svg>
-  ),
-};
-
-// Helper function to get the appropriate icon
-const getIconForType = (type, iconType) => {
-  // Default to first option if not found
-  if (!SVG_ICONS[iconType]) {
-    if (type === "bot") return SVG_ICONS.bot;
-    if (type === "voice") return SVG_ICONS.microphone;
-    if (type === "message") return SVG_ICONS.message;
-    return null;
+// Normalize backend flags that may arrive as 1/0, "1"/"0", "true"/"false", or booleans
+function toBoolean(value, defaultValue = false) {
+  if (value === undefined || value === null) return defaultValue;
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value === 1;
+  if (typeof value === "string") {
+    const v = value.trim().toLowerCase();
+    if (v === "true" || v === "1" || v === "yes" || v === "on") return true;
+    if (v === "false" || v === "0" || v === "no" || v === "off") return false;
   }
-  return SVG_ICONS[iconType];
-};
+  return Boolean(value);
+}
+
+// Removed icon selection feature
 
 export const loader = async ({ request }) => {
   const { admin } = await authenticate.admin(request);
@@ -238,6 +115,28 @@ export const loader = async ({ request }) => {
       );
     }
 
+    // Auto features normalized
+    const autoFeatures = {
+      allowAutoRedirect: toBoolean(website.allowAutoRedirect, false),
+      allowAutoScroll: toBoolean(website.allowAutoScroll, false),
+      allowAutoHighlight: toBoolean(website.allowAutoHighlight, false),
+      allowAutoClick: toBoolean(website.allowAutoClick, false),
+      allowAutoCancel: toBoolean(website.allowAutoCancel, false),
+      allowAutoReturn: toBoolean(website.allowAutoReturn, false),
+      allowAutoExchange: toBoolean(website.allowAutoExchange, false),
+      allowAutoGetUserOrders: toBoolean(website.allowAutoGetUserOrders, false),
+      allowAutoUpdateUserInfo: toBoolean(
+        website.allowAutoUpdateUserInfo,
+        false,
+      ),
+      // Defaults true where UI indicates enabled-by-default
+      allowAutoFillForm: toBoolean(website.allowAutoFillForm, true),
+      allowAutoTrackOrder: toBoolean(website.allowAutoTrackOrder, true),
+      allowAutoLogout: toBoolean(website.allowAutoLogout, true),
+      allowAutoLogin: toBoolean(website.allowAutoLogin, true),
+      allowAutoGenerateImage: toBoolean(website.allowAutoGenerateImage, true),
+    };
+
     // Return the website data with all the customization options
     return json({
       websiteData: website,
@@ -254,6 +153,7 @@ export const loader = async ({ request }) => {
         iconMessage: website.iconMessage || "chat",
         clickMessage: website.clickMessage || "",
         allowMultiAIReview: website.allowMultiAIReview || false,
+        autoFeatures,
         // Additional fields for compatibility with UI
         monthlyQueries: website.monthlyQueries,
         queryLimit: website.queryLimit,
@@ -379,6 +279,44 @@ function hsbToHex({ hue, saturation, brightness }) {
   return `#${r}${g}${b}`;
 }
 
+// Parse color input string to hex. Accepts #RRGGBB, #RGB, rgb(r,g,b)
+function parseColorInputToHex(input) {
+  if (!input) return null;
+  const value = String(input).trim();
+  // Hex full or short
+  if (/^#?[0-9a-fA-F]{6}$/.test(value)) {
+    return value.startsWith("#") ? value : `#${value}`;
+  }
+  if (/^#?[0-9a-fA-F]{3}$/.test(value)) {
+    const v = value.replace("#", "");
+    const r = v[0];
+    const g = v[1];
+    const b = v[2];
+    return `#${r}${r}${g}${g}${b}${b}`;
+  }
+  // rgb(r,g,b)
+  const rgbMatch = value
+    .replace(/\s+/g, "")
+    .match(/^rgb\((\d{1,3}),(\d{1,3}),(\d{1,3})\)$/i);
+  if (rgbMatch) {
+    const r = Math.max(0, Math.min(255, parseInt(rgbMatch[1], 10)));
+    const g = Math.max(0, Math.min(255, parseInt(rgbMatch[2], 10)));
+    const b = Math.max(0, Math.min(255, parseInt(rgbMatch[3], 10)));
+    const toHex = (n) => n.toString(16).padStart(2, "0");
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+  }
+  // Plain comma separated r,g,b
+  const parts = value.split(",");
+  if (parts.length === 3 && parts.every((p) => /^\d{1,3}$/.test(p.trim()))) {
+    const r = Math.max(0, Math.min(255, parseInt(parts[0].trim(), 10)));
+    const g = Math.max(0, Math.min(255, parseInt(parts[1].trim(), 10)));
+    const b = Math.max(0, Math.min(255, parseInt(parts[2].trim(), 10)));
+    const toHex = (n) => n.toString(16).padStart(2, "0");
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+  }
+  return null;
+}
+
 export default function CustomizeChatbotPage() {
   const { websiteData, chatbotSettings, error, disconnected, accessKey } =
     useLoaderData();
@@ -399,9 +337,6 @@ export default function CustomizeChatbotPage() {
   const [customInstructions, setCustomInstructions] = useState(
     chatbotSettings?.customInstructions || "",
   );
-  const [clickMessage, setClickMessage] = useState(
-    chatbotSettings?.clickMessage || "",
-  );
   const [popUpQuestions, setPopUpQuestions] = useState(
     chatbotSettings?.popUpQuestions || [],
   );
@@ -410,18 +345,38 @@ export default function CustomizeChatbotPage() {
       ? hexToHsb(chatbotSettings.color)
       : { hue: 147, brightness: 0.5, saturation: 1 },
   );
-  const [allowMultiAIReview, setAllowMultiAIReview] = useState(
-    chatbotSettings?.allowMultiAIReview || false,
+  const [colorInput, setColorInput] = useState(
+    chatbotSettings?.color || "#008060",
   );
 
-  // Icon selection state
-  const [iconBot, setIconBot] = useState(chatbotSettings?.iconBot || "robot");
+  // Auto features state
+  const [autoFeatures, setAutoFeatures] = useState(
+    chatbotSettings?.autoFeatures || {
+      allowAutoRedirect: false,
+      allowAutoScroll: false,
+      allowAutoHighlight: false,
+      allowAutoClick: false,
+      allowAutoCancel: false,
+      allowAutoReturn: false,
+      allowAutoExchange: false,
+      allowAutoGetUserOrders: false,
+      allowAutoUpdateUserInfo: false,
+      allowAutoFillForm: true,
+      allowAutoTrackOrder: true,
+      allowAutoLogout: true,
+      allowAutoLogin: true,
+      allowAutoGenerateImage: true,
+    },
+  );
+
+  const toggleAutoFeature = useCallback((featureKey) => {
+    setAutoFeatures((prev) => ({ ...prev, [featureKey]: !prev[featureKey] }));
+  }, []);
 
   // Validation states
   const [botNameError, setBotNameError] = useState("");
   const [welcomeMessageError, setWelcomeMessageError] = useState("");
   const [customInstructionsError, setCustomInstructionsError] = useState("");
-  const [clickMessageError, setClickMessageError] = useState("");
   const [popUpQuestionsError, setPopUpQuestionsError] = useState("");
 
   // New popup question input
@@ -466,18 +421,6 @@ export default function CustomizeChatbotPage() {
     return true;
   }, []);
 
-  const validateClickMessage = useCallback((value) => {
-    const words = countWords(value);
-
-    if (words > 15) {
-      setClickMessageError("Click message cannot be more than 15 words");
-      return false;
-    }
-
-    setClickMessageError("");
-    return true;
-  }, []);
-
   // Handle adding a new popup question
   const handleAddQuestion = useCallback(() => {
     if (!newQuestion.trim()) return;
@@ -500,12 +443,7 @@ export default function CustomizeChatbotPage() {
     setPopUpQuestionsError("");
   }, []);
 
-  // Icon options
-  const botIconOptions = [
-    { label: "Bot", value: "bot" },
-    { label: "Voice", value: "voice" },
-    { label: "Message", value: "message" },
-  ];
+  // Removed icon options
 
   // Form submission
   const handleSave = async () => {
@@ -513,14 +451,8 @@ export default function CustomizeChatbotPage() {
     const isNameValid = botName ? validateBotName(botName) : true;
     const isWelcomeValid = validateWelcomeMessage(welcomeMessage);
     const isInstructionsValid = validateCustomInstructions(customInstructions);
-    const isClickMessageValid = validateClickMessage(clickMessage);
 
-    if (
-      !isNameValid ||
-      !isWelcomeValid ||
-      !isInstructionsValid ||
-      !isClickMessageValid
-    ) {
+    if (!isNameValid || !isWelcomeValid || !isInstructionsValid) {
       return;
     }
 
@@ -546,11 +478,8 @@ export default function CustomizeChatbotPage() {
         botName,
         customWelcomeMessage: welcomeMessage,
         customInstructions,
-        clickMessage,
         popUpQuestions: formattedQuestions,
         color: colorHex,
-        allowMultiAIReview,
-        iconBot,
       };
 
       console.log("Saving chatbot settings:", updateData);
@@ -578,7 +507,37 @@ export default function CustomizeChatbotPage() {
       const data = await response.json();
       console.log("API response:", data);
 
-      setToastMessage("Chatbot settings saved successfully!");
+      // Save auto-features using our app API
+      const autoFeaturesPayload = {
+        allowAutoRedirect: !!autoFeatures.allowAutoRedirect,
+        allowAutoScroll: !!autoFeatures.allowAutoScroll,
+        allowAutoHighlight: !!autoFeatures.allowAutoHighlight,
+        allowAutoClick: !!autoFeatures.allowAutoClick,
+        allowAutoCancel: !!autoFeatures.allowAutoCancel,
+        allowAutoReturn: !!autoFeatures.allowAutoReturn,
+        allowAutoExchange: !!autoFeatures.allowAutoExchange,
+        allowAutoGetUserOrders: !!autoFeatures.allowAutoGetUserOrders,
+        allowAutoUpdateUserInfo: !!autoFeatures.allowAutoUpdateUserInfo,
+        allowAutoFillForm: !!autoFeatures.allowAutoFillForm,
+        allowAutoTrackOrder: !!autoFeatures.allowAutoTrackOrder,
+        allowAutoLogout: !!autoFeatures.allowAutoLogout,
+        allowAutoLogin: !!autoFeatures.allowAutoLogin,
+        allowAutoGenerateImage: !!autoFeatures.allowAutoGenerateImage,
+      };
+
+      const autoRes = await fetch(`/api/updateWebsiteAutos`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(autoFeaturesPayload),
+      });
+      const autoResData = await autoRes.json().catch(() => ({}));
+      if (!autoRes.ok || !autoResData.success) {
+        throw new Error(
+          autoResData.error || "Failed to update AI auto features",
+        );
+      }
+
+      setToastMessage("Chatbot settings and auto features saved successfully!");
       setToastType("success");
       setShowToast(true);
     } catch (error) {
@@ -653,12 +612,7 @@ export default function CustomizeChatbotPage() {
                       autoComplete="off"
                       helpText="The name displayed to your customers (max 120 characters)"
                       error={botNameError}
-                      disabled={true}
                     />
-                    <Banner tone="info">
-                      Note: Chatbot name is currently disabled and not being
-                      used.
-                    </Banner>
 
                     <TextField
                       label="Welcome Message"
@@ -671,12 +625,7 @@ export default function CustomizeChatbotPage() {
                       autoComplete="off"
                       helpText="First message shown when a customer opens the chat (max 25 words)"
                       error={welcomeMessageError}
-                      disabled={true}
                     />
-                    <Banner tone="info">
-                      Note: Welcome message is currently disabled and not being
-                      used.
-                    </Banner>
 
                     <TextField
                       label="Custom Instructions"
@@ -691,24 +640,7 @@ export default function CustomizeChatbotPage() {
                       error={customInstructionsError}
                     />
 
-                    <Checkbox
-                      label="Allow Multi-AI Review"
-                      checked={allowMultiAIReview}
-                      onChange={setAllowMultiAIReview}
-                      helpText="When enabled, multiple AI models will review responses for better quality"
-                    />
-
-                    <TextField
-                      label="Click Message"
-                      value={clickMessage}
-                      onChange={(value) => {
-                        setClickMessage(value);
-                        validateClickMessage(value);
-                      }}
-                      autoComplete="off"
-                      helpText="Message shown when user clicks on the chatbot button (max 15 words)"
-                      error={clickMessageError}
-                    />
+                    {/* Removed Multi-AI Review and Click Message fields */}
                   </BlockStack>
                 </BlockStack>
               </Card>
@@ -731,12 +663,7 @@ export default function CustomizeChatbotPage() {
                       options for customers to click.
                     </Text>
 
-                    <Banner tone="info">
-                      Note: Suggested questions are currently disabled and not
-                      being used.
-                    </Banner>
-
-                    {/* Popup questions list - now disabled */}
+                    {/* Popup questions list */}
                     <BlockStack gap="300">
                       {popUpQuestions.length > 0 ? (
                         popUpQuestions.map((question, index) => (
@@ -751,7 +678,6 @@ export default function CustomizeChatbotPage() {
                               plain
                               onClick={() => handleRemoveQuestion(index)}
                               accessibilityLabel="Remove question"
-                              disabled={true}
                             />
                           </InlineStack>
                         ))
@@ -762,7 +688,7 @@ export default function CustomizeChatbotPage() {
                       )}
                     </BlockStack>
 
-                    {/* Add new question - now disabled */}
+                    {/* Add new question */}
                     <InlineStack gap="200" align="start">
                       <div style={{ flexGrow: 1 }}>
                         <TextField
@@ -772,15 +698,10 @@ export default function CustomizeChatbotPage() {
                           autoComplete="off"
                           labelHidden
                           placeholder="Type a question customers might ask..."
-                          disabled={true}
                         />
                       </div>
                       <div style={{ marginTop: "4px" }}>
-                        <Button
-                          onClick={handleAddQuestion}
-                          disabled={true}
-                          icon={PlusIcon}
-                        >
+                        <Button onClick={handleAddQuestion} icon={PlusIcon}>
                           Add
                         </Button>
                       </div>
@@ -795,6 +716,116 @@ export default function CustomizeChatbotPage() {
                     <Text variant="bodySm" color="subdued">
                       {popUpQuestions.length}/3 questions added
                     </Text>
+                  </BlockStack>
+                </BlockStack>
+              </Card>
+
+              {/* AI Auto Features Card */}
+              <Card>
+                <BlockStack gap="400">
+                  <InlineStack align="space-between">
+                    <InlineStack gap="200">
+                      <Icon source={SettingsIcon} color="highlight" />
+                      <Text as="h3" variant="headingMd">
+                        AI Auto Features
+                      </Text>
+                    </InlineStack>
+                  </InlineStack>
+                  <Divider />
+
+                  <BlockStack gap="400">
+                    <Banner tone="warning">
+                      Disabling these features may reduce the assistant's
+                      effectiveness.
+                    </Banner>
+
+                    <LegacyStack vertical spacing="tight">
+                      <Checkbox
+                        label="Automatically redirect users to relevant pages"
+                        checked={autoFeatures.allowAutoRedirect}
+                        onChange={() => toggleAutoFeature("allowAutoRedirect")}
+                      />
+                      <Checkbox
+                        label="Scroll to relevant sections on the page"
+                        checked={autoFeatures.allowAutoScroll}
+                        onChange={() => toggleAutoFeature("allowAutoScroll")}
+                      />
+                      <Checkbox
+                        label="Highlight important elements on the page"
+                        checked={autoFeatures.allowAutoHighlight}
+                        onChange={() => toggleAutoFeature("allowAutoHighlight")}
+                      />
+                      <Checkbox
+                        label="Click buttons and links on behalf of users"
+                        checked={autoFeatures.allowAutoClick}
+                        onChange={() => toggleAutoFeature("allowAutoClick")}
+                      />
+                      <Checkbox
+                        label="Automatically fill forms for users"
+                        checked={autoFeatures.allowAutoFillForm}
+                        onChange={() => toggleAutoFeature("allowAutoFillForm")}
+                      />
+                    </LegacyStack>
+
+                    <Divider />
+                    <Text as="h4" variant="headingSm">
+                      Order Features
+                    </Text>
+                    <LegacyStack vertical spacing="tight">
+                      <Checkbox
+                        label="Help users cancel orders"
+                        checked={autoFeatures.allowAutoCancel}
+                        onChange={() => toggleAutoFeature("allowAutoCancel")}
+                      />
+                      <Checkbox label="Help users return products" disabled />
+                      <Checkbox label="Help users exchange products" disabled />
+                      <Checkbox
+                        label="Help users track their orders"
+                        checked={autoFeatures.allowAutoTrackOrder}
+                        onChange={() =>
+                          toggleAutoFeature("allowAutoTrackOrder")
+                        }
+                      />
+                      <Checkbox
+                        label="Fetch and display user order history"
+                        checked={autoFeatures.allowAutoGetUserOrders}
+                        onChange={() =>
+                          toggleAutoFeature("allowAutoGetUserOrders")
+                        }
+                      />
+                    </LegacyStack>
+
+                    <Divider />
+                    <Text as="h4" variant="headingSm">
+                      User Data Features
+                    </Text>
+                    <LegacyStack vertical spacing="tight">
+                      <Checkbox
+                        label="Help users update their account information"
+                        checked={autoFeatures.allowAutoUpdateUserInfo}
+                        onChange={() =>
+                          toggleAutoFeature("allowAutoUpdateUserInfo")
+                        }
+                      />
+                      <Checkbox
+                        label="Help users log out"
+                        checked={autoFeatures.allowAutoLogout}
+                        onChange={() => toggleAutoFeature("allowAutoLogout")}
+                      />
+                      <Checkbox
+                        label="Help users log in"
+                        checked={autoFeatures.allowAutoLogin}
+                        onChange={() => toggleAutoFeature("allowAutoLogin")}
+                      />
+                    </LegacyStack>
+
+                    <Divider />
+                    <Text as="h4" variant="headingSm">
+                      Content Generation Features
+                    </Text>
+                    <LegacyStack vertical spacing="tight">
+                      <Checkbox label="Generate images for users" disabled />
+                    </LegacyStack>
                   </BlockStack>
                 </BlockStack>
               </Card>
@@ -822,9 +853,40 @@ export default function CustomizeChatbotPage() {
                           Primary Color
                         </Text>
                         <ColorPicker
-                          onChange={setPrimaryColor}
+                          onChange={(value) => {
+                            setPrimaryColor(value);
+                            const hex = hsbToHex(value);
+                            setColorInput(hex);
+                          }}
                           color={primaryColor}
                         />
+                        <InlineStack gap="200">
+                          <TextField
+                            label="Color (Hex or RGB)"
+                            value={colorInput}
+                            onChange={(val) => {
+                              setColorInput(val);
+                              const hex = parseColorInputToHex(val);
+                              if (hex) {
+                                setPrimaryColor(hexToHsb(hex));
+                              }
+                            }}
+                            autoComplete="off"
+                            placeholder="#008060 or rgb(0,128,96) or 0,128,96"
+                          />
+                          <Box paddingInlineStart="200" paddingBlockStart="400">
+                            <div
+                              style={{
+                                width: 28,
+                                height: 28,
+                                borderRadius: 6,
+                                border: "1px solid #E1E3E5",
+                                background: hsbToHex(primaryColor),
+                              }}
+                              aria-label="Color preview"
+                            />
+                          </Box>
+                        </InlineStack>
                         <Text variant="bodySm" as="p" color="subdued">
                           This color will be used for the chatbot button and
                           header
@@ -832,20 +894,7 @@ export default function CustomizeChatbotPage() {
                       </BlockStack>
                     </Box>
 
-                    <InlineStack gap="400" blockAlign="center">
-                      <Select
-                        label="Bot Icon Type"
-                        options={botIconOptions}
-                        onChange={setIconBot}
-                        value={iconBot}
-                        helpText="Icon displayed for the chatbot"
-                      />
-                      <div style={{ marginTop: "1.6rem", marginLeft: "1rem" }}>
-                        <div style={{ color: "#2c6ecb" }}>
-                          {getIconForType("bot", iconBot)}
-                        </div>
-                      </div>
-                    </InlineStack>
+                    {/* Bot icon selection removed */}
                   </BlockStack>
                 </BlockStack>
               </Card>
