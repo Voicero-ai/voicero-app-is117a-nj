@@ -22,6 +22,7 @@ import {
   EmptyState,
   Toast,
   Frame,
+  Spinner,
 } from "@shopify/polaris";
 import {
   QuestionCircleIcon,
@@ -78,6 +79,7 @@ export default function HelpSettingsPage() {
   const [selectedQuestion, setSelectedQuestion] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState("");
+  const [editTitle, setEditTitle] = useState("");
   const [toastActive, setToastActive] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -196,7 +198,7 @@ export default function HelpSettingsPage() {
         body: JSON.stringify({
           accessKey,
           id: selectedQuestion.id,
-          question: selectedQuestion.title,
+          question: editTitle,
           documentAnswer: editContent,
           number: selectedQuestion.order,
           type: selectedQuestion.isAIGenerated ? "ai" : "manual",
@@ -208,10 +210,16 @@ export default function HelpSettingsPage() {
         throw new Error(data.error || "Failed to save changes");
       }
       const updated = questions.map((q) =>
-        q.id === selectedQuestion.id ? { ...q, content: editContent } : q,
+        q.id === selectedQuestion.id
+          ? { ...q, content: editContent, title: editTitle }
+          : q,
       );
       setQuestions(updated);
-      setSelectedQuestion({ ...selectedQuestion, content: editContent });
+      setSelectedQuestion({
+        ...selectedQuestion,
+        content: editContent,
+        title: editTitle,
+      });
       setIsEditing(false);
       setToastMessage("Changes saved successfully!");
       setToastActive(true);
@@ -381,7 +389,7 @@ export default function HelpSettingsPage() {
           content: "Refresh",
           icon: RefreshIcon,
           onAction: () => {
-            fetchQuestions();
+            if (!isLoading) fetchQuestions();
           },
         }}
       >
@@ -390,6 +398,20 @@ export default function HelpSettingsPage() {
             <Layout.Section>
               <Card>
                 <BlockStack gap="400">
+                  {isLoading && (
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "center",
+                        padding: 12,
+                      }}
+                    >
+                      <Spinner
+                        accessibilityLabel="Loading help modules"
+                        size="large"
+                      />
+                    </div>
+                  )}
                   <div
                     style={{
                       background:
@@ -443,7 +465,12 @@ export default function HelpSettingsPage() {
                           </InlineStack>
 
                           <InlineStack>
-                            <Button icon={PlusIcon} onClick={handleAdd}>
+                            <Button
+                              icon={PlusIcon}
+                              onClick={handleAdd}
+                              disabled={isSubmitting || isLoading}
+                              loading={isSubmitting}
+                            >
                               Add Question
                             </Button>
                           </InlineStack>
@@ -608,6 +635,8 @@ export default function HelpSettingsPage() {
                                       icon={DeleteIcon}
                                       variant="secondary"
                                       tone="critical"
+                                      disabled={isSubmitting}
+                                      loading={isSubmitting}
                                     >
                                       Delete
                                     </Button>
@@ -626,7 +655,12 @@ export default function HelpSettingsPage() {
                         <Card>
                           <BlockStack gap="300" align="center">
                             <Text>No questions yet.</Text>
-                            <Button icon={PlusIcon} onClick={handleAdd}>
+                            <Button
+                              icon={PlusIcon}
+                              onClick={handleAdd}
+                              disabled={isSubmitting || isLoading}
+                              loading={isSubmitting}
+                            >
                               Add your first question
                             </Button>
                           </BlockStack>
@@ -646,9 +680,18 @@ export default function HelpSettingsPage() {
                                 }}
                               >
                                 <BlockStack gap="300">
-                                  <Text variant="headingLg" fontWeight="bold">
-                                    {selectedQuestion.title}
-                                  </Text>
+                                  {isEditing ? (
+                                    <TextField
+                                      value={editTitle}
+                                      onChange={setEditTitle}
+                                      autoComplete="off"
+                                      placeholder="Enter question title"
+                                    />
+                                  ) : (
+                                    <Text variant="headingLg" fontWeight="bold">
+                                      {selectedQuestion.title}
+                                    </Text>
+                                  )}
 
                                   <InlineStack gap="200" wrap>
                                     <div
@@ -774,6 +817,7 @@ export default function HelpSettingsPage() {
                                         setEditContent("");
                                       }}
                                       variant="secondary"
+                                      disabled={isSubmitting}
                                     >
                                       Cancel
                                     </Button>
@@ -781,6 +825,8 @@ export default function HelpSettingsPage() {
                                       onClick={handleSave}
                                       primary
                                       icon={CheckIcon}
+                                      disabled={isSubmitting}
+                                      loading={isSubmitting}
                                     >
                                       Save Changes
                                     </Button>
@@ -793,9 +839,12 @@ export default function HelpSettingsPage() {
                                         setEditContent(
                                           selectedQuestion.content,
                                         );
+                                        setEditTitle(selectedQuestion.title);
                                       }}
                                       primary
                                       icon={EditIcon}
+                                      disabled={isSubmitting}
+                                      loading={isSubmitting}
                                     >
                                       Edit
                                     </Button>
@@ -804,6 +853,8 @@ export default function HelpSettingsPage() {
                                         onClick={handleUnpublish}
                                         variant="secondary"
                                         icon={ViewIcon}
+                                        disabled={isSubmitting}
+                                        loading={isSubmitting}
                                       >
                                         Unpublish
                                       </Button>
@@ -815,6 +866,8 @@ export default function HelpSettingsPage() {
                                           backgroundColor: "#10B981",
                                           borderColor: "#10B981",
                                         }}
+                                        disabled={isSubmitting}
+                                        loading={isSubmitting}
                                       >
                                         Publish
                                       </Button>
