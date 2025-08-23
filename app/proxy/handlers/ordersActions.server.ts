@@ -23,6 +23,12 @@ export async function processOrderAction(request: Request) {
 
     const data = await request.json();
 
+    // Normalize action names - map cancel_order to cancel
+    if (data.action === "cancel_order") {
+      console.log("✏️ Normalizing action name: 'cancel_order' → 'cancel'");
+      data.action = "cancel";
+    }
+
     if (
       ![
         "refund",
@@ -46,6 +52,15 @@ export async function processOrderAction(request: Request) {
       data.orderNumber ||
       data.order_number ||
       (data.action_context && data.action_context.order_id);
+
+    // Clean up order identifier (remove any prefixes like "si ")
+    if (typeof orderIdentifier === "string") {
+      const cleanIdentifier = orderIdentifier.replace(/^si\s+/i, "").trim();
+      console.log(
+        `📋 Cleaned order identifier: "${orderIdentifier}" → "${cleanIdentifier}"`,
+      );
+      data.order_id = cleanIdentifier;
+    }
     const email =
       data.email ||
       data.order_email ||
@@ -83,20 +98,63 @@ export async function processOrderAction(request: Request) {
         }
       }
     `;
-    const queryCondition = `name:${orderIdentifier} AND customer_email:${email}`;
+    // Add a # prefix if not present to match Shopify order name format
+    const formattedOrderId = orderIdentifier.startsWith("#")
+      ? orderIdentifier
+      : `#${orderIdentifier}`;
+
+    console.log(
+      `🔍 Searching for order with condition: name:${formattedOrderId} AND customer_email:${email}`,
+    );
+    const queryCondition = `name:${formattedOrderId} AND customer_email:${email}`;
     const orderResponse = await (admin as any).graphql(orderQuery, {
       variables: { query: queryCondition },
     });
     const orderData = await orderResponse.json();
     if (!orderData.data.orders.edges.length) {
-      return json(
-        {
-          success: false,
-          error: "Order not found or does not match the provided email",
-          verified: false,
-        },
-        addCorsHeaders(),
+      // Try alternative search without # prefix
+      console.log(
+        `⚠️ Order not found with #${orderIdentifier}, trying without # prefix...`,
       );
+      const alternativeQueryCondition = `name:${orderIdentifier} AND customer_email:${email}`;
+
+      try {
+        const altOrderResponse = await (admin as any).graphql(orderQuery, {
+          variables: { query: alternativeQueryCondition },
+        });
+        const altOrderData = await altOrderResponse.json();
+
+        if (altOrderData.data.orders.edges.length > 0) {
+          console.log(
+            `✅ Order found with alternative query: ${alternativeQueryCondition}`,
+          );
+          orderData.data.orders.edges = altOrderData.data.orders.edges;
+        } else {
+          console.log(`❌ Order still not found with alternative query`);
+          return json(
+            {
+              success: false,
+              error: "Order not found or does not match the provided email",
+              verified: false,
+              orderIdentifier,
+              email,
+              query_condition: queryCondition,
+              alt_query_condition: alternativeQueryCondition,
+            },
+            addCorsHeaders(),
+          );
+        }
+      } catch (searchError) {
+        console.error("Error in alternative order search:", searchError);
+        return json(
+          {
+            success: false,
+            error: "Order not found or does not match the provided email",
+            verified: false,
+          },
+          addCorsHeaders(),
+        );
+      }
     }
 
     const order = orderData.data.orders.edges[0].node;
@@ -177,6 +235,8 @@ export async function processOrderAction(request: Request) {
         order_status: order.displayFulfillmentStatus,
         cancelled_at: order.cancelledAt,
         refundable: order.refundable,
+        order_name: order.name,
+        order_id_raw: order.id,
       });
 
       const canCancel =
