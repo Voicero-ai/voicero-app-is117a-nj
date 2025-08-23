@@ -4,5 +4,7 @@ import { processOrderAction as processOrderActionServer } from "app/proxy/handle
 export const dynamic = "force-dynamic";
 
 export async function action({ request }: ActionFunctionArgs) {
+  console.log("⚡ Order action request received:", request.url);
+  console.log("⚡ Request method:", request.method);
   return processOrderActionServer(request);
 }

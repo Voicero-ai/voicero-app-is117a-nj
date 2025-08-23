@@ -171,6 +171,14 @@ export async function processOrderAction(request: Request) {
     }
 
     if (data.action === "cancel") {
+      console.log("🔄 CANCEL ACTION PROCESSING:", {
+        order_id: orderIdentifier,
+        email,
+        order_status: order.displayFulfillmentStatus,
+        cancelled_at: order.cancelledAt,
+        refundable: order.refundable,
+      });
+
       const canCancel =
         order.displayFulfillmentStatus?.toUpperCase() !== "FULFILLED" &&
         !order.cancelledAt;
@@ -184,10 +192,12 @@ export async function processOrderAction(request: Request) {
             }
           }
         `;
+        console.log("📤 Sending cancel mutation for order:", order.id);
         const cancelResp = await (admin as any).graphql(cancelQuery, {
           variables: { orderId: order.id },
         });
         const cancelData = await cancelResp.json();
+        console.log("📥 Cancel mutation response:", cancelData);
         if (
           cancelData.data.orderCancel.orderCancelUserErrors &&
           cancelData.data.orderCancel.orderCancelUserErrors.length > 0
@@ -262,6 +272,13 @@ export async function processOrderAction(request: Request) {
 
     // Return handling for both return and return_order
     if (data.action === "return" || data.action === "return_order") {
+      console.log("🔄 RETURN ACTION PROCESSING:", {
+        action: data.action,
+        order_id: orderIdentifier,
+        email,
+        reason: data.reason || data.returnReason,
+        order_status: order.displayFulfillmentStatus,
+      });
       // If unfulfilled, suggest cancel
       if (
         data.action === "return_order" &&
@@ -372,6 +389,10 @@ export async function processOrderAction(request: Request) {
           }
         }
       `;
+      console.log(
+        "📤 Sending return creation mutation with line items:",
+        returnLineItems.length,
+      );
       const returnResponse = await (admin as any).graphql(
         returnCreateMutation,
         {
@@ -381,6 +402,7 @@ export async function processOrderAction(request: Request) {
         },
       );
       const returnResult = await returnResponse.json();
+      console.log("📥 Return creation response:", returnResult);
 
       if (returnResult.data?.returnCreate?.userErrors?.length > 0) {
         const errors = returnResult.data.returnCreate.userErrors;
@@ -390,19 +412,22 @@ export async function processOrderAction(request: Request) {
         );
       }
 
-      return json(
-        {
-          success: true,
-          message: `Return for order ${order.name} has been initiated successfully.`,
-          return: returnResult.data?.returnCreate?.return,
-          status: "approved",
-          reason: normalizeReturnReason(returnReason) || "OTHER",
-          returnReason: normalizeReturnReason(returnReason) || "OTHER",
-          reason_note: returnReasonNote,
-          returnReasonNote: returnReasonNote,
-        },
-        addCorsHeaders(),
-      );
+      const response = {
+        success: true,
+        message: `Return for order ${order.name} has been initiated successfully.`,
+        return: returnResult.data?.returnCreate?.return,
+        status: "approved",
+        reason: normalizeReturnReason(returnReason) || "OTHER",
+        returnReason: normalizeReturnReason(returnReason) || "OTHER",
+        reason_note: returnReasonNote,
+        returnReasonNote: returnReasonNote,
+      };
+      console.log("✅ Return successfully processed:", {
+        order: order.name,
+        status: "approved",
+        reason: normalizeReturnReason(returnReason) || "OTHER",
+      });
+      return json(response, addCorsHeaders());
     }
 
     return json(

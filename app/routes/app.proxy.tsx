@@ -1238,6 +1238,11 @@ export const action: ActionFunction = async ({ request }) => {
         }
 
         // If we reach here, the requested action wasn't supported
+        console.log("❌ Unsupported order action:", {
+          action: data.action,
+          order_id: data.order_id || data.orderNumber,
+          email: data.email,
+        });
         return json(
           {
             success: false,
