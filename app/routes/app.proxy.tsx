@@ -21,6 +21,14 @@ export const action: ActionFunction = async ({ request }) => {
   console.log("Request URL:", request.url);
   console.log("Request method:", request.method);
 
+  // Log raw request body for troubleshooting
+  try {
+    const bodyClone = await request.clone().text();
+    console.log("📦 Raw request body:", bodyClone);
+  } catch (e) {
+    console.error("Could not log request body:", e);
+  }
+
   // Handle preflight requests
   if (request.method.toLowerCase() === "options") {
     return new Response(null, addCorsHeaders({ status: 204 }));
@@ -31,7 +39,10 @@ export const action: ActionFunction = async ({ request }) => {
     const dataPreview = await request
       .clone()
       .json()
-      .catch(() => ({}));
+      .catch((e) => {
+        console.error("❌ Failed to parse request JSON for delegation:", e);
+        return {};
+      });
     if (dataPreview?.action === "updateCustomer" && dataPreview.customer) {
       return processCustomerAction(request);
     }
@@ -39,6 +50,7 @@ export const action: ActionFunction = async ({ request }) => {
       [
         "refund",
         "cancel",
+        "cancel_order", // Add support for cancel_order action
         "return",
         "exchange",
         "verify_order",
@@ -46,10 +58,15 @@ export const action: ActionFunction = async ({ request }) => {
         "return_order",
       ].includes(dataPreview?.action)
     ) {
+      console.log(
+        "⏩ Delegating to specialized order action handler:",
+        dataPreview?.action,
+      );
       return processOrderAction(request);
     }
-  } catch (_) {
-    // ignore and fall back to legacy logic below
+  } catch (error) {
+    console.error("❌ Error during request delegation:", error);
+    // fall back to legacy logic below
   }
 
   try {
