@@ -3103,52 +3103,50 @@ export default function Index() {
                                                   </Text>
                                                 </InlineStack>
                                                 <div style={{ height: 6 }} />
-                                                {!isActionMsg && (
-                                                  <Text
-                                                    variant="bodySm"
-                                                    color="subdued"
-                                                  >
-                                                    {(() => {
-                                                      if (
-                                                        typeof m.content ===
-                                                        "string"
-                                                      ) {
-                                                        // Try to parse as JSON first to extract just the answer
-                                                        try {
-                                                          const parsed =
-                                                            JSON.parse(
-                                                              m.content,
-                                                            );
-                                                          if (parsed.answer) {
-                                                            return parsed.answer;
-                                                          }
-                                                          return m.content;
-                                                        } catch {
-                                                          return m.content;
-                                                        }
-                                                      }
+                                                <Text
+                                                  variant="bodySm"
+                                                  color="subdued"
+                                                >
+                                                  {(() => {
+                                                    if (
+                                                      typeof m.content ===
+                                                      "string"
+                                                    ) {
+                                                      // Try to parse as JSON first to extract just the answer
                                                       try {
-                                                        // If content is already an object, check for answer field
-                                                        if (
-                                                          m.content &&
-                                                          typeof m.content ===
-                                                            "object" &&
-                                                          m.content.answer
-                                                        ) {
-                                                          return m.content
-                                                            .answer;
+                                                        const parsed =
+                                                          JSON.parse(
+                                                            m.content,
+                                                          );
+                                                        if (parsed.answer) {
+                                                          return parsed.answer;
                                                         }
-                                                        return JSON.stringify(
-                                                          m.content,
-                                                        );
+                                                        return m.content;
                                                       } catch {
-                                                        return String(
-                                                          m.content,
-                                                        );
+                                                        return m.content;
                                                       }
-                                                    })()}
-                                                  </Text>
-                                                )}
+                                                    }
+                                                    try {
+                                                      // If content is already an object, check for answer field
+                                                      if (
+                                                        m.content &&
+                                                        typeof m.content ===
+                                                          "object" &&
+                                                        m.content.answer
+                                                      ) {
+                                                        return m.content
+                                                          .answer;
+                                                      }
+                                                      return JSON.stringify(
+                                                        m.content,
+                                                      );
+                                                    } catch {
+                                                      return String(
+                                                        m.content,
+                                                      );
+                                                    }
+                                                  })()}
+                                                </Text>
                                                 {isActionMsg && (
                                                   <div
                                                     style={{
