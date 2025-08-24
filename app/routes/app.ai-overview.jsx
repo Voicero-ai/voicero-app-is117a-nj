@@ -310,7 +310,7 @@ export default function AIOverviewPage() {
     }
 
     fetchAiHistory();
-  }, [websiteData, accessKey, updatedAnalysis]);
+  }, [websiteData, accessKey]);
 
   // Helper function to format markdown text with bold, italics, etc.
   const formatMarkdownText = (text) => {
