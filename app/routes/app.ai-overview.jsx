@@ -1012,7 +1012,7 @@ export default function AIOverviewPage() {
                       label: "Avg. user messages when good",
                       value:
                         kpiSnapshot?.avg_user_messages_when_good !== undefined
-                          ? `${kpiSnapshot.avg_user_messages_when_good}`
+                          ? `${kpiSnapshot.avg_user_messages_when_good.toFixed(2)}`
                           : "-",
                       icon: ChatIcon,
                       accent: "#F3E8FF",
@@ -1021,7 +1021,7 @@ export default function AIOverviewPage() {
                       label: "Avg. user messages when bad",
                       value:
                         kpiSnapshot?.avg_user_messages_when_bad !== undefined
-                          ? `${kpiSnapshot.avg_user_messages_when_bad}`
+                          ? `${kpiSnapshot.avg_user_messages_when_bad.toFixed(2)}`
                           : "-",
                       icon: ChatIcon,
                       accent: "#FFE4E6",
@@ -1154,11 +1154,11 @@ export default function AIOverviewPage() {
                             thread.initialQuery ||
                             "Untitled conversation";
 
-                          // Sort messages with most recent first
+                          // Sort messages with oldest first (chronological order)
                           const sortedMessages = messages.length
                             ? [...messages].sort(
                                 (a, b) =>
-                                  new Date(b.createdAt) - new Date(a.createdAt),
+                                  new Date(a.createdAt) - new Date(b.createdAt),
                               )
                             : [];
 
