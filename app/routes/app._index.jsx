@@ -778,7 +778,7 @@ export default function Index() {
   const [syncStatusText, setSyncStatusText] = useState("");
   const [showActivationGuide, setShowActivationGuide] = useState(false);
   // Action details UI state
-  const [selectedActionType, setSelectedActionType] = useState(null); // 'redirect' | 'purchase' | 'click' | 'scroll'
+  const [selectedActionType, setSelectedActionType] = useState(null); // 'orders' | 'movement' | 'cart'
   const [selectedThreadId, setSelectedThreadId] = useState(null);
   const [voiceEnabled, setVoiceEnabled] = useState(null);
   const [textEnabled, setTextEnabled] = useState(null);
@@ -822,166 +822,38 @@ export default function Index() {
 
       console.log("getThreadsForAction called with actionType:", actionType);
 
-      const details = extendedWebsiteData.actionDetails || {};
-      const fromDetails = Array.isArray(details[actionType])
-        ? details[actionType]
+      const actionConversations = extendedWebsiteData.actionConversations || {};
+      const conversationsForType = Array.isArray(actionConversations[actionType])
+        ? actionConversations[actionType]
         : [];
 
       console.log(
-        "Raw details for",
+        "Raw conversations for",
         actionType,
         ":",
-        fromDetails.length,
+        conversationsForType.length,
         "threads",
       );
 
-      let threads = fromDetails;
+      let threads = conversationsForType;
 
-      // Always filter threads to ensure they contain the correct action type
-      if (threads.length) {
-        const beforeFilter = threads.length;
-        threads = threads.filter((t) => {
-          // Thread must have messages
-          if (!Array.isArray(t.messages) || t.messages.length === 0) {
-            return false;
-          }
-
-          // Thread must contain at least one message with the matching action type
-          const hasMatchingAction = t.messages.some((m) => {
-            const payload = parseActionPayload(m.content);
-            if (!payload) return false;
-            const a = payload.action;
-            if (actionType === "purchase") {
-              return (
-                a === "purchase" || a === "add_to_cart" || a === "add to cart"
-              );
-            }
-            if (actionType === "add_to_cart" || actionType === "add to cart") {
-              return (
-                a === "purchase" || a === "add_to_cart" || a === "add to cart"
-              );
-            }
-            return a === actionType;
-          });
-
-          if (!hasMatchingAction) {
-            // Log threads that don't match to debug
-            const threadActions = t.messages
-              .map((m) => {
-                const payload = parseActionPayload(m.content);
-                return payload ? payload.action : "no-action";
-              })
-              .filter((a) => a !== "no-action");
-            console.log(
-              "Filtered out thread with actions:",
-              threadActions,
-              "looking for:",
-              actionType,
-            );
-          }
-
-          return hasMatchingAction;
-        });
-
-        console.log(
-          "After filtering actionDetails:",
-          beforeFilter,
-          "->",
-          threads.length,
-          "threads for",
-          actionType,
-        );
-      }
-
-      // Fallback to actionConversations if details are empty
-      if (!threads.length && extendedWebsiteData.actionConversations) {
-        console.log("Falling back to actionConversations for", actionType);
-        const conv = extendedWebsiteData.actionConversations[actionType] || [];
-        console.log(
-          "Raw actionConversations for",
-          actionType,
-          ":",
-          conv.length,
-          "threads",
-        );
-
-        // Always filter by messages containing the action - don't allow threads without messages
-        const filtered = conv.filter((t) => {
-          if (!Array.isArray(t.messages) || t.messages.length === 0) {
-            return false;
-          }
-
-          const hasMatchingAction = t.messages.some((m) => {
-            const payload = parseActionPayload(m.content);
-            return payload && payload.action === actionType;
-          });
-
-          if (!hasMatchingAction) {
-            // Log threads that don't match to debug
-            const threadActions = t.messages
-              .map((m) => {
-                const payload = parseActionPayload(m.content);
-                return payload ? payload.action : "no-action";
-              })
-              .filter((a) => a !== "no-action");
-            console.log(
-              "Filtered out conversation thread with actions:",
-              threadActions,
-              "looking for:",
-              actionType,
-            );
-          }
-
-          return hasMatchingAction;
-        });
-
-        console.log(
-          "After filtering actionConversations:",
-          conv.length,
-          "->",
-          filtered.length,
-          "threads for",
-          actionType,
-        );
-
-        // Deduplicate threads in fallback as well
-        const uniqueFiltered = filtered.reduce((unique, thread) => {
-          const id = thread.threadId || thread.messageId;
-          if (!unique.find((t) => (t.threadId || t.messageId) === id)) {
-            unique.push(thread);
-          }
-          return unique;
-        }, []);
-
-        console.log(
-          "After deduplication (fallback):",
-          filtered.length,
-          "->",
-          uniqueFiltered.length,
-          "threads for",
-          actionType,
-        );
-        return uniqueFiltered;
-      }
-
-      // Deduplicate threads by threadId or messageId to avoid showing the same thread multiple times
-      const uniqueThreads = threads.reduce((unique, thread) => {
-        const id = thread.threadId || thread.messageId;
-        if (!unique.find((t) => (t.threadId || t.messageId) === id)) {
-          unique.push(thread);
+      // Return the threads directly as they're already categorized correctly
+      // Extract the thread data from each conversation object
+      const extractedThreads = threads.map((conversation) => {
+        if (conversation.thread) {
+          return conversation.thread;
         }
-        return unique;
-      }, []);
+        // If no thread property, assume it's already a thread object
+        return conversation;
+      });
 
       console.log(
-        "After deduplication:",
-        threads.length,
-        "->",
-        uniqueThreads.length,
+        "Final result:",
+        extractedThreads.length,
         "threads for",
         actionType,
       );
-      return uniqueThreads;
+      return extractedThreads;
     },
     [extendedWebsiteData, parseActionPayload],
   );
@@ -2859,40 +2731,28 @@ export default function Index() {
                             >
                               {[
                                 {
-                                  icon: DataPresentationIcon,
-                                  value:
-                                    extendedWebsiteData.globalStats
-                                      ?.totalAiRedirects || 0,
-                                  label: "Redirects",
-                                  accent: "#EEF6FF",
-                                  type: "redirect",
-                                },
-                                {
                                   icon: CheckIcon,
                                   value:
-                                    extendedWebsiteData.globalStats
-                                      ?.totalAiPurchases || 0,
-                                  label: "Purchases",
+                                    extendedWebsiteData.actionConversations?.orders?.length || 0,
+                                  label: "Order Actions",
                                   accent: "#E8F5E9",
-                                  type: "purchase",
-                                },
-                                {
-                                  icon: InfoIcon,
-                                  value:
-                                    extendedWebsiteData.globalStats
-                                      ?.totalAiClicks || 0,
-                                  label: "Clicks",
-                                  accent: "#FEF3C7",
-                                  type: "click",
+                                  type: "orders",
                                 },
                                 {
                                   icon: RefreshIcon,
                                   value:
-                                    extendedWebsiteData.globalStats
-                                      ?.totalAiScrolls || 0,
-                                  label: "Scrolls",
+                                    extendedWebsiteData.actionConversations?.movement?.length || 0,
+                                  label: "Movement Actions",
                                   accent: "#F3E8FF",
-                                  type: "scroll",
+                                  type: "movement",
+                                },
+                                {
+                                  icon: InfoIcon,
+                                  value:
+                                    extendedWebsiteData.actionConversations?.cart?.length || 0,
+                                  label: "Cart Actions",
+                                  accent: "#FEF3C7",
+                                  type: "cart",
                                 },
                               ].map((stat, idx) => (
                                 <div
@@ -2961,9 +2821,7 @@ export default function Index() {
                                     </div>
                                     <BlockStack gap="100">
                                       <Text variant="bodySm" color="subdued">
-                                        {stat.type === "purchase"
-                                          ? "Add To Cart"
-                                          : stat.label}
+                                        {stat.label}
                                       </Text>
                                       <Text
                                         variant="headingXl"
@@ -2997,9 +2855,6 @@ export default function Index() {
                                     fontWeight="semibold"
                                   >
                                     {(() => {
-                                      if (selectedActionType === "purchase") {
-                                        return "Add to cart";
-                                      }
                                       const label =
                                         selectedActionType
                                           .charAt(0)
