@@ -17,7 +17,7 @@ export async function loader({ request }) {
       );
     }
 
-    const upstreamUrl = `https://c276bc3ac2fd.ngrok-free.app/api/helpCenter/get${
+    const upstreamUrl = `https://90fd72f59232.ngrok-free.app/api/helpCenter/get${
       websiteId ? `?websiteId=${encodeURIComponent(websiteId)}` : ""
     }`;
 
@@ -62,7 +62,7 @@ export async function action({ request }) {
       );
     }
 
-    const upstreamUrl = `https://c276bc3ac2fd.ngrok-free.app/api/helpCenter/get${
+    const upstreamUrl = `https://90fd72f59232.ngrok-free.app/api/helpCenter/get${
       websiteId ? `?websiteId=${encodeURIComponent(websiteId)}` : ""
     }`;
 

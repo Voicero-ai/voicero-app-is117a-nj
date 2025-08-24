@@ -20,7 +20,7 @@ export async function loader({ request }) {
 
     // Call the external news API with POST instead of GET
     const response = await fetch(
-      `https://c276bc3ac2fd.ngrok-free.app/api/news`,
+      `https://90fd72f59232.ngrok-free.app/api/news`,
       {
         method: "POST", // Changed from GET to POST
         headers: {
@@ -79,7 +79,7 @@ export async function action({ request }) {
 
     // Call the external news API
     const response = await fetch(
-      `https://c276bc3ac2fd.ngrok-free.app/api/news`,
+      `https://90fd72f59232.ngrok-free.app/api/news`,
       {
         method: "POST",
         headers: {

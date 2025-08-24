@@ -109,7 +109,7 @@ export const loader = async ({ request }) => {
 
     // Fetch interface settings using new API
     const interfaceRes = await fetch(
-      `https://c276bc3ac2fd.ngrok-free.app/api/updateInterface/get?websiteId=${website.id}`,
+      `https://90fd72f59232.ngrok-free.app/api/updateInterface/get?websiteId=${website.id}`,
       {
         method: "GET",
         headers: {
@@ -466,7 +466,7 @@ export default function CustomizeChatbotPage() {
 
     try {
       const res = await fetch(
-        `https://c276bc3ac2fd.ngrok-free.app/api/updateInterface/addQuestion`,
+        `https://90fd72f59232.ngrok-free.app/api/updateInterface/addQuestion`,
         {
           method: "POST",
           headers: {
@@ -502,7 +502,7 @@ export default function CustomizeChatbotPage() {
       }
       try {
         const res = await fetch(
-          `https://c276bc3ac2fd.ngrok-free.app/api/updateInterface/deleteQuestion`,
+          `https://90fd72f59232.ngrok-free.app/api/updateInterface/deleteQuestion`,
           {
             method: "POST",
             headers: {
@@ -589,7 +589,7 @@ export default function CustomizeChatbotPage() {
 
       // Make API call to save interface settings
       const response = await fetch(
-        `https://c276bc3ac2fd.ngrok-free.app/api/updateInterface/edit`,
+        `https://90fd72f59232.ngrok-free.app/api/updateInterface/edit`,
         {
           method: "POST",
           headers: {

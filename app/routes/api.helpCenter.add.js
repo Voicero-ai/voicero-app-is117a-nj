@@ -23,7 +23,7 @@ export async function action({ request }) {
     }
 
     const response = await fetch(
-      `https://c276bc3ac2fd.ngrok-free.app/api/helpCenter/add`,
+      `https://90fd72f59232.ngrok-free.app/api/helpCenter/add`,
       {
         method: "POST",
         headers: {
