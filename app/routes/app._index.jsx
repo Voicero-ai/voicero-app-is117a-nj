@@ -2943,14 +2943,17 @@ export default function Index() {
                                         return threads.map((t, i) => {
                                           const active =
                                             selectedThreadId ===
-                                            (t.threadId || t.messageId);
-                                          const created = new Date(
-                                            t.createdAt,
-                                          ).toLocaleString();
+                                            (t.id || t.threadId || t.messageId);
+                                          const created = t.createdAt 
+                                            ? new Date(t.createdAt).toLocaleString()
+                                            : t.messages && t.messages[0] && t.messages[0].createdAt 
+                                              ? new Date(t.messages[0].createdAt).toLocaleString()
+                                              : "Unknown";
                                           return (
                                             <div
                                               key={
-                                                (t.threadId ||
+                                                (t.id ||
+                                                  t.threadId ||
                                                   t.messageId ||
                                                   i) + "-row"
                                               }
@@ -2965,7 +2968,7 @@ export default function Index() {
                                               }}
                                               onClick={() =>
                                                 setSelectedThreadId(
-                                                  t.threadId || t.messageId,
+                                                  t.id || t.threadId || t.messageId,
                                                 )
                                               }
                                             >
@@ -2975,7 +2978,8 @@ export default function Index() {
                                                   fontWeight="semibold"
                                                 >
                                                   Thread{" "}
-                                                  {t.threadId?.slice(0, 8) ||
+                                                  {t.id?.slice(0, 8) ||
+                                                    t.threadId?.slice(0, 8) ||
                                                     t.messageId?.slice(0, 8)}
                                                 </Text>
                                                 <Text
@@ -3020,14 +3024,14 @@ export default function Index() {
 
                                       const thread = threads.find(
                                         (t) =>
-                                          (t.threadId || t.messageId) ===
+                                          (t.id || t.threadId || t.messageId) ===
                                           selectedThreadId,
                                       );
 
                                       console.log(
                                         "UI: Found thread:",
                                         thread
-                                          ? thread.threadId || thread.messageId
+                                          ? thread.id || thread.threadId || thread.messageId
                                           : "none",
                                       );
 
@@ -3044,45 +3048,14 @@ export default function Index() {
                                         );
                                       }
 
-                                      // Validate that the thread actually contains messages for the selected action type
-                                      const hasMatchingAction =
-                                        thread.messages &&
-                                        Array.isArray(thread.messages) &&
-                                        thread.messages.some((m) => {
-                                          const payload = parseActionPayload(
-                                            m.content,
-                                          );
-                                          if (!payload) return false;
-                                          const a = payload.action;
-                                          const s = selectedActionType;
-                                          if (s === "purchase") {
-                                            return (
-                                              a === "purchase" ||
-                                              a === "add_to_cart" ||
-                                              a === "add to cart"
-                                            );
-                                          }
-                                          if (
-                                            s === "add_to_cart" ||
-                                            s === "add to cart"
-                                          ) {
-                                            return (
-                                              a === "purchase" ||
-                                              a === "add_to_cart" ||
-                                              a === "add to cart"
-                                            );
-                                          }
-                                          return a === s;
-                                        });
-
-                                      if (!hasMatchingAction) {
+                                      // Check if thread has messages
+                                      if (!thread.messages || !Array.isArray(thread.messages) || thread.messages.length === 0) {
                                         return (
                                           <Text
                                             variant="bodySm"
                                             color="subdued"
                                           >
-                                            No messages found for this action in
-                                            the selected conversation.
+                                            No messages found in the selected conversation.
                                           </Text>
                                         );
                                       }
@@ -3096,13 +3069,8 @@ export default function Index() {
                                       return (
                                         <BlockStack gap="150">
                                           {messages.map((m, idx) => {
-                                            const payload = parseActionPayload(
-                                              m.content,
-                                            );
-                                            const isActionMsg =
-                                              payload &&
-                                              payload.action ===
-                                                selectedActionType;
+                                            // Check if this message has action properties
+                                            const isActionMsg = m.actionType != null;
                                             return (
                                               <div
                                                 key={m.id || idx}
@@ -3203,48 +3171,33 @@ export default function Index() {
                                                       style={{ height: 4 }}
                                                     />
                                                     <BlockStack gap="050">
-                                                      {payload?.answer && (
+                                                      {m.actionType && (
                                                         <Text
                                                           variant="bodySm"
                                                           color="subdued"
                                                         >
-                                                          Answer:{" "}
-                                                          {payload.answer}
+                                                          Action Type:{" "}
+                                                          {m.actionType}
                                                         </Text>
                                                       )}
-                                                      <Text
-                                                        variant="bodySm"
-                                                        color="subdued"
-                                                      >
-                                                        Action:{" "}
-                                                        {payload?.action}
-                                                      </Text>
-                                                      {(() => {
-                                                        const ctx =
-                                                          payload?.context ||
-                                                          {};
-                                                        const extra =
-                                                          ctx.url ||
-                                                          ctx.product_name ||
-                                                          ctx.button_text ||
-                                                          ctx.exact_text;
-                                                        if (!extra) return null;
-                                                        const label = ctx.url
-                                                          ? "URL"
-                                                          : ctx.product_name
-                                                            ? "Product"
-                                                            : ctx.button_text
-                                                              ? "Button"
-                                                              : "Text";
-                                                        return (
-                                                          <Text
-                                                            variant="bodySm"
-                                                            color="subdued"
-                                                          >
-                                                            {label}: {extra}
-                                                          </Text>
-                                                        );
-                                                      })()}
+                                                      {m.scrollToText && (
+                                                        <Text
+                                                          variant="bodySm"
+                                                          color="subdued"
+                                                        >
+                                                          Scroll To:{" "}
+                                                          {m.scrollToText}
+                                                        </Text>
+                                                      )}
+                                                      {m.pageUrl && (
+                                                        <Text
+                                                          variant="bodySm"
+                                                          color="subdued"
+                                                        >
+                                                          Page:{" "}
+                                                          {m.pageUrl}
+                                                        </Text>
+                                                      )}
                                                     </BlockStack>
                                                   </div>
                                                 )}
