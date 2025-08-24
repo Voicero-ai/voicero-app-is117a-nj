@@ -261,9 +261,18 @@
 
       // 3) Load widget with the resolved token
       console.log("VoiceroAI: access token:", accessToken);
+      const config = {
+        // These would be set by the merchant during setup
+        SHOPIFY_API_SECRET: "053ef615ccbae33978cbd201ee4dbdbc", // REPLACE WITH ACTUAL SECRET
+        SHOP: "{{ shop.permanent_domain }}", // Dynamically get the shop domain
+        APP_PROXY_BASE_URL:
+          "https://voicero-app-is117a-nj.vercel.app/app/proxy", // Voicero proxy URL
+      };
+      
       var script = document.createElement('script');
       script.src = "http://localhost:8090/widget.js";
       script.setAttribute('data-token', accessToken);
+      script.setAttribute('data-config', JSON.stringify(config));
       script.onload = function() {
         console.log("VoiceroAI: Widget loaded successfully from localhost:8090");
       };
