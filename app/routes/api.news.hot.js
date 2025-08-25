@@ -24,22 +24,19 @@ export async function action({ request }) {
     }
 
     // Call the external news hot API
-    const response = await fetch(
-      `https://90fd72f59232.ngrok-free.app/api/news/hot`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          Authorization: `Bearer ${accessKey}`,
-        },
-        body: JSON.stringify({
-          websiteId,
-          postId,
-          hot,
-        }),
+    const response = await fetch(`https://www.voicero.ai/api/news/hot`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${accessKey}`,
       },
-    );
+      body: JSON.stringify({
+        websiteId,
+        postId,
+        hot,
+      }),
+    });
 
     const text = await response.text();
     let data;

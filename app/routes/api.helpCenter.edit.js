@@ -29,26 +29,23 @@ export async function action({ request }) {
       );
     }
 
-    const response = await fetch(
-      `https://90fd72f59232.ngrok-free.app/api/helpCenter/edit`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          Authorization: `Bearer ${accessKey}`,
-        },
-        body: JSON.stringify({
-          id,
-          websiteId,
-          question,
-          documentAnswer,
-          number,
-          type,
-          status,
-        }),
+    const response = await fetch(`https://www.voicero.ai/api/helpCenter/edit`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${accessKey}`,
       },
-    );
+      body: JSON.stringify({
+        id,
+        websiteId,
+        question,
+        documentAnswer,
+        number,
+        type,
+        status,
+      }),
+    });
 
     const text = await response.text();
     let data;

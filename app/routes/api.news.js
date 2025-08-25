@@ -19,19 +19,16 @@ export async function loader({ request }) {
     }
 
     // Call the external news API with POST instead of GET
-    const response = await fetch(
-      `https://90fd72f59232.ngrok-free.app/api/news`,
-      {
-        method: "POST", // Changed from GET to POST
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          Authorization: `Bearer ${accessKey}`,
-        },
-        // Include websiteId in the request body
-        body: JSON.stringify({ websiteId }),
+    const response = await fetch(`https://www.voicero.ai/api/news`, {
+      method: "POST", // Changed from GET to POST
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${accessKey}`,
       },
-    );
+      // Include websiteId in the request body
+      body: JSON.stringify({ websiteId }),
+    });
 
     const text = await response.text();
     let data;
@@ -78,18 +75,15 @@ export async function action({ request }) {
     }
 
     // Call the external news API
-    const response = await fetch(
-      `https://90fd72f59232.ngrok-free.app/api/news`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          Authorization: `Bearer ${accessKey}`,
-        },
-        body: JSON.stringify(body),
+    const response = await fetch(`https://www.voicero.ai/api/news`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${accessKey}`,
       },
-    );
+      body: JSON.stringify(body),
+    });
 
     const text = await response.text();
     let data;

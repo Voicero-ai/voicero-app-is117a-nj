@@ -21,7 +21,7 @@ export async function action({ request }) {
     }
 
     const response = await fetch(
-      `https://90fd72f59232.ngrok-free.app/api/helpCenter/delete`,
+      `https://www.voicero.ai/api/helpCenter/delete`,
       {
         method: "POST",
         headers: {

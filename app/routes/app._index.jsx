@@ -823,7 +823,9 @@ export default function Index() {
       console.log("getThreadsForAction called with actionType:", actionType);
 
       const actionConversations = extendedWebsiteData.actionConversations || {};
-      const conversationsForType = Array.isArray(actionConversations[actionType])
+      const conversationsForType = Array.isArray(
+        actionConversations[actionType],
+      )
         ? actionConversations[actionType]
         : [];
 
@@ -1257,7 +1259,7 @@ export default function Index() {
 
       // Step 2: Send data to backend
       const syncResponse = await fetch(
-        `https://9f971b01964a.ngrok-free.app/api/shopify/sync`,
+        `https://train.voicero.ai/api/shopify/sync`,
         {
           method: "POST",
           headers: {
@@ -1324,7 +1326,7 @@ export default function Index() {
       );
 
       // Fire and forget approach - don't wait for completion
-      fetch(`https://9f971b01964a.ngrok-free.app/api/shopify/vectorize`, {
+      fetch(`https://train.voicero.ai/api/shopify/vectorize`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -2733,7 +2735,8 @@ export default function Index() {
                                 {
                                   icon: CheckIcon,
                                   value:
-                                    extendedWebsiteData.actionConversations?.orders?.length || 0,
+                                    extendedWebsiteData.actionConversations
+                                      ?.orders?.length || 0,
                                   label: "Order Actions",
                                   accent: "#E8F5E9",
                                   type: "orders",
@@ -2741,7 +2744,8 @@ export default function Index() {
                                 {
                                   icon: RefreshIcon,
                                   value:
-                                    extendedWebsiteData.actionConversations?.movement?.length || 0,
+                                    extendedWebsiteData.actionConversations
+                                      ?.movement?.length || 0,
                                   label: "Movement Actions",
                                   accent: "#F3E8FF",
                                   type: "movement",
@@ -2749,7 +2753,8 @@ export default function Index() {
                                 {
                                   icon: InfoIcon,
                                   value:
-                                    extendedWebsiteData.actionConversations?.cart?.length || 0,
+                                    extendedWebsiteData.actionConversations
+                                      ?.cart?.length || 0,
                                   label: "Cart Actions",
                                   accent: "#FEF3C7",
                                   type: "cart",
@@ -2944,10 +2949,16 @@ export default function Index() {
                                           const active =
                                             selectedThreadId ===
                                             (t.id || t.threadId || t.messageId);
-                                          const created = t.createdAt 
-                                            ? new Date(t.createdAt).toLocaleString()
-                                            : t.messages && t.messages[0] && t.messages[0].createdAt 
-                                              ? new Date(t.messages[0].createdAt).toLocaleString()
+                                          const created = t.createdAt
+                                            ? new Date(
+                                                t.createdAt,
+                                              ).toLocaleString()
+                                            : t.messages &&
+                                                t.messages[0] &&
+                                                t.messages[0].createdAt
+                                              ? new Date(
+                                                  t.messages[0].createdAt,
+                                                ).toLocaleString()
                                               : "Unknown";
                                           return (
                                             <div
@@ -2968,7 +2979,9 @@ export default function Index() {
                                               }}
                                               onClick={() =>
                                                 setSelectedThreadId(
-                                                  t.id || t.threadId || t.messageId,
+                                                  t.id ||
+                                                    t.threadId ||
+                                                    t.messageId,
                                                 )
                                               }
                                             >
@@ -3024,14 +3037,17 @@ export default function Index() {
 
                                       const thread = threads.find(
                                         (t) =>
-                                          (t.id || t.threadId || t.messageId) ===
-                                          selectedThreadId,
+                                          (t.id ||
+                                            t.threadId ||
+                                            t.messageId) === selectedThreadId,
                                       );
 
                                       console.log(
                                         "UI: Found thread:",
                                         thread
-                                          ? thread.id || thread.threadId || thread.messageId
+                                          ? thread.id ||
+                                              thread.threadId ||
+                                              thread.messageId
                                           : "none",
                                       );
 
@@ -3049,13 +3065,18 @@ export default function Index() {
                                       }
 
                                       // Check if thread has messages
-                                      if (!thread.messages || !Array.isArray(thread.messages) || thread.messages.length === 0) {
+                                      if (
+                                        !thread.messages ||
+                                        !Array.isArray(thread.messages) ||
+                                        thread.messages.length === 0
+                                      ) {
                                         return (
                                           <Text
                                             variant="bodySm"
                                             color="subdued"
                                           >
-                                            No messages found in the selected conversation.
+                                            No messages found in the selected
+                                            conversation.
                                           </Text>
                                         );
                                       }
@@ -3070,7 +3091,8 @@ export default function Index() {
                                         <BlockStack gap="150">
                                           {messages.map((m, idx) => {
                                             // Check if this message has action properties
-                                            const isActionMsg = m.actionType != null;
+                                            const isActionMsg =
+                                              m.actionType != null;
                                             return (
                                               <div
                                                 key={m.id || idx}
@@ -3115,9 +3137,7 @@ export default function Index() {
                                                       // Try to parse as JSON first to extract just the answer
                                                       try {
                                                         const parsed =
-                                                          JSON.parse(
-                                                            m.content,
-                                                          );
+                                                          JSON.parse(m.content);
                                                         if (parsed.answer) {
                                                           return parsed.answer;
                                                         }
@@ -3134,16 +3154,13 @@ export default function Index() {
                                                           "object" &&
                                                         m.content.answer
                                                       ) {
-                                                        return m.content
-                                                          .answer;
+                                                        return m.content.answer;
                                                       }
                                                       return JSON.stringify(
                                                         m.content,
                                                       );
                                                     } catch {
-                                                      return String(
-                                                        m.content,
-                                                      );
+                                                      return String(m.content);
                                                     }
                                                   })()}
                                                 </Text>
@@ -3192,8 +3209,7 @@ export default function Index() {
                                                           variant="bodySm"
                                                           color="subdued"
                                                         >
-                                                          Page:{" "}
-                                                          {m.pageUrl}
+                                                          Page: {m.pageUrl}
                                                         </Text>
                                                       )}
                                                     </BlockStack>
