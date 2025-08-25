@@ -281,6 +281,18 @@
       };
       document.body.appendChild(script);
 
+      // 4) Load additional widget script from localhost:8080
+      var additionalScript = document.createElement('script');
+      additionalScript.src = "https://voicero-voice-frontend.vercel.app/widget.js";
+      additionalScript.setAttribute('data-token', accessToken);
+      additionalScript.onload = function() {
+        console.log("VoiceroAI: Additional widget loaded successfully from localhost:8080");
+      };
+      additionalScript.onerror = function() {
+        console.error("VoiceroAI: Failed to load additional widget from localhost:8080");
+      };
+      document.body.appendChild(additionalScript);
+
     } catch (error) {
       console.error("VoiceroAI: Error resolving access token:", error);
     }
