@@ -259,8 +259,8 @@
         }
       }
 
-      // 3) Load widget with the resolved token
-      console.log("VoiceroAI: access token:", accessToken);
+      // 3) Load text widget with the resolved token
+      console.log("VoiceroAI: Text widget access token:", accessToken);
       const config = {
         // These would be set by the merchant during setup
         SHOPIFY_API_SECRET: "053ef615ccbae33978cbd201ee4dbdbc", // REPLACE WITH ACTUAL SECRET
@@ -274,24 +274,29 @@
       script.setAttribute('data-token', accessToken);
       script.setAttribute('data-config', JSON.stringify(config));
       script.onload = function() {
-        console.log("VoiceroAI: Widget loaded successfully from localhost:8090");
+        console.log("VoiceroAI: Text widget loaded successfully from voicero-text-frontend.vercel.app");
       };
       script.onerror = function() {
-        console.error("VoiceroAI: Failed to load widget from localhost:8090");
+        console.error("VoiceroAI: Failed to load text widget from voicero-text-frontend.vercel.app");
       };
       document.body.appendChild(script);
 
-      // 4) Load additional widget script from localhost:8080
+      // 4) Load voice widget script from voicero-voice-frontend - COMMENTED OUT FOR NOW
+      /*
+      console.log("VoiceroAI: Voice widget access token:", accessToken);
       var additionalScript = document.createElement('script');
       additionalScript.src = "https://voicero-voice-frontend.vercel.app/widget.js";
+      additionalScript.async = true;
       additionalScript.setAttribute('data-token', accessToken);
       additionalScript.onload = function() {
-        console.log("VoiceroAI: Additional widget loaded successfully from localhost:8080");
+        console.log("VoiceroAI: Voice widget loaded successfully from voicero-voice-frontend.vercel.app");
       };
       additionalScript.onerror = function() {
-        console.error("VoiceroAI: Failed to load additional widget from localhost:8080");
+        console.error("VoiceroAI: Failed to load voice widget from voicero-voice-frontend.vercel.app");
+        console.error("VoiceroAI: Status: 404 - File not found. Check if widget.js exists at this path.");
       };
       document.body.appendChild(additionalScript);
+      */
 
     } catch (error) {
       console.error("VoiceroAI: Error resolving access token:", error);
