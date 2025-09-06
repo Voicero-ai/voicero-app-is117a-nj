@@ -2132,7 +2132,8 @@ export default function Index() {
                           const monthlyQueries =
                             websiteData?.monthlyQueries || 0;
                           const queryLimit = websiteData?.queryLimit || 0;
-                          const lastSyncedRaw = websiteData?.lastSyncedAt;
+                          const lastSyncedRaw =
+                            websiteData?.lastSyncedAt || websiteData?.lastSync;
                           const totalTextChats =
                             websiteData?.globalStats?.totalTextChats || 0;
                           const totalVoiceChats =
