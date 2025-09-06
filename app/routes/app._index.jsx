@@ -896,56 +896,12 @@ export default function Index() {
 
       setIsLoadingExtendedData(true);
 
-      // Client-side cache in sessionStorage for 1 hour
-      const CACHE_KEY = "voicero:website:get";
-      const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
-      const now = Date.now();
-
-      try {
-        const cachedRaw = sessionStorage.getItem(CACHE_KEY);
-        if (cachedRaw) {
-          const cached = JSON.parse(cachedRaw);
-          if (cached.expiresAt && now < cached.expiresAt && cached.data) {
-            setExtendedWebsiteData(cached.data);
-            setIsLoadingExtendedData(false);
-            // Background refresh; when it completes, update UI and cache
-            fetch("/api/website/get?bypassCache=true")
-              .then((r) => r.json())
-              .then((d) => {
-                if (d?.success && d.websiteData) {
-                  setExtendedWebsiteData(d.websiteData);
-                  try {
-                    sessionStorage.setItem(
-                      CACHE_KEY,
-                      JSON.stringify({
-                        data: d.websiteData,
-                        expiresAt: Date.now() + CACHE_TTL_MS,
-                      }),
-                    );
-                  } catch {}
-                }
-              })
-              .catch(() => {});
-            return;
-          }
-        }
-      } catch {}
-
       const response = await fetch("/api/website/get");
       const data = await response.json();
       console.log("websites/get data: ", data);
 
       if (data.success && data.websiteData) {
         setExtendedWebsiteData(data.websiteData);
-        try {
-          sessionStorage.setItem(
-            CACHE_KEY,
-            JSON.stringify({
-              data: data.websiteData,
-              expiresAt: now + CACHE_TTL_MS,
-            }),
-          );
-        } catch {}
       } else {
         console.error("Failed to fetch extended website data:", data.error);
       }
@@ -1457,7 +1413,7 @@ export default function Index() {
         throw new Error(data?.error || "Failed to toggle feature");
       }
 
-      // Update extendedWebsiteData and client cache to reflect override
+      // Update extendedWebsiteData to reflect override
       setExtendedWebsiteData((prev) => {
         if (!prev) return prev;
         return {
@@ -1467,23 +1423,6 @@ export default function Index() {
             : { showTextAI: nextEnabled }),
         };
       });
-
-      try {
-        const CACHE_KEY = "voicero:website:get";
-        const raw = sessionStorage.getItem(CACHE_KEY);
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          if (parsed?.data) {
-            parsed.data = {
-              ...parsed.data,
-              ...(feature === "voice"
-                ? { showVoiceAI: nextEnabled }
-                : { showTextAI: nextEnabled }),
-            };
-            sessionStorage.setItem(CACHE_KEY, JSON.stringify(parsed));
-          }
-        }
-      } catch {}
     } catch (err) {
       // Revert optimistic update on failure
       if (feature === "voice") setVoiceEnabled(!nextEnabled);
