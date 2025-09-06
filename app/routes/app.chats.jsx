@@ -100,19 +100,11 @@ export default function Chats() {
 
   // Filter and sort states
   const [websiteId, setWebsiteId] = useState(loaderData?.website?.id || "");
-  const [actionFilter, setActionFilter] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [sortOption, setSortOption] = useState("recent");
   const [currentPage, setCurrentPage] = useState(1);
 
   const fetcher = useFetcher();
-
-  const actionOptions = [
-    { label: "All Actions", value: "" },
-    { label: "Click", value: "click" },
-    { label: "Scroll", value: "scroll" },
-    { label: "Purchase", value: "purchase" },
-    { label: "Redirect", value: "redirect" },
-  ];
 
   const sortOptions = [
     { label: "Most Recent", value: "recent" },
@@ -138,8 +130,8 @@ export default function Chats() {
           sort: sortOption,
         });
 
-        if (actionFilter) {
-          params.append("action", actionFilter);
+        if (searchQuery && searchQuery.length >= 3) {
+          params.append("search", searchQuery);
         }
 
         const response = await fetch(`/api/websites/chats?${params}`);
@@ -164,7 +156,7 @@ export default function Chats() {
         setLoadingMore(false);
       }
     },
-    [websiteId, actionFilter, sortOption],
+    [websiteId, searchQuery, sortOption],
   );
 
   useEffect(() => {
@@ -201,6 +193,36 @@ export default function Chats() {
       default:
         return ChatIcon;
     }
+  };
+
+  const highlightSearchText = (text, searchTerm) => {
+    if (!searchTerm || searchTerm.length < 3 || !text) {
+      return text;
+    }
+
+    const regex = new RegExp(
+      `(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
+      "gi",
+    );
+    const parts = text.split(regex);
+
+    return parts.map((part, index) =>
+      regex.test(part) ? (
+        <span
+          key={index}
+          style={{
+            backgroundColor: "#FFD700",
+            fontWeight: "bold",
+            padding: "1px 2px",
+            borderRadius: "2px",
+          }}
+        >
+          {part}
+        </span>
+      ) : (
+        part
+      ),
+    );
   };
 
   const getTypeBadge = (type, sourceType) => {
@@ -302,12 +324,18 @@ export default function Chats() {
                     helpText="This is your connected website"
                   />
                 </Box>
-                <Box minWidth="150px">
-                  <Select
-                    label="Filter by Action"
-                    options={actionOptions}
-                    value={actionFilter}
-                    onChange={setActionFilter}
+                <Box minWidth="200px">
+                  <TextField
+                    label="Search Conversations"
+                    value={searchQuery}
+                    onChange={setSearchQuery}
+                    placeholder="Enter at least 3 characters to search..."
+                    helpText={
+                      searchQuery.length > 0 && searchQuery.length < 3
+                        ? `${3 - searchQuery.length} more characters needed`
+                        : "Search in conversation content"
+                    }
+                    connectedLeft={<Icon source={FilterIcon} />}
                   />
                 </Box>
                 <Box minWidth="150px">
@@ -320,10 +348,11 @@ export default function Chats() {
                 </Box>
                 <Box paddingBlockStart="600">
                   <Button
-                    icon={FilterIcon}
+                    primary={searchQuery.length >= 3}
+                    disabled={searchQuery.length > 0 && searchQuery.length < 3}
                     onClick={() => fetchChats(1, false)}
                   >
-                    Apply Filters
+                    {searchQuery.length >= 3 ? "Search" : "Load All"}
                   </Button>
                 </Box>
               </InlineStack>
@@ -375,7 +404,10 @@ export default function Chats() {
                                 </Text>
                               </InlineStack>
                               <Text variant="headingMd" truncate>
-                                {conversation.initialQuery}
+                                {highlightSearchText(
+                                  conversation.initialQuery,
+                                  searchQuery,
+                                )}
                               </Text>
                               <InlineStack gap="200">
                                 <Text variant="bodySm" tone="subdued">
@@ -433,7 +465,12 @@ export default function Chats() {
                                           {formatDate(message.createdAt)}
                                         </Text>
                                       </InlineStack>
-                                      <Text>{message.content}</Text>
+                                      <Text>
+                                        {highlightSearchText(
+                                          message.content,
+                                          searchQuery,
+                                        )}
+                                      </Text>
                                     </BlockStack>
                                   </Box>
                                 </Card>

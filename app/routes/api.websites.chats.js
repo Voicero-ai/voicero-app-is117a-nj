@@ -38,7 +38,7 @@ export async function loader({ request }) {
 
     const url = new URL(request.url);
     const websiteId = url.searchParams.get("websiteId");
-    const action = url.searchParams.get("action");
+    const search = url.searchParams.get("search");
     const sort = url.searchParams.get("sort") || "recent";
     const page = url.searchParams.get("page") || "1";
     const limit = url.searchParams.get("limit") || "10";
@@ -51,11 +51,11 @@ export async function loader({ request }) {
       sort,
     });
 
-    if (action) {
-      queryParams.append("action", action);
+    if (search && search.length >= 3) {
+      queryParams.append("search", search);
     }
 
-    // Call external API at localhost:3000 with access key
+    // Call external API with access key
     const response = await fetch(
       `https://www.voicero.ai/api/websites/chats?${queryParams}`,
       {
