@@ -2123,21 +2123,20 @@ export default function Index() {
                         }}
                       >
                         {(() => {
-                          const isActive = !!fetcher.data?.websiteData?.active;
-                          const hasPlan = !!fetcher.data?.websiteData?.plan;
-                          const plan = fetcher.data?.websiteData?.plan;
+                          // Use extendedWebsiteData if available, otherwise fallback to fetcher.data
+                          const websiteData =
+                            extendedWebsiteData || fetcher.data?.websiteData;
+                          const isActive = !!websiteData?.active;
+                          const hasPlan = !!websiteData?.plan;
+                          const plan = websiteData?.plan;
                           const monthlyQueries =
-                            fetcher.data?.websiteData?.monthlyQueries || 0;
-                          const queryLimit =
-                            fetcher.data?.websiteData?.queryLimit || 0;
-                          const lastSyncedRaw =
-                            fetcher.data?.websiteData?.lastSyncedAt;
+                            websiteData?.monthlyQueries || 0;
+                          const queryLimit = websiteData?.queryLimit || 0;
+                          const lastSyncedRaw = websiteData?.lastSyncedAt;
                           const totalTextChats =
-                            fetcher.data?.websiteData?.globalStats
-                              ?.totalTextChats || 0;
+                            websiteData?.globalStats?.totalTextChats || 0;
                           const totalVoiceChats =
-                            fetcher.data?.websiteData?.globalStats
-                              ?.totalVoiceChats || 0;
+                            websiteData?.globalStats?.totalVoiceChats || 0;
                           const isSynced =
                             !!lastSyncedRaw && lastSyncedRaw !== "Never";
                           const lastSyncedDisplay = lastSyncedRaw
