@@ -2146,14 +2146,7 @@ export default function Index() {
                               : new Date(lastSyncedRaw).toLocaleDateString()
                             : "Never";
 
-                          const limitLabel =
-                            plan === "Beta"
-                              ? "/ Unlimited"
-                              : plan === "Enterprise"
-                                ? "/ Pay per query"
-                                : plan === "Starter"
-                                  ? "/ 100"
-                                  : `/ ${queryLimit}`;
+                          const limitLabel = "/ 1000";
 
                           const tiles = [
                             {
