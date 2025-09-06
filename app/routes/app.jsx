@@ -41,6 +41,7 @@ export default function App() {
           <Link to="/app" rel="home">
             Home
           </Link>
+          <Link to="/app/chats">Chats</Link>
           <Link to="/app/ai-overview">AI Overview</Link>
           <Link to="/app/customize-chatbot">Customize Chatbot</Link>
           <Link to="/app/help-settings">Help Interface</Link>
