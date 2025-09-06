@@ -225,6 +225,38 @@ export default function Chats() {
     );
   };
 
+  const parseSimpleMarkdown = (text, searchTerm) => {
+    if (!text) return text;
+
+    // Simple markdown patterns
+    let processed = text
+      // Bold **text**
+      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+      // Italic *text*
+      .replace(/\*(.*?)\*/g, "<em>$1</em>")
+      // Code `text`
+      .replace(
+        /`(.*?)`/g,
+        '<code style="background-color: #f4f6f8; padding: 2px 4px; border-radius: 3px; font-family: monospace;">$1</code>',
+      )
+      // Line breaks
+      .replace(/\n/g, "<br/>");
+
+    // Apply search highlighting
+    if (searchTerm && searchTerm.length >= 3) {
+      const regex = new RegExp(
+        `(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
+        "gi",
+      );
+      processed = processed.replace(
+        regex,
+        '<span style="background-color: #FFD700; font-weight: bold; padding: 1px 2px; border-radius: 2px;">$1</span>',
+      );
+    }
+
+    return <div dangerouslySetInnerHTML={{ __html: processed }} />;
+  };
+
   const getTypeBadge = (type, sourceType) => {
     if (type === "voice" || sourceType === "voiceconversation") {
       return <Badge tone="info">Voice</Badge>;
@@ -465,12 +497,12 @@ export default function Chats() {
                                           {formatDate(message.createdAt)}
                                         </Text>
                                       </InlineStack>
-                                      <Text>
-                                        {highlightSearchText(
+                                      <div>
+                                        {parseSimpleMarkdown(
                                           message.content,
                                           searchQuery,
                                         )}
-                                      </Text>
+                                      </div>
                                     </BlockStack>
                                   </Box>
                                 </Card>
