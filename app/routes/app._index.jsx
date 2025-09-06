@@ -2193,6 +2193,12 @@ export default function Index() {
                             fetcher.data?.websiteData?.queryLimit || 0;
                           const lastSyncedRaw =
                             fetcher.data?.websiteData?.lastSyncedAt;
+                          const totalTextChats =
+                            fetcher.data?.websiteData?.globalStats
+                              ?.totalTextChats || 0;
+                          const totalVoiceChats =
+                            fetcher.data?.websiteData?.globalStats
+                              ?.totalVoiceChats || 0;
                           const isSynced =
                             !!lastSyncedRaw && lastSyncedRaw !== "Never";
                           const lastSyncedDisplay = lastSyncedRaw
@@ -2221,9 +2227,9 @@ export default function Index() {
                             {
                               icon: DataPresentationIcon,
                               label: "Plan Type",
-                              value: hasPlan ? plan : "No Active Plan",
-                              sub: hasPlan ? "Active plan" : "Limited Access",
-                              accent: hasPlan ? "#EEF6FF" : "#FFF4E4",
+                              value: "Free",
+                              sub: "Active plan",
+                              accent: "#EEF6FF",
                             },
                             {
                               icon: ChatIcon,
@@ -2238,6 +2244,20 @@ export default function Index() {
                               value: lastSyncedDisplay,
                               sub: isSynced ? "Up to date" : "Never synced",
                               accent: isSynced ? "#E8F5E9" : "#FFF4E4",
+                            },
+                            {
+                              icon: ChatIcon,
+                              label: "Total Text Chats",
+                              value: totalTextChats.toLocaleString(),
+                              sub: "Text conversations",
+                              accent: "#EEF6FF",
+                            },
+                            {
+                              icon: ProductIcon,
+                              label: "Total Voice Chats",
+                              value: totalVoiceChats.toLocaleString(),
+                              sub: "Voice conversations",
+                              accent: "#F0F9FF",
                             },
                           ];
 
