@@ -57,7 +57,7 @@ export async function loader({ request }) {
 
     // Call external API at localhost:3000 with access key
     const response = await fetch(
-      `http://localhost:3000/api/websites/chats?${queryParams}`,
+      `https://www.voicero.ai/api/websites/chats?${queryParams}`,
       {
         method: "GET",
         headers: {

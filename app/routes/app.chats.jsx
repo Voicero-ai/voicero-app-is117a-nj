@@ -23,7 +23,7 @@ import {
   ChevronDownIcon,
   ChevronUpIcon,
   CalendarIcon,
-  VoiceIcon,
+  MicrophoneIcon,
   FilterIcon,
 } from "@shopify/polaris-icons";
 import { authenticate } from "../shopify.server";
@@ -197,7 +197,7 @@ export default function Chats() {
   const getTypeIcon = (type) => {
     switch (type) {
       case "voice":
-        return VoiceIcon;
+        return MicrophoneIcon;
       default:
         return ChatIcon;
     }
